@@ -32,7 +32,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Linux desktop prerequisites
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libheif-dev libheif-plugin-libde265 libheif-plugin-aomdec
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libheif-dev libheif-plugin-libde265 libheif-plugin-aomdec libheif-plugin-aomenc
       - name: macOS media prerequisites
         if: runner.os == 'macOS'
         run: brew install libheif pkgconf cmake ninja gtkmm3 fftw libiptcdata lensfun exiv2 little-cms2 libomp librsvg fmt libraw
