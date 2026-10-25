@@ -40,7 +40,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          vcpkg install "libheif[core,aom]:x64-windows-static-md"
+          "VCPKG_ROOT=$(Split-Path (Get-Command vcpkg).Source)" >> $env:GITHUB_ENV
+          vcpkg install "libheif[core,aom,libde265]:x64-windows-static-md"
           "VCPKGRS_TRIPLET=x64-windows-static-md" >> $env:GITHUB_ENV
       - run: python scripts/fetch-media-fixtures.py "${{ runner.temp }}/raw-assets"
       - run: cargo test --manifest-path crates/media-core/Cargo.toml --locked -- --include-ignored

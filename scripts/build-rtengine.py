@@ -40,7 +40,8 @@ def main():
         run("git", "-C", str(source), "apply", "--check", str(patch))
         run("git", "-C", str(source), "apply", str(patch))
     actual_patch = subprocess.check_output([
-        "git", "-C", str(source), "diff", "--no-ext-diff", "--no-color", "--binary", "HEAD", "--"])
+        # Match the recorded patch even when a full clone chooses longer object IDs.
+        "git", "-C", str(source), "diff", "--abbrev=7", "--no-ext-diff", "--no-color", "--binary", "HEAD", "--"])
     if actual_patch != patch.read_bytes():
         raise RuntimeError("rtengine source has changes outside the recorded patch")
     prefix = subprocess.check_output(["brew", "--prefix"], text=True).strip()

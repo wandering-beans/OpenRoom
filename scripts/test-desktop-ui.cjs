@@ -1475,7 +1475,8 @@ async function run() {
     await page.locator('.tile').filter({has:page.locator('.grid-number', {hasText:/^3$/})}).focus();await page.keyboard.press('Shift+F10');
     assert.equal(await page.locator('#photo-menu').isVisible(), true);
     await page.keyboard.press('Escape');
-    assert.equal(await page.locator('#photo-menu').isVisible(), false);
+    await page.locator('#photo-menu').waitFor({state:'hidden'});
+    assert.equal(await page.locator('.tile.active-photo').evaluate(tile => tile === document.activeElement), true, 'Escape returns focus to the photo');
     await page.click('#module-develop');
     await page.locator('.film-tile').filter({has:page.locator('.film-number', {hasText:/^1$/})}).click();
     assert.match(await page.textContent('#selection-count'),/1枚/, 'plain click collapses a multiple selection');
