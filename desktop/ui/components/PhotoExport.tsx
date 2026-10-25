@@ -64,6 +64,12 @@ function PhotoExport({ prepare, error, ref }: ExportActions & { ref: Ref<PhotoEx
     const pointerDown = (event: PointerEvent) => {
       if (!menu.current?.contains(event.target as Node)) setMenuOpen(false);
     };
+    const keyDown = (event: KeyboardEvent) => {
+      // Keyboard context menus can leave focus on the photo on Linux.
+      if (menu.current && !menu.current.hidden && (event.key === 'Escape' || event.key === 'Tab')) {
+        event.preventDefault(); event.stopPropagation(); closeMenu(true);
+      }
+    };
     const blur = () => setMenuOpen(false);
     const beforeUnload = (event: BeforeUnloadEvent) => {
       if (phaseRef.current === 'running') { event.preventDefault(); event.returnValue = ''; }
@@ -74,12 +80,14 @@ function PhotoExport({ prepare, error, ref }: ExportActions & { ref: Ref<PhotoEx
       if (phaseRef.current === 'running') setResult(t('{0}/{1}枚を書き出し中…', payload.completed, payload.total));
     }).then(stop => { if (disposed) stop(); else unlisten = stop; }).catch(error);
     document.addEventListener('pointerdown', pointerDown);
+    document.addEventListener('keydown', keyDown, true);
     window.addEventListener('blur', blur);
     window.addEventListener('beforeunload', beforeUnload);
     return () => {
       disposed = true;
       unlisten?.();
       document.removeEventListener('pointerdown', pointerDown);
+      document.removeEventListener('keydown', keyDown, true);
       window.removeEventListener('blur', blur);
       window.removeEventListener('beforeunload', beforeUnload);
     };
@@ -143,12 +151,7 @@ function PhotoExport({ prepare, error, ref }: ExportActions & { ref: Ref<PhotoEx
   }
 
   return <>
-    <div id="photo-menu" ref={menu} role="menu" aria-label={t('写真の操作')} hidden={!menuOpen} style={position}
-      onKeyDown={event => {
-        if (event.key === 'Escape' || event.key === 'Tab') {
-          event.preventDefault(); event.stopPropagation(); closeMenu(true);
-        }
-      }}>
+    <div id="photo-menu" ref={menu} role="menu" aria-label={t('写真の操作')} hidden={!menuOpen} style={position}>
       <button id="photo-export" role="menuitem" onClick={open}>{t('書き出し…')}</button>
     </div>
     <dialog id="export-dialog" ref={dialog} aria-labelledby="export-title" onClose={focusPhoto}
