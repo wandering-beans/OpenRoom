@@ -1099,6 +1099,15 @@ for (const id of ['full-image', 'navigator-image', 'image-area']) navigatorObser
 $('image-area').addEventListener('scroll', updateNavigatorViewport, { passive: true });
 $('navigator-image').addEventListener('load', updateNavigatorViewport);
 
+async function pastePhotoSettings() {
+  const id = items[selected]?.id;
+  if (id == null || !await allowChange() || items[selected]?.id !== id) return;
+  if (await develop.pasteSettings(id) && !develop.active && items[selected]?.id === id) {
+    syncReview();
+    await displayPhoto();
+  }
+}
+
 document.addEventListener('keydown', event => {
   if ($('app-shell').inert || document.querySelector('dialog[open]') || photoExport.busy || !$('photo-menu').hidden || document.body.dataset.catalogBusy) return;
   if ((event.metaKey || event.ctrlKey) && event.key === ',') {
@@ -1107,6 +1116,16 @@ document.addEventListener('keydown', event => {
   if ((event.target as Element).closest('[role=separator]')) return;
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
     event.preventDefault(); toggleFilters(true); libraryFilters.text(); $('search').focus(); return;
+  }
+  if (!(event.target as Element).closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')
+      && (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey
+      && ['c', 'v'].includes(event.key.toLowerCase()) && items[selected]) {
+    event.preventDefault();
+    if (!event.repeat && !develop.busy && !$('workspace').inert) {
+      if (event.key.toLowerCase() === 'c') void develop.copySettings(items[selected].id);
+      else void pastePhotoSettings().catch(showError);
+    }
+    return;
   }
   if ((event.target as Element).matches('input, textarea, select') || event.metaKey || event.ctrlKey || event.altKey) return;
   const key = event.key.toLowerCase();

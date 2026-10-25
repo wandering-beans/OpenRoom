@@ -9,6 +9,7 @@ import { element as $ } from './dom';
 import { t, language, metadataValue } from './i18n';
 import { createToneCurve } from "./tone-curve";
 import { createDevelopTools } from "./develop-tools";
+import { createCopySettings } from './components/CopySettings';
 // Rust owns image processing; this controller only edits recipes and displays results.
 
 const clone = <T,>(value: T): T => structuredClone(value);
@@ -43,6 +44,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
   let undo: Settings[] = [], redo: Settings[] = [], clipboard: SettingsPatch | null = null, gesture: Settings | null = null, gestureOwner: HTMLElement | null = null;
   let interacting = false;
   let pendingStep: {label: string} | null = null, historyRows: HistoryRow[] = [], historyToken = 0;
+  const chooseCopySettings = createCopySettings();
   const controls: SliderHandle[] = [];
   const historyView = createView($('develop-history-list'));
   let rawInfo: RawInfo | null = null, rasterTemperature: number | null = null, whiteBalanceReady = false;
@@ -464,8 +466,49 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     finishGesture(); if (!settings || !redo.length) return;
     const previous = clone(settings); undo.push(previous); settings = redo.pop()!; recordStep(previous, t("やり直し")); changed();
   };
-  $('develop-copy').onclick = () => { if (settings) { clipboard = tools.selectedPatch(settings); buttons(); status(t("現像設定をコピーしました")); } };
-  $('develop-paste').onclick = () => { if (clipboard) tools.paste(clipboard); };
+  async function copySettings(id: number) {
+    if (loading || leaving || exporting) return;
+    finishGesture();
+    exporting = true; buttons();
+    try {
+      const source = active && item?.id === id && settings ? clone(settings) : (await invoke('get_develop', {id})).settings;
+      const patch = await chooseCopySettings(source);
+      if (patch) {
+        clipboard = patch;
+        $(active ? 'develop-status' : 'status').textContent = t('現像設定をコピーしました');
+      }
+    } catch (failure) { error(failure); }
+    finally { exporting = false; buttons(); }
+  }
+  async function pasteSettings(id: number) {
+    if (!clipboard || loading || leaving || exporting) return false;
+    if (active) {
+      if (item?.id !== id || !settings) return false;
+      tools.paste(clipboard);
+      exporting = true; buttons();
+      try { return await save(); }
+      finally { exporting = false; buttons(); }
+    }
+    exporting = true; buttons();
+    let persisted = false;
+    try {
+      const recipe = await invoke('get_develop', {id});
+      const next = Object.assign(clone(recipe.settings), clone(clipboard));
+      await invoke('save_develop', {id, settings: next, expectedRevision: recipe.revision,
+        steps: [{settings: next, label: t('設定を貼り付け')}], undo: [...(recipe.undo || []), recipe.settings].slice(-10)});
+      persisted = true;
+      saved(id);
+      await invoke('refresh_library_preview', {id});
+      saved(id);
+      $('status').textContent = t('現像設定を貼り付けました');
+      return true;
+    } catch (failure) {
+      error(persisted ? t('設定は保存済みですが、表示を更新できませんでした。{0}', failure) : failure);
+      return false;
+    } finally { exporting = false; buttons(); }
+  }
+  $('develop-copy').onclick = () => { if (item) void copySettings(item.id); };
+  $('develop-paste').onclick = () => { if (item) void pasteSettings(item.id); };
   $('develop-before').onclick = () => { if (!settings) return; before = !before; buttons(); schedule(); };
   $('develop-mono').onchange = event => edit(value => { value.monochrome = (event.target as HTMLInputElement).checked; });
   for (const axis of ['h', 'v'] as const) $(`develop-flip-${axis}`).onchange = event => edit(value => { value[`flip_${axis}`] = (event.target as HTMLInputElement).checked; });
@@ -493,6 +536,8 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     get dirty() { return dirty(); },
     get busy() { return loading || saving || exporting || leaving || Boolean(gesture); },
     select,
+    copySettings,
+    pasteSettings,
     rotate(turns: number) { if (active && settings) edit(value => { value.quarter_turns = (value.quarter_turns + turns + 4) % 4; }); },
     async activate(value: boolean, next: Photo | null) {
       active = value;

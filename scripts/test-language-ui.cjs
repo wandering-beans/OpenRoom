@@ -56,6 +56,12 @@ module.exports = async function testLanguage(page, url) {
     }}return strings;
   });
   assert.deepEqual(untranslated, [], 'English controls must have no untranslated labels');
+  await page.keyboard.press('Control+c');
+  await page.locator('#copy-settings-dialog[open]').waitFor();
+  assert.equal(/[\u3040-\u30ff\u3400-\u9fff]/.test(await page.locator('#copy-settings-dialog').innerText()), false, 'copy dialog labels are translated');
+  await page.setViewportSize({width:900,height:700});
+  assert.equal(await page.locator('#copy-settings-dialog').evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth), true, 'copy dialog fits a narrow window');
+  await page.keyboard.press('Escape');
   await preferences();
   assert.equal(await page.locator('#preferences-title').textContent(), 'Settings');
   assert.equal(await page.locator('#mcp-status').textContent(), 'Stopped');

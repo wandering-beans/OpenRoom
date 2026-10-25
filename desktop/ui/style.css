@@ -505,3 +505,17 @@ body:not(.develop-mode) .develop-left { display: none; }
 html[lang=en] .develop-slider{grid-template-columns:minmax(105px,1.15fr) minmax(70px,1.5fr) 48px}
 
 html[lang=en]{--crop-tool-caption:'Tool:'}
+
+#copy-settings-dialog { width: min(960px, calc(100vw - 48px)); max-height: calc(100vh - 48px); box-sizing: border-box; overflow: auto; background: #303030; color: #eee; border: 1px solid #727272; padding: 24px; }
+#copy-settings-dialog::backdrop { background: #0009; }
+#copy-settings-dialog h2 { margin: 0 0 20px; font-size: 20px; }
+.copy-settings-groups { columns: 3 240px; column-gap: 24px; }
+.copy-settings-groups fieldset { break-inside: avoid; margin: 0 0 18px; padding: 0; border: 0; }
+.copy-settings-groups legend { padding: 0; font-weight: 600; }
+.copy-settings-groups label { display: flex; align-items: center; gap: 7px; padding: 4px 0; }
+.copy-settings-groups fieldset > label { margin-left: 22px; }
+.copy-settings-groups input { accent-color: #2985e8; }
+.copy-settings-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.copy-settings-actions span { flex: 1; }
+.copy-settings-actions button { padding: 7px 12px; }
+#copy-settings-confirm { background: #2867a6; }
