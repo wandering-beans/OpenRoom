@@ -1,0 +1,63 @@
+diff --git a/src/decoders/orf.rs b/src/decoders/orf.rs
+index a252073..6ce30a0 100644
+--- a/src/decoders/orf.rs
++++ b/src/decoders/orf.rs
+@@ -254,6 +254,28 @@ impl<'a> Decoder for OrfDecoder<'a> {
+   fn format_hint(&self) -> FormatHint {
+     FormatHint::ORF
+   }
++
++  fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<image::DynamicImage>> {
++    if params.image_index != 0 {
++      return Ok(None);
++    }
++    let Some(settings) = self.makernote.get_entry_raw_with_len(OrfMakernotes::CameraSettingsIFD, &mut file.reader(), 4)? else {
++      return Ok(None);
++    };
++    let exif = self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes).ok_or("ORF: missing EXIF")?;
++    let base = exif.get_entry(ExifTag::MakerNotes).and_then(|entry| entry.offset()).ok_or("ORF: missing MakerNote offset")?;
++    let base = u32::try_from(base).map_err(|_| "ORF: MakerNote offset exceeds 32 bits")?;
++    let offset = base.checked_add(settings.get_force_u32(0)).ok_or("ORF: preview directory offset overflow")?;
++    // CameraSettings preview offsets are relative to the Olympus MakerNote, not the TIFF header.
++    let settings = IFD::new(&mut file.reader(), offset, 0, 0, self.makernote.endian, &[])?;
++    let (Some(start), Some(length)) = (settings.get_entry(0x0101u16), settings.get_entry(0x0102u16)) else {
++      return Ok(None);
++    };
++    let bytes = file.subview(u64::from(base) + start.force_u64(0), length.force_u64(0))?;
++    image::load_from_memory_with_format(bytes, image::ImageFormat::Jpeg)
++      .map(Some)
++      .map_err(|err| RawlerError::DecoderFailed(format!("ORF: invalid camera preview: {err}")))
++  }
+ }
+ 
+ impl<'a> OrfDecoder<'a> {
+@@ -473,6 +495,7 @@ crate::tags::tiff_tag_enum!(OrfEquipmentTags);
+ #[derive(Debug, Copy, Clone, PartialEq, enumn::N)]
+ #[repr(u16)]
+ pub enum OrfMakernotes {
++  CameraSettingsIFD = 0x2020,
+   ImageProcessingIFD = 0x2040,
+   RawInfo = 0x3000,
+   OlympusRedMul = 0x1017,
+diff --git a/src/decoders/srw.rs b/src/decoders/srw.rs
+index 089d211..b6f357e 100644
+--- a/src/decoders/srw.rs
++++ b/src/decoders/srw.rs
+@@ -131,6 +131,17 @@ impl<'a> Decoder for SrwDecoder<'a> {
+   fn format_hint(&self) -> FormatHint {
+     FormatHint::SRW
+   }
++
++  fn preview_image(&self, file: &RawSource, params: &RawDecodeParams) -> Result<Option<image::DynamicImage>> {
++    if params.image_index != 0 {
++      return Ok(None);
++    }
++    let preview = self.tiff.find_ifds_with_tag(ExifTag::JPEGInterchangeFormatLength)
++      .into_iter()
++      .filter(|ifd| ifd.has_entry(ExifTag::JPEGInterchangeFormat))
++      .max_by_key(|ifd| ifd.get_entry(ExifTag::JPEGInterchangeFormatLength).unwrap().force_u64(0));
++    preview.map(|ifd| super::dynamic_image_from_jpeg_interchange_format(ifd, file)).transpose()
++  }
+ }
+ 
+ impl<'a> SrwDecoder<'a> {

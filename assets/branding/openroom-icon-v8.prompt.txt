@@ -1,0 +1,13 @@
+Tool: built-in image_gen
+Edit target: assets/branding/openroom-icon-v7.png
+Reference: user-provided cropped screenshot of the lighting boundary
+Transparent background: true
+
+Edit Image 1, the full OpenRoom app icon. Image 2 is only the user's cropped screenshot pointing out the current overly abrupt light-to-black boundary; do not import its crop, checkerboard, Canvas badge, or any UI into the result.
+
+Make exactly these THREE changes:
+1. REMOVE ALL LIGHT UNDER O. The capital O must be plain crisp white on uninterrupted solid black, with absolutely no white beam, glow, haze, reflection or illuminated patch below it. Keep the O's size, stroke, position and shape unchanged.
+2. THIN THE VERTICAL STEM OF THE LOWERCASE r. Keep the exact text "Or" (capital O, lowercase r), not uppercase R. Reduce r's straight vertical stem width to about 65 percent of its current width. Keep its baseline, cap/shoulder height, overall position and readable smooth curved shoulder. Shape the join naturally so the thinner stem still connects elegantly to the existing curved shoulder. Keep all letter faces pure white, flat, opaque, sharp and smooth.
+3. SOFTEN THE COLORED LIGHT'S OUTER BOUNDARY. Keep a downward spectral fan below ONLY the foot of r, blue/violet on the left through cyan, green, yellow/orange to red on the right. Its source must match the new narrower stem. Keep the light recognizably directional and spectral, but give its left edge, right edge, and bottom a long smooth feathered fade into black. Eliminate hard triangular cutout edges, sharp color-to-black borders, solid colored wedges, clipped ends and obvious boundaries. Use delicate atmospheric optical falloff so the colored light gradually disappears into black. The center can remain luminous, with softly blended internal colors. Fade out well before the tile edges. No colored spill under O or above the letter baseline.
+
+Preserve the original black rounded-square tile dimensions, corner radius, narrow transparent outside margin, composition and monogram placement. No frame, no added text, no extra symbols, no text reflections, no watermark. One full square application icon only.

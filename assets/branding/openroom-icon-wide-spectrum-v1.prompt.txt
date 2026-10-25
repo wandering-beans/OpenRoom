@@ -1,0 +1,9 @@
+Tool: built-in image_gen
+Edit target: assets/branding/openroom-icon-v8.png
+Transparent background: true
+
+Edit the attached OpenRoom app icon. Preserve the pure white "Or" typography exactly, including the thinner lowercase r stem, letter sizes, positions and spacing, the black rounded square, and transparent outside corners.
+
+Redesign ONLY the light composition to fix its visual imbalance. The current narrow rainbow cone issuing directly from the foot of r is awkward. REMOVE that cone entirely and leave r's foot sharp white against black.
+
+Instead create a SINGLE understated shared spectral backlight behind the LOWER PORTION OF THE ENTIRE MONOGRAM, centered beneath the whole word "Or", not under r. Think faint photographic dispersed light revealing itself in a shallow softly feathered area behind and just below both letters together. Blue/cyan softly on the left, green near center, amber/red on the right. A continuous elegant spectral wash stretches across the whole monogram width, with very faint directional streaks descending a short distance from behind the lower letter region. Its source is broad and hidden behind the combined letters, never a point or a jet at either letter's foot. Keep substantial black negative space and restrained brightness. No hard triangular silhouette, no colored spout, no rainbow arch, no disconnected horizontal neon bar, no individual spotlight cones. The colored light should fade seamlessly into pure black on every edge and within a short distance below the text. No separate white light beam under O. Both letters remain entirely solid white and crisp; light stays behind them. Background above the lower part of the monogram remains black. A polished minimal professional photographic application icon, subtle color accent balanced across the composition. No added text or graphics.

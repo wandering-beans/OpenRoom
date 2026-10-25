@@ -1,0 +1,13 @@
+:root {
+  color-scheme: dark;
+  --brand-black: #000000;
+  --brand-surface: #111214;
+  --brand-white: #fafafa;
+  --brand-muted: #b2b5bc;
+  --brand-blue: #315aff;
+  --brand-cyan: #20c7e8;
+  --brand-green: #4cdb83;
+  --brand-yellow: #f5d454;
+  --brand-red: #f46350;
+  --brand-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", sans-serif;
+}

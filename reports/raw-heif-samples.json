@@ -1,0 +1,109 @@
+[
+  {
+    "name": "Canon - EOS 350D - RAW (3:2).CR2",
+    "url": "https://raw.pixls.us/getfile.php/758/nice/Canon%20-%20EOS%20350D%20-%20RAW%20%283:2%29.CR2",
+    "sha256": "8cbb84e04d93b005fe082da9c954122a612b5281af00aa088d767850f343fd38",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Canon - EOS M50 - CRAW (3:2).CR3",
+    "url": "https://raw.pixls.us/getfile.php/2663/nice/Canon%20-%20EOS%20M50%20-%20CRAW%20%283:2%29.CR3",
+    "sha256": "15384b775867ec4c42b11882837f1e368cedc0561832ffab271221e6bb80be4c",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Canon - EOS D30 - RAW (3:2).CRW",
+    "url": "https://raw.pixls.us/getfile.php/1307/nice/Canon%20-%20EOS%20D30%20-%20RAW%20%283:2%29.CRW",
+    "sha256": "4ee482f2b6f9f1a8d370703ea04e9f2abaa49356973a7f56b229af93a78e8a2e",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Sony - NEX-6 - 12bit 12bit compressed (3:2).ARW",
+    "url": "https://raw.pixls.us/getfile.php/782/nice/Sony%20-%20NEX-6%20-%2012bit%2012bit%20compressed%20%283:2%29.ARW",
+    "sha256": "bf4c6d21136aa4fd626212fe72b962b6404e3fca45cdc3b6afbed8e73fee2cf8",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Sony - DSC-R1 - 14bit 14bit uncompressed (3:2).SR2",
+    "url": "https://raw.pixls.us/getfile.php/3221/nice/Sony%20-%20DSC-R1%20-%2014bit%2014bit%20uncompressed%20%283:2%29.SR2",
+    "sha256": "921c5f2513dd1671a9089e73fc778fc3573bc4cb70a3a555d0414661d0e62274",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Sony - DSC-F828 - 4:3.SRF",
+    "url": "https://raw.pixls.us/getfile.php/1351/nice/Sony%20-%20DSC-F828%20-%204:3.SRF",
+    "sha256": "07739f94bcab0c7e198d418ac65172d0dce04bb84a7683ecffd0bfe4b32f6d79",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Fujifilm - X-T2 - 14bit 14bit compressed (3:2).RAF",
+    "url": "https://raw.pixls.us/getfile.php/865/nice/Fujifilm%20-%20X-T2%20-%2014bit%2014bit%20compressed%20%283:2%29.RAF",
+    "sha256": "f756ad5be551a8b3e1b503a8a6f7e8e637fba519c0b0f8c79dd58e94b0287602",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "example.heic",
+    "url": "https://raw.githubusercontent.com/strukturag/libheif/master/examples/example.heic",
+    "sha256": "7f8b363e4936c0666a25f64f3a92fda10bd8e5453be4592530b65a55dd98f3f2"
+  },
+  {
+    "name": "Nikon - D2H - 12bit 12bit compressed (Lossy (type 1)) (3:2).NEF",
+    "url": "https://raw.pixls.us/getfile.php/5227/nice/Nikon%20-%20D2H%20-%2012bit%2012bit%20compressed%20%28Lossy%20%28type%201%29%29%20%283:2%29.NEF",
+    "sha256": "155edb938f884ea7372ce98d4ff5f965c3e413b43b95bc9923da6e92082cf914",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Nikon - COOLPIX P1000 - 12bit 12bit uncompressed (4:3).NRW",
+    "url": "https://raw.pixls.us/getfile.php/3381/nice/Nikon%20-%20COOLPIX%20P1000%20-%2012bit%2012bit%20uncompressed%20%284:3%29.NRW",
+    "sha256": "1d9470ee083f914e51aa0be782161b432f27f87dbef551a59ec435f5dbc289dd",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Panasonic - DMC-FZ28 - 16:9.RW2",
+    "url": "https://raw.pixls.us/getfile.php/7330/nice/Panasonic%20-%20DMC-FZ28%20-%2016:9.RW2",
+    "sha256": "b58564eb3cd148e6282aeba0b104506fa021ce905a3040f15b6ef1cbd6142fff",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Olympus - E-3 - 16bit (4:3).ORF",
+    "url": "https://raw.pixls.us/getfile.php/1803/nice/Olympus%20-%20E-3%20-%2016bit%20%284:3%29.ORF",
+    "sha256": "ba4605bbd9fe9b77971da444bcdb1698904c0ad4ebdf9dd42dd45ab255f3f6d4",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Pentax - K10D - 12bit 12bit compressed (3:2).PEF",
+    "url": "https://raw.pixls.us/getfile.php/2239/nice/Pentax%20-%20K10D%20-%2012bit%2012bit%20compressed%20%283:2%29.PEF",
+    "sha256": "e35ae4154a468be3154f5f462e884ba5941f010d3e8f23d347fbec14809f44d3",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Leica - D-LUX 5 - 16:9.RWL",
+    "url": "https://raw.pixls.us/getfile.php/2808/nice/Leica%20-%20D-LUX%205%20-%2016:9.RWL",
+    "sha256": "4665b97c0ac978d65d5d48ae506d26b835c91b473996e040f30fa7abb010df79",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Samsung - NX500 - 12bit 12bit normal compression (3:2).SRW",
+    "url": "https://raw.pixls.us/getfile.php/3668/nice/Samsung%20-%20NX500%20-%2012bit%2012bit%20normal%20compression%20%283:2%29.SRW",
+    "sha256": "156e43118811bcecb6fcc600b5f41ee1773c4f00b6a5b2dd72e177e35f6596ab",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Hasselblad - H3D - 16bit (4:3).3FR",
+    "url": "https://raw.pixls.us/getfile.php/2851/nice/Hasselblad%20-%20H3D%20-%2016bit%20%284:3%29.3FR",
+    "sha256": "34fdb93cb215e4f419ae0f7252c57b881fa381003124b4f9c143d27741f211b3",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Hasselblad - H4D-40 - 16bit (4:3).fff",
+    "url": "https://raw.pixls.us/getfile.php/931/nice/Hasselblad%20-%20H4D-40%20-%2016bit%20%284:3%29.fff",
+    "sha256": "1bfe64fa6fc07453ae74ed50c2f817d77a12a310b34a7f9893d32dd03f8c2ad0",
+    "license": "CC0-1.0"
+  },
+  {
+    "name": "Phase One - P65+ - IIQ S (4:3).IIQ",
+    "url": "https://raw.pixls.us/getfile.php/2767/nice/Phase%20One%20-%20P65%2B%20-%20IIQ%20S%20%284:3%29.IIQ",
+    "sha256": "69fc81e92360a45920158f7d6238eed0cd6260cd32aa4a0beec2ac79273add80",
+    "license": "CC0-1.0"
+  }
+]

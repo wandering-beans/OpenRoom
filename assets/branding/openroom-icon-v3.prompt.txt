@@ -1,0 +1,11 @@
+Tool: built-in image_gen
+Transparent background: true
+
+Use case: logo-brand
+Asset type: OpenRoom desktop application icon, one square icon.
+Input images: Image 1 is the user's style reference screenshot of an LrC app icon. Use only its compact rounded-square silhouette, generous bold lettering and professional desktop-app proportions. Do not copy the screenshot's brown desktop background, dock indicator dot, blue letters, or LrC text. Image 2 is the previous OpenRoom icon, the edit target; retain only the exact two-letter monogram "Or" and redesign its appearance.
+Primary request: a black icon background with solid white letters, with light shining out from BEHIND the letters.
+Composition: one centered rounded-square near-black tile, softly rounded corners like the reference. Large "Or" monogram optically centered, capital O and lowercase r, strong bold clean sans-serif typography, white opaque front faces with crisp smooth edges. The letters are the only text and occupy about 68 percent of the tile width.
+Light treatment: create a beautiful restrained backlit effect. White light originates just behind the edges of the letters, illuminating a soft haze and several fine softly tapering rays spreading diagonally toward the upper sides and top of the tile. The letters remain crisp solid white in front of the light. Carefully graded faint charcoal illumination within the black tile lets the beams be visible while the dominant background stays deep black. The effect should feel like photographic light shining into a darkroom. Balanced and polished, luminous but understated. No light covering the letter faces. Keep good small-size legibility.
+Color: strictly monochrome black, charcoal gray and white. No blue, cyan, gold, rainbow or colored rim.
+Constraints: no border line, no full wordmark, no other text, no Adobe symbol, no camera or doorway symbol, no separate objects, no tiny details, no dock dot, no screenshot frame, no presentation mockup, no multiple variants, no heavy extrusion or chrome lettering, no lens flare orb. Icon tile itself is black and opaque; only the area outside its rounded corners is transparent. The tile nearly fills the square canvas with a narrow even transparent margin. Render high resolution.

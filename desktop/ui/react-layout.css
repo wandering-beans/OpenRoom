@@ -1,0 +1,6 @@
+/* Preserve the existing body flex layout without adding visual wrappers. */
+#root { display: contents; }
+#photo-export-root, #preferences-root { display: none; }
+
+/* Mounting points do not add boxes to the existing panel layout. */
+#develop-tools-layout, #develop-left-panels { display: contents; }

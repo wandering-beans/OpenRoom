@@ -1,0 +1,6 @@
+Tool: built-in image_gen
+Reference: ../sources/openroom-icon-master.png
+Transparent background: false
+
+Create a clean production-ready HORIZONTAL LOGO for "OpenRoom", using the attached approved app icon at the left and the word "OpenRoom" at the right.
+Solid perfectly opaque pure BLACK rectangular background. The wordmark is perfectly smooth flat pure WHITE, a carefully spaced medium-weight contemporary sans serif; capital O and R, exact spelling OpenRoom. Every letter must have clean uninterrupted solid white fill, precise antialiased edges and NO distressed or eroded areas, NO speckles, NO grunge, NO outlines, NO texture. The icon must faithfully preserve the attached white Or monogram and lower soft spectral light. The whole icon is around 1.5 times the wordmark capital height. Balanced gap between icon and text. Restrained professional photo-software identity. Wide 3:1 landscape composition, generous outer black padding, one line, one lockup. No tagline, no other text, no mockup, no presentation board. OPAQUE BLACK BACKGROUND: do not attempt background removal or transparency.

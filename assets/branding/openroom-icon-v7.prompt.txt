@@ -1,0 +1,14 @@
+Tool: built-in image_gen
+Edit target: assets/branding/openroom-icon-v6.png
+Reference: user-provided diffraction spectrum photograph
+Transparent background: true
+
+Edit Image 1, the existing OpenRoom icon. Image 2 is ONLY a visual reference for the colored light produced by diffraction spectroscopy; use its blue-green-yellow-red spectral separation and luminous optical character, never its text, ruler, watermark, physical apparatus or photographic background.
+
+Preserve Image 1's exact white "Or" typography, positioning, scale, spacing, opaque black rounded-square tile, and transparent outside corners.
+
+Make these two specific lighting changes:
+1. UNDER THE CAPITAL O: eliminate the five separate white shafts and all alternating dark slots. Replace them with ONE continuous natural white light beam emerging from behind the lower curved edge of O and projecting downward. An unbroken luminous curtain, with smooth intensity variations and soft edge falloff, slightly fanning out with straight overall trajectory. It must have no distinct stripes, separate spotlight cones, dark cutouts or five-part pattern. Keep it white, with a bright origin and a graceful fade into black below.
+2. UNDER THE LOWERCASE r: replace the white rays with a restrained but clearly visible dispersed spectrum inspired by the diffraction reference. A compact continuous fan of straight downward-traveling light separates gradually into blue/violet on its left side, cyan, green, yellow/orange, and red on its right side. The rays start together at the underside of r's stem, then separate in angle and color as they travel down. Rich luminous optical colors, subtly softened boundaries, brightness decreasing along the downward path; a natural spectral fan rather than colored solid bars. Keep the r itself pure white. Let the colored spectrum occupy only the small area under r, balanced against the white light under O.
+
+All illumination remains beneath the letter baseline; clean pure black above and beside the letters and inside O. Keep the optical light lengths and moderate brightness similar to Image 1, fading before the tile bottom. No prism object, no diffraction grating object, no rainbow arch, no horizontal spectrum bar, no added text, no numbers, no extra shapes, no border, no mirror reflection. One polished square application icon only.

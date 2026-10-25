@@ -1,0 +1,4 @@
+Rawler 0.8.0 from crates.io. Upstream source: https://github.com/dnglab/dnglab
+License: LGPL-2.1; see LICENSE.
+OpenRoom changes: add RawSource::new_preview without whole-file prefetch; keep the original new() prefetch behavior. Add embedded camera JPEG extraction for Olympus ORF and Samsung SRW. Sensor decoding and development are unchanged. Upstream photo testdata and benchmark targets are omitted.
+Crates.io package checksum (SHA-256): 51cb9d46a5b34946878eb236d1180adec0806eee260738ce299517b083a232e8

@@ -1,0 +1,26 @@
+--- a/src/rawsource.rs
++++ b/src/rawsource.rs
+@@ -27,10 +27,21 @@
+ 
+ impl RawSource {
+   pub fn new(path: &Path) -> std::io::Result<Self> {
++    Self::open(path, true)
++  }
++
++  /// Embedded previews only need a small portion of a RAW, especially on network shares.
++  pub fn new_preview(path: &Path) -> std::io::Result<Self> {
++    Self::open(path, false)
++  }
++
++  fn open(path: &Path, prefetch: bool) -> std::io::Result<Self> {
+     let file = File::open(path)?;
+-    let mmap = unsafe { MmapOptions::new().populate().map(&file)? };
++    let mut options = MmapOptions::new();
++    if prefetch { options.populate(); }
++    let mmap = unsafe { options.map(&file)? };
+     #[cfg(unix)]
+-    {
++    if prefetch {
+       mmap.advise(memmap2::Advice::WillNeed)?;
+       mmap.advise(memmap2::Advice::Sequential)?;
+     }

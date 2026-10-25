@@ -1,0 +1,19 @@
+[package]
+name = "advanced-explorer-media"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "tiff"] }
+rawler = { path = "../../native/rawler", version = "=0.8.0" }
+libheif-rs = { version = "2.7", default-features = false, features = ["v1_17"] }
+serde = { version = "1", features = ["derive"] }
+rayon = "1"
+ag-psd = "0.3"
+flate2 = "1"
+moxcms = "0.8"
+
+[dev-dependencies]
+tempfile = "3"
+tiff = "0.11"

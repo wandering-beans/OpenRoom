@@ -1,0 +1,287 @@
+{
+  "brand": "OpenRoom",
+  "approved_icon_source": "sources/openroom-icon-master.png",
+  "integration_status": "integrated",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 4610,
+      "sha256": "89fc96a62166f3fc6e0d204e08c0ac1864bc1b6433842c37b2ea2cb45df74ead"
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_128x128.png",
+      "bytes": 21109,
+      "sha256": "7395311322cdc1008bc1d8e50d7112ae6e00a05cf758a98841ab2e455ac7aa37",
+      "format": "PNG",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_128x128@2x.png",
+      "bytes": 75124,
+      "sha256": "5165d745ddf355c6964d5d2732f93cc8fde04db226d6916df0b5d26dad51ecbb",
+      "format": "PNG",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_16x16.png",
+      "bytes": 789,
+      "sha256": "6eac90858170b2777d7d51d1552ae7630d600ac5cb226e42b7b5e640cc166a53",
+      "format": "PNG",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_16x16@2x.png",
+      "bytes": 2149,
+      "sha256": "772c83dbcaab83cacc08312aeebb4cd46c8425b703833f6a9936831463ccac16",
+      "format": "PNG",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_256x256.png",
+      "bytes": 75124,
+      "sha256": "5165d745ddf355c6964d5d2732f93cc8fde04db226d6916df0b5d26dad51ecbb",
+      "format": "PNG",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_256x256@2x.png",
+      "bytes": 294612,
+      "sha256": "1c2f9dfb892e7b25544b76d0cb221c961727738e27b0bc7fd3d0f341d1c13e01",
+      "format": "PNG",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_32x32.png",
+      "bytes": 2149,
+      "sha256": "772c83dbcaab83cacc08312aeebb4cd46c8425b703833f6a9936831463ccac16",
+      "format": "PNG",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_32x32@2x.png",
+      "bytes": 6594,
+      "sha256": "fa75b2070dabc5ac7e0cbf7aeb4eb1cb7d44c631d91f563039efdb43fbbd97af",
+      "format": "PNG",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_512x512.png",
+      "bytes": 294612,
+      "sha256": "1c2f9dfb892e7b25544b76d0cb221c961727738e27b0bc7fd3d0f341d1c13e01",
+      "format": "PNG",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "path": "icons/OpenRoom.iconset/icon_512x512@2x.png",
+      "bytes": 1134575,
+      "sha256": "165e9b9e99ffc590ddd27e99a4057d29606dc234b990480f4c28abcc275e4b30",
+      "format": "PNG",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "path": "icons/macos/AppIcon.icon/Assets/OpenRoom.png",
+      "bytes": 1134575,
+      "sha256": "165e9b9e99ffc590ddd27e99a4057d29606dc234b990480f4c28abcc275e4b30",
+      "format": "PNG",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "path": "icons/macos/AppIcon.icon/icon.json",
+      "bytes": 507,
+      "sha256": "02dd9ad21fb22a3c24d9f8e8d964e6dfafda3c89c2b4d0b2d414440cb293f16d"
+    },
+    {
+      "path": "icons/macos/Assets.car",
+      "bytes": 2706648,
+      "sha256": "d20bcd7a36b6e781910c02501a4fdde195ab930d3804ded0f7c633da3ec1070f"
+    },
+    {
+      "path": "icons/openroom.icns",
+      "bytes": 1913527,
+      "sha256": "813c60081bae0a9136a3b396faa989a78cf8e8ff87e2468225b026f963161b82",
+      "format": "ICNS",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "path": "icons/openroom.ico",
+      "bytes": 111429,
+      "sha256": "edcbd0c297389bc1f805c59f9c1b2b72246943fbef78ad644ad63026f2612b45",
+      "format": "ICO",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "path": "icons/png/openroom-1024.png",
+      "bytes": 1134575,
+      "sha256": "165e9b9e99ffc590ddd27e99a4057d29606dc234b990480f4c28abcc275e4b30",
+      "format": "PNG",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "path": "icons/png/openroom-128.png",
+      "bytes": 21109,
+      "sha256": "7395311322cdc1008bc1d8e50d7112ae6e00a05cf758a98841ab2e455ac7aa37",
+      "format": "PNG",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "icons/png/openroom-16.png",
+      "bytes": 789,
+      "sha256": "6eac90858170b2777d7d51d1552ae7630d600ac5cb226e42b7b5e640cc166a53",
+      "format": "PNG",
+      "width": 16,
+      "height": 16
+    },
+    {
+      "path": "icons/png/openroom-20.png",
+      "bytes": 1082,
+      "sha256": "7a54b0d21e348f75400d8f979b0cebe3f7965dc5aec6b6baf28c4325117fc99e",
+      "format": "PNG",
+      "width": 20,
+      "height": 20
+    },
+    {
+      "path": "icons/png/openroom-24.png",
+      "bytes": 1414,
+      "sha256": "36c92be0ced8d89dbca13f37ab8385455908e6ffce8b515ab2751981b07fb120",
+      "format": "PNG",
+      "width": 24,
+      "height": 24
+    },
+    {
+      "path": "icons/png/openroom-256.png",
+      "bytes": 75124,
+      "sha256": "5165d745ddf355c6964d5d2732f93cc8fde04db226d6916df0b5d26dad51ecbb",
+      "format": "PNG",
+      "width": 256,
+      "height": 256
+    },
+    {
+      "path": "icons/png/openroom-32.png",
+      "bytes": 2149,
+      "sha256": "772c83dbcaab83cacc08312aeebb4cd46c8425b703833f6a9936831463ccac16",
+      "format": "PNG",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "icons/png/openroom-48.png",
+      "bytes": 4132,
+      "sha256": "0cbd396926b07511bd6f60ea2a2f27d1e3f97e3955c499a7b6a7016a019321ef",
+      "format": "PNG",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "path": "icons/png/openroom-512.png",
+      "bytes": 294612,
+      "sha256": "1c2f9dfb892e7b25544b76d0cb221c961727738e27b0bc7fd3d0f341d1c13e01",
+      "format": "PNG",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "path": "icons/png/openroom-64.png",
+      "bytes": 6594,
+      "sha256": "fa75b2070dabc5ac7e0cbf7aeb4eb1cb7d44c631d91f563039efdb43fbbd97af",
+      "format": "PNG",
+      "width": 64,
+      "height": 64
+    },
+    {
+      "path": "icons/png/openroom-96.png",
+      "bytes": 12885,
+      "sha256": "0d0e21f4147e9e6f3b822e23c1f5dbce1c2ae4ec141229321302c7e8c945f3fb",
+      "format": "PNG",
+      "width": 96,
+      "height": 96
+    },
+    {
+      "path": "index.html",
+      "bytes": 6714,
+      "sha256": "f3537585e98335df5e7654c441183479edd0947e985e76e115edf9ee8c609249"
+    },
+    {
+      "path": "logos/openroom-horizontal-dark.png",
+      "bytes": 603162,
+      "sha256": "44c49d02e0f5bd5e8038cb4fd461434727d259c68c655c014eba5cc154655e27",
+      "format": "PNG",
+      "width": 2172,
+      "height": 724
+    },
+    {
+      "path": "preview.png",
+      "bytes": 189170,
+      "sha256": "6ad1b52f9b4f1fd62ac6c1d188cd631ceaa1816b3526aa9263f05694ac847c45",
+      "format": "PNG",
+      "width": 1200,
+      "height": 1496
+    },
+    {
+      "path": "prompts/horizontal-logo.txt",
+      "bytes": 1099,
+      "sha256": "e0b7e066e655c5e992947d22a105cb2390a667b64aa326d908662564075130ee"
+    },
+    {
+      "path": "prompts/icon-master.txt",
+      "bytes": 1841,
+      "sha256": "0f1fca83c864d62bcd548f9a82528a72124ec8624d0df2d360b0cfdb2b9d0631"
+    },
+    {
+      "path": "sources/brand.css",
+      "bytes": 357,
+      "sha256": "680ac52d5811103aac9a0673edca2ac7ba5f527ec4757549305fae5436f37963"
+    },
+    {
+      "path": "sources/openroom-icon-master.png",
+      "bytes": 1668593,
+      "sha256": "1fd286bbf7462ac446f37ec6ba5127b02da7cdf4f3f68c62a237e930cd64980e",
+      "format": "PNG",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "path": "splash/index.html",
+      "bytes": 2032,
+      "sha256": "2f873a581e5f0a9c6630d83abb1b3f4cceae8279ee55eba610731f4060767d92"
+    },
+    {
+      "path": "splash/openroom-splash-1600x1000.png",
+      "bytes": 73305,
+      "sha256": "67ed45fa2fffa0436cd3734fedb312ec90a9c6b733def9d2e768e89086667ea6",
+      "format": "PNG",
+      "width": 1600,
+      "height": 1000
+    },
+    {
+      "path": "splash/openroom-splash-3200x2000.png",
+      "bytes": 311536,
+      "sha256": "ec09d500fddc761caf93ab0fe75cf7e2fc53dc64293e63058dd73d1d13bcc2fd",
+      "format": "PNG",
+      "width": 3200,
+      "height": 2000
+    },
+    {
+      "path": "splash/openroom-splash-preview.png",
+      "bytes": 75418,
+      "sha256": "9828ba2d86e7d93f1eed7d47119c90e52a094482f7013f4be852e6a373c2574a",
+      "format": "PNG",
+      "width": 1600,
+      "height": 1000
+    }
+  ]
+}

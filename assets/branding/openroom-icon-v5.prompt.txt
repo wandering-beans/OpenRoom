@@ -1,0 +1,9 @@
+Tool: built-in image_gen
+Reference: assets/branding/openroom-icon-v4.png
+Transparent background: true
+
+Edit the attached OpenRoom app icon. Make one targeted change: strengthen the white light shining DOWNWARD from behind the BOTTOM edges of the white "Or" letters.
+
+Preserve the current black rounded-square tile, transparent corners, exact "Or" typeface, size, spacing, position and pure white flat letter faces. Preserve the clean black background above and beside the letters and inside the O.
+
+The existing bottom light is too faint. Make it clearly more visible, approximately three times brighter, with bright soft white highlights immediately under the lower edge of the O and the foot of the r. From these lower edges let a few smooth, soft white light beams fan DOWNWARD into the black lower part of the tile, extending about 15–20 percent of the tile height below the baseline before smoothly fading to black. The light should look like light escaping from BEHIND the letters and illuminating the dark space beneath them. Bright near the letter bottoms, falling off gracefully downward, controlled and elegant. Both letters have visible light beneath them, forming a balanced composition. No light source or rays above the baseline, no upper or side halo, no starburst, no colored light, no text reflections, no extra text, no borders, no changes to typography or composition. Keep the bottom edge and lower corners black. One high-resolution icon; preserve transparency outside the rounded opaque black tile.

@@ -1,0 +1,74 @@
+// Uses the desktop UI suite's in-memory catalog and IPC fixtures.
+const assert = require('node:assert/strict');
+module.exports = async function testLanguage(page, url) {
+  const ready = () => page.waitForFunction(() => window.listeners['open-preferences'] && !document.querySelector('#app-shell').inert);
+  const preferences = () => page.evaluate(() => window.listeners['open-preferences']({payload:null}));
+  await page.goto(url); await ready();
+  assert.equal(await page.locator('#preferences-open').count(), 0);
+  await page.locator('.catalog-panel').evaluate(element => element.open = true);
+  assert.equal(await page.locator('#all').isVisible(), true);
+  assert.equal(await page.locator('#catalog-open').isVisible(), false);
+  await page.click('#catalog-manage > summary');
+  for (const id of ['catalog-open','catalog-new','catalog-copy','catalog-location']) assert.equal(await page.locator('#'+id).isVisible(), true);
+  await preferences();
+  await page.evaluate(() => window.failLanguage = true);
+  await page.selectOption('#ui-language','en');
+  await page.waitForFunction(() => document.querySelector('#language-status').textContent.includes('Injected'));
+  assert.equal(await page.locator('html').getAttribute('lang'), 'ja');
+  assert.equal(await page.inputValue('#ui-language'), 'ja');
+  await page.evaluate(() => window.failLanguage = false);
+  await page.click('#mcp-close');
+  await page.click('#module-develop');
+  await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-'));
+  await page.evaluate(() => {
+    window.failDevelopSave = true;
+    const input = document.querySelector('#develop-exposure-value');
+    input.value='1.25'; input.dispatchEvent(new Event('input', {bubbles:true})); input.dispatchEvent(new Event('change', {bubbles:true}));
+  });
+  await preferences();
+  await page.keyboard.press('Control+z');
+  assert.equal(await page.inputValue('#develop-exposure-value'), '1.25', 'preferences must block background undo');
+  await page.selectOption('#ui-language','en');
+  await page.waitForFunction(() => document.querySelector('#language-status').textContent.includes('保存できません'));
+  assert.equal(await page.locator('html').getAttribute('lang'), 'ja', 'failed edits must prevent language reload');
+  await page.evaluate(() => window.failDevelopSave = false);
+  await Promise.all([page.waitForNavigation(),page.selectOption('#ui-language','en')]); await ready();
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('test-language-saves')));
+  assert.equal(saved.at(-1).args.settings.exposure, 1.25, 'flush recipe before changing language');
+  assert.equal(await page.locator('#module-library').textContent(), 'Library');
+  assert.equal(await page.locator('#module-develop').textContent(), 'Develop');
+  assert.equal(await page.locator('#all > span').first().textContent(), 'All Photos');
+  await page.click('#module-develop');
+  await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-'));
+  assert.equal(await page.locator('#develop-exposure-value').getAttribute('aria-label'), 'Exposure value');
+  await page.click('.develop-toolstrip [data-tool=crop]');
+  assert.equal(await page.locator('.crop-panel > summary').evaluate(element => getComputedStyle(element,'::before').content), '"Tool:"');
+  await page.click('.develop-toolstrip [data-tool=brush]');
+  assert.ok((await page.locator('#mask-new').innerText()).includes('Create New Mask'));
+  assert.equal(await page.locator('#local-heading').innerText(), 'Mask Adjustments');
+  const untranslated = await page.locator('#develop-controls, #mask-palette, #preferences-dialog').evaluateAll(elements => {
+    const strings=[];
+    for(const root of elements){const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(walker.nextNode()){
+      const node=walker.currentNode;
+      if(node.parentElement.closest('option[value="ja"]'))continue;
+      if(/[\u3040-\u30ff\u3400-\u9fff]/.test(node.textContent))strings.push(node.textContent.trim());
+    }}return strings;
+  });
+  assert.deepEqual(untranslated, [], 'English controls must have no untranslated labels');
+  await preferences();
+  assert.equal(await page.locator('#preferences-title').textContent(), 'Settings');
+  assert.equal(await page.locator('#mcp-status').textContent(), 'Stopped');
+  await page.click('#mcp-close');
+  for(const width of [900,1320]) {
+    await page.setViewportSize({width,height:880});
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),true,'English UI must fit the window');
+  }
+  if(process.env.AE_LANGUAGE_SCREENSHOT) await page.screenshot({path:process.env.AE_LANGUAGE_SCREENSHOT});
+  await page.reload(); await ready();
+  assert.equal(await page.locator('#module-library').textContent(),'Library','language survives restart');
+  await preferences();
+  await Promise.all([page.waitForNavigation(),page.selectOption('#ui-language','ja')]); await ready();
+  assert.equal(await page.locator('#module-library').textContent(),'ライブラリ');
+  console.log('Language checks passed: native-only settings entry, catalog disclosure, save failures, edit flush, English labels, layout, persistence and Japanese restoration.');
+};

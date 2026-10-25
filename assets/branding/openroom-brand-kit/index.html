@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenRoom — ブランド素材</title>
+  <link rel="icon" href="icons/openroom.ico">
+  <link rel="stylesheet" href="sources/brand.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #090a0c; color: var(--brand-white); font-family: var(--brand-font); line-height: 1.6; }
+    main { max-width: 1144px; margin: auto; padding: 44px 40px 48px; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 30px; }
+    h1 { margin: 0; font-size: 27px; font-weight: 500; letter-spacing: -.03em; }
+    h1 span { font-size: 12px; font-weight: 400; color: var(--brand-muted); margin-left: 18px; letter-spacing: .04em; }
+    h2 { font-size: 15px; font-weight: 500; margin: 0; }
+    p { margin: 8px 0 0; color: var(--brand-muted); font-size: 12px; }
+    a { color: #f3f4f7; text-underline-offset: 4px; }
+    a:hover { color: #94d9f2; }
+    a:focus-visible { outline: 2px solid var(--brand-cyan); outline-offset: 5px; }
+    .download { padding: 9px 15px; border: 1px solid #3d4149; border-radius: 7px; font-size: 12px; text-decoration: none; white-space: nowrap; }
+    .primary { display: grid; grid-template-columns: 33% 1fr; gap: 18px; }
+    .panel { background: #111214; border: 1px solid #24272d; border-radius: 14px; overflow: hidden; }
+    .art { height: 246px; background: #000; display: flex; align-items: center; justify-content: center; }
+    .app-icon { width: 204px; height: 204px; }
+    .horizontal-logo { width: 94%; height: auto; }
+    .caption { padding: 18px 22px; }
+    .links { display: flex; gap: 17px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; }
+    .sizes { display: flex; gap: 25px; align-items: end; margin-top: 18px; padding: 21px 24px; background: #111214; border: 1px solid #24272d; border-radius: 12px; }
+    .sizes-label { margin-right: auto; align-self: center; }
+    .size { display: grid; justify-items: center; gap: 7px; color: var(--brand-muted); font-size: 10px; }
+    .size img { display: block; }
+    .section-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin: 28px 0 13px; }
+    .splash-preview { display: block; width: 100%; height: auto; }
+    .footnote { display: flex; justify-content: space-between; gap: 24px; margin-top: 22px; padding-top: 18px; border-top: 1px solid #292c32; }
+    .palette { display: flex; align-items: center; gap: 5px; }
+    .swatch { width: 15px; height: 15px; border-radius: 50%; background: var(--swatch); }
+    .swatch:first-child { border: 1px solid #4b4e55; }
+    .footnote p { margin: 0; font-size: 11px; }
+    @media (max-width: 700px) {
+      main { padding: 25px 18px; }
+      header { align-items: start; }
+      h1 span { display: block; margin: 4px 0 0; }
+      .primary { grid-template-columns: 1fr; }
+      .sizes { flex-wrap: wrap; gap: 18px; }
+      .sizes-label { width: 100%; }
+      .footnote { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>OpenRoom <span>ブランド素材</span></h1>
+      <a class="download" href="../openroom-brand-kit.zip" download>素材一式をダウンロード</a>
+    </header>
+    <section class="primary" aria-label="ロゴとアイコン">
+      <article class="panel">
+        <div class="art"><img class="app-icon" src="icons/png/openroom-512.png" width="204" height="204" alt="白いOrと柔らかな分光のアプリアイコン"></div>
+        <div class="caption">
+          <h2>アプリアイコン</h2>
+          <p>採用ロゴをそのまま使用。角の外側は透過。</p>
+          <div class="links"><a href="icons/openroom.icns" download>macOS</a><a href="icons/openroom.ico" download>Windows</a><a href="icons/png/openroom-1024.png" download>PNG</a></div>
+        </div>
+      </article>
+      <article class="panel">
+        <div class="art"><img class="horizontal-logo" src="logos/openroom-horizontal-dark.png" alt="アイコンとOpenRoomを並べた横組みロゴ"></div>
+        <div class="caption">
+          <h2>横組みロゴ</h2>
+          <p>黒背景のヘッダー、アプリ紹介、About画面に。</p>
+          <div class="links"><a href="logos/openroom-horizontal-dark.png" download>PNGをダウンロード</a></div>
+        </div>
+      </article>
+    </section>
+    <section class="sizes" aria-label="アイコンの実寸プレビュー">
+      <div class="sizes-label"><h2>小さなサイズでも</h2><p>実寸表示 / PNGは11サイズ</p></div>
+      <div class="size"><img src="icons/png/openroom-16.png" width="16" height="16" alt="16ピクセルのアイコン"><span>16 px</span></div>
+      <div class="size"><img src="icons/png/openroom-24.png" width="24" height="24" alt="24ピクセルのアイコン"><span>24 px</span></div>
+      <div class="size"><img src="icons/png/openroom-32.png" width="32" height="32" alt="32ピクセルのアイコン"><span>32 px</span></div>
+      <div class="size"><img src="icons/png/openroom-48.png" width="48" height="48" alt="48ピクセルのアイコン"><span>48 px</span></div>
+      <div class="size"><img src="icons/png/openroom-64.png" width="64" height="64" alt="64ピクセルのアイコン"><span>64 px</span></div>
+    </section>
+    <div class="section-heading"><h2>起動画面</h2><div class="links"><a href="splash/index.html">HTMLを開く</a><a href="splash/openroom-splash-1600x1000.png" download>PNG</a></div></div>
+    <section class="panel" aria-label="起動画面のプレビュー">
+      <img class="splash-preview" src="splash/openroom-splash-preview.png" width="1600" height="1000" alt="中央にOrアイコンとOpenRoom、下部に起動表示を配置した黒い起動画面">
+    </section>
+    <footer class="footnote">
+      <div class="palette" aria-label="ブランドカラー">
+        <span class="swatch" style="--swatch:#000000" title="Black #000000"></span>
+        <span class="swatch" style="--swatch:#fafafa" title="White #FAFAFA"></span>
+        <span class="swatch" style="--swatch:#315aff" title="Blue #315AFF"></span>
+        <span class="swatch" style="--swatch:#20c7e8" title="Cyan #20C7E8"></span>
+        <span class="swatch" style="--swatch:#4cdb83" title="Green #4CDB83"></span>
+        <span class="swatch" style="--swatch:#f5d454" title="Yellow #F5D454"></span>
+        <span class="swatch" style="--swatch:#f46350" title="Red #F46350"></span>
+      </div>
+      <p>黒と白を基本に、分光色はロゴの光に使う。<br>名前・ロゴ・起動画面をアプリに反映。</p>
+    </footer>
+  </main>
+</body>
+</html>

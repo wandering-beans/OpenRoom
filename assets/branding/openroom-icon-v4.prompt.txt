@@ -1,0 +1,9 @@
+Tool: built-in image_gen
+Reference: assets/branding/openroom-icon-v3.png
+Transparent background: true
+
+Edit the attached OpenRoom app icon. Change ONLY the lighting effect. Preserve exactly the existing rounded black square silhouette, transparent outside corners, white "Or" monogram, typeface, letter sizes, spacing, position and monochrome palette.
+
+The current light is far too strong. Remove ALL rays, haze, glows and illumination above and beside the letters. The entire region above the letter baseline must have a clean deep black background, including the O counter. The white letter faces remain sharp, flat and opaque.
+
+Replace the current lighting with an extremely subtle, low-intensity soft light leaking from BEHIND ONLY the BOTTOM edges of the "Or", shining a short distance DOWNWARD into the black area beneath the letters. Think a faint restrained pool of white-to-charcoal light immediately under the baseline, with perhaps two very soft short downward beams. Light should be around 10 percent as intense as in the reference. Fade completely to black within roughly 10–15 percent of the icon height beneath the baseline. Keep the lower corners and bottom edge black. No upward rays, no side rays, no halo around the entire letters, no starbursts, no dramatic spotlights, no reflection of the text. Mostly black background with a tiny suggestion of photographic light below. One icon only, no added text or border. Preserve transparency only outside the opaque rounded black tile.

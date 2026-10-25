@@ -1,0 +1,10 @@
+Generated with the built-in image_gen tool.
+
+Use case: logo-brand
+Asset type: primary logo for OpenRoom, a free and open-source desktop RAW photo development and photo library application.
+Primary request: Create one polished, original logo lockup with a distinctive standalone symbol on the left and the exact wordmark "OpenRoom" on the right.
+Concept: an open photographic darkroom admitting light. Draw a compact, bold geometric symbol that combines an open room / doorway with an abstract O using clever negative space. A small warm light-colored plane entering the opening subtly evokes exposure and image development. The symbol must remain recognizable as a small app icon. Favor a confident simple silhouette, balanced proportions and deliberate optical spacing over tiny details.
+Style: precise flat vector-like graphic, contemporary professional photographic software identity, understated and welcoming, clean crisp edges, no texture. Use the existing project's restrained forest-green and warm amber palette as loose inspiration, with the wordmark in a very dark forest green. One small amber accent at most.
+Composition: a single horizontal logo centered with generous transparent padding. Symbol height roughly twice the capital letter height; beautifully kerned medium-weight modern humanist sans-serif wordmark, exact capitalization OpenRoom, with a capital O and R. Everything on one line.
+Text (verbatim): "OpenRoom"
+Constraints: genuinely transparent background. Only the symbol and wordmark; no tagline, no captions, no presentation board, no mockup, no watermark. No camera illustration, no stock shutter blades, no "Lr" monogram, no imitation Adobe logo, no drop shadow, no glossy 3D rendering, no gradient. Keep the icon simple and make the room/opening idea visually compelling. Render high resolution with smooth edges.

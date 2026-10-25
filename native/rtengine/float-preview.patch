@@ -1,0 +1,173 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0c772b3..6858076 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -453,8 +453,13 @@ endif()
+ 
+ include(cmake/Compile.cmake)
+ add_subdirectory(rtengine)
+-add_subdirectory(rtgui)
+-add_subdirectory(rtdata)
++if(OPENROOM_ENGINE_ONLY)
++    include("${OPENROOM_BRIDGE_DIR}/bridge.cmake")
++    return()
++else()
++    add_subdirectory(rtgui)
++    add_subdirectory(rtdata)
++endif()
+ 
+ include(cmake/AboutThisBuild.cmake)
+ rt_generate_about_command(ABOUT_COMMAND_WITH_ARGS rtengine rth)
+diff --git a/rtengine/FTblockDN.cc b/rtengine/FTblockDN.cc
+index 41cb70d..cb7dfe4 100644
+--- a/rtengine/FTblockDN.cc
++++ b/rtengine/FTblockDN.cc
+@@ -789,7 +789,8 @@ BENCHFUN
+             }
+ 
+ #ifdef _OPENMP
+-            denoiseNestedLevels = omp_get_max_threads() / numthreads;
++            // Parallelize independent tiles, not their floating-point reductions.
++            denoiseNestedLevels = 1;
+             bool oldNested = omp_get_nested();
+ 
+             if (denoiseNestedLevels < 2) {
+@@ -867,7 +868,7 @@ BENCHFUN
+                 }
+ 
+ #ifdef _OPENMP
+-                #pragma omp for schedule(dynamic) collapse(2)
++                #pragma omp for schedule(dynamic) collapse(2) ordered
+ #endif
+ 
+                 for (int tiletop = 0; tiletop < imheight; tiletop += tileHskip) {
+@@ -1578,6 +1579,11 @@ BENCHFUN
+                                 newGain = isRAW ? 1.f / gain : 1.f;;
+                             }
+ 
++                            // Overlapping tiles must be accumulated in a fixed order without concurrent writes.
++#ifdef _OPENMP
++                            #pragma omp ordered
++#endif
++                            {
+                             //convert back to RGB and write to destination array
+                             if (isRAW) {
+                                 if (!denoiseMethodRgb) {//Lab mode
+@@ -1704,6 +1710,7 @@ BENCHFUN
+                                 }
+                             }
+ 
++                            }
+                             //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                         }
+ 
+diff --git a/rtengine/imagefloat.cc b/rtengine/imagefloat.cc
+index 22efdf1..a031a91 100644
+--- a/rtengine/imagefloat.cc
++++ b/rtengine/imagefloat.cc
+@@ -230,7 +230,8 @@ void Imagefloat::getStdImage (const ColorTemp &ctemp, int tran, Imagefloat* imag
+     gm /= area;
+     bm /= area;
+ 
+-    const auto CLIP0 = [](float v) -> float { return std::max(v, 0.f); };
++    // OpenRoom retains extended ICC colors until its final output conversion.
++    const auto CLIP0 = [](float v) -> float { return v; };
+ 
+ #ifdef _OPENMP
+     #pragma omp parallel
+diff --git a/rtengine/improccoordinator.cc b/rtengine/improccoordinator.cc
+index 87077bc..a04f13c 100644
+--- a/rtengine/improccoordinator.cc
++++ b/rtengine/improccoordinator.cc
+@@ -860,6 +860,13 @@ void ImProcCoordinator::updatePreviewImage(int todo, bool panningRelatedChange)
+   
+         oprevi = orig_prev;
+ 
++        if (openroomLinearOnly) {
++            if (imageListener) {
++                imageListener->imageReady(params->crop, params->cropGuide);
++            }
++            return;
++        }
++
+         if ((todo & M_SPOT) && !spotsDone) {
+             if (params->spot.enabled && !params->spot.entries.empty()) {
+                 allocCache(spotprev);
+@@ -2864,13 +2871,9 @@ void ImProcCoordinator::setScale(int prevscale)
+     int nW, nH;
+     imgsrc->getFullSize(fw, fh, tr);
+ 
+-    prevscale++;
+-
+-    do {
+-        prevscale--;
+-        PreviewProps pp(0, 0, fw, fh, prevscale);
+-        imgsrc->getSize(pp, nW, nH);
+-    } while (nH < 400 && prevscale > 1 && (nW * nH < 1000000));  // actually hardcoded values, perhaps a better choice is possible
++    // OpenRoom explicitly selects its interactive preview bound.
++    PreviewProps pp(0, 0, fw, fh, prevscale);
++    imgsrc->getSize(pp, nW, nH);
+ 
+     if (nW != pW || nH != pH) {
+ 
+@@ -2881,12 +2884,14 @@ void ImProcCoordinator::setScale(int prevscale)
+ 
+         orig_prev = new Imagefloat(pW, pH);
+         oprevi = orig_prev;
+-        oprevl = new LabImage(pW, pH);
+-        nprevl = new LabImage(pW, pH);
++        if (!openroomLinearOnly) {
++            oprevl = new LabImage(pW, pH);
++            nprevl = new LabImage(pW, pH);
+ 
+-        //ncie is only used in ImProcCoordinator::updatePreviewImage, it will be allocated on first use and deleted if not used anymore
+-        previmg = new Image8(pW, pH);
+-        workimg = new Image8(pW, pH);
++            // Display buffers are unused by the linear consumer.
++            previmg = new Image8(pW, pH);
++            workimg = new Image8(pW, pH);
++        }
+ 
+         allocated = true;
+     }
+@@ -3488,6 +3493,13 @@ void ImProcCoordinator::startProcessing(int changeCode)
+ 
+ void ImProcCoordinator::process()
+ {
++#ifdef _OPENMP
++    // OpenMP thread limits set by the caller do not propagate into this GLib thread.
++    if (openroomLinearOnly) {
++        omp_set_num_threads(4);
++        omp_set_max_active_levels(1);
++    }
++#endif
+     if (plistener) {
+         plistener->setProgressState(true);
+     }
+diff --git a/rtengine/improccoordinator.h b/rtengine/improccoordinator.h
+index 8d507c9..4f49da9 100644
+--- a/rtengine/improccoordinator.h
++++ b/rtengine/improccoordinator.h
+@@ -399,6 +399,9 @@ protected:
+     int locallcieMask;
+ 
+ public:
++    // OpenRoom owns geometry and display conversion; borrow this until the next update.
++    bool openroomLinearOnly = false;
++    const Imagefloat* openroomFloat() const { return orig_prev; }
+ 
+     ImProcCoordinator ();
+     ~ImProcCoordinator () override;
+diff --git a/rtengine/xtrans_demosaic.cc b/rtengine/xtrans_demosaic.cc
+index fb97711..8790731 100644
+--- a/rtengine/xtrans_demosaic.cc
++++ b/rtengine/xtrans_demosaic.cc
+@@ -739,6 +739,8 @@ void RawImageSource::xtrans_interpolate (const int passes, const bool useCieLab,
+                     }
+                 }
+ 
++                // Edge sums include the halo; never reuse Lab bytes or a previous tile's map.
++                memset(homo, 0, ndir * ts * ts * sizeof(uint8_t));
+                 /* Build homogeneity maps from the derivatives:         */
+ #if defined(__SSE2__) || defined(RT_SIMDE)
+                 vfloat eightv = F2V(8.f);

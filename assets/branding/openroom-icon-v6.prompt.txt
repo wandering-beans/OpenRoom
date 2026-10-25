@@ -1,0 +1,9 @@
+Tool: built-in image_gen
+Reference: assets/branding/openroom-icon-v5.png
+Transparent background: true
+
+Edit the attached OpenRoom icon with ONE focused change: make the light below the letters STRAIGHT and DIRECTIONAL instead of diffuse.
+
+Preserve the existing exact white "Or" letterforms, size, position, spacing, rounded black tile, transparent outside corners, and monochrome color scheme.
+
+Replace the fuzzy cloudlike glow underneath the letters with a small group of clean straight white light shafts emerging from BEHIND ONLY the bottom edges of the O and the r and traveling downward. The shafts have clearly defined straight edges and consistent direction, mostly vertically downward with a very slight outward angle. Each beam is a narrow elongated trapezoid or straight tapered ray with bright origin at the lower letter edge, gently fading in brightness along its length. Show visible black gaps between a few distinct shafts. Keep the edges sharp enough to read as linear photographic light rays, with only minimal softening; no foggy pool of illumination or rounded blob. Light length is roughly 18–22 percent of the icon height below the letters. Maintain the current moderate brightness and elegant restraint; no huge white triangle, no horizontal underline, no text reflection, no solid extruded lettering. No light above or beside the letters. Upper area and O counter remain pure black. All light ends before the bottom edge. No additional graphics or text. One square icon. Preserve transparency outside the black rounded square.

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenRoom — 起動画面</title>
+  <link rel="stylesheet" href="../sources/brand.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--brand-black); color: var(--brand-white); font-family: var(--brand-font); }
+    .splash { min-height: 100svh; display: grid; place-items: center; position: relative; overflow: hidden; }
+    .identity { display: flex; flex-direction: column; align-items: center; padding-bottom: 4vh; }
+    .identity img { width: clamp(144px, 30vmin, 300px); height: auto; display: block; }
+    h1 { margin: 18px 0 0; font-size: clamp(30px, 4.6vmin, 46px); line-height: 1.1; letter-spacing: -.04em; font-weight: 500; }
+    .description { margin: 16px 0 0; color: var(--brand-muted); font-size: clamp(11px, 1.4vmin, 14px); letter-spacing: .13em; }
+    .startup-status { position: absolute; bottom: 9%; text-align: center; color: var(--brand-muted); font-size: 12px; }
+    .loading-track { width: 144px; height: 2px; margin: 0 auto 16px; overflow: hidden; background: #24262b; }
+    .loading-track::after { content: ""; display: block; width: 48px; height: 100%; background: #d9dce3; animation: loading 1.9s ease-in-out infinite alternate; }
+    @keyframes loading { from { transform: translateX(-16px); } to { transform: translateX(112px); } }
+    @media (prefers-reduced-motion: reduce) { .loading-track::after { animation: none; margin: auto; } }
+  </style>
+</head>
+<body>
+  <main class="splash" aria-label="OpenRoom 起動画面">
+    <div class="identity">
+      <img src="../icons/png/openroom-1024.png" alt="OpenRoomのOrロゴ" width="1024" height="1024">
+      <h1>OpenRoom</h1>
+      <p class="description">RAW PHOTO EDITOR</p>
+    </div>
+    <div class="startup-status" role="status">
+      <div class="loading-track" aria-hidden="true"></div>
+      <span>起動しています…</span>
+    </div>
+  </main>
+</body>
+</html>

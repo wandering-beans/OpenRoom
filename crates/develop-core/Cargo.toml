@@ -1,0 +1,25 @@
+[package]
+name = "advanced-explorer-develop"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["rtengine"]
+rtengine = ["dep:advanced-explorer-rtengine"]
+
+[target.'cfg(target_os = "macos")'.dependencies]
+advanced-explorer-rtengine = { path = "../rtengine", optional = true }
+
+[dependencies]
+anyhow = "1"
+advanced-explorer-media = { path = "../media-core" }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "tiff"] }
+imageproc = { version = "0.27", default-features = false, features = ["rayon"] }
+fast_image_resize = { version = "6.1", features = ["image", "rayon"] }
+moxcms = { version = "0.8", features = ["extended_range"] }
+rayon = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

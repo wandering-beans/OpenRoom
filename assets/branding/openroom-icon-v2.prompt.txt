@@ -1,0 +1,9 @@
+Tool: built-in image_gen
+Reference: assets/branding/openroom-logo-v1.png
+Transparent background: false
+
+Use case: logo-brand
+Asset type: square desktop application icon for OpenRoom, a free open-source RAW photo editor.
+Edit target: the attached existing OpenRoom logo. Redesign it completely according to this new user direction: a black-background, two-letter creative-software application icon in the familiar minimalist Adobe-style category.
+Create a single clean square icon, front facing, filling the image canvas. Flat solid near-black background, a thin crisp cyan-blue square border slightly inset from the edges, and exactly two letters "Or" centered inside. Capital O, lowercase r. Use large bold modern sans-serif typography, excellent optical centering, balanced spacing and comfortable margins. The text and border should be the same bright cool cyan-blue. Keep the silhouette restrained and professional, legible at small app-icon sizes. The two letters are the entire logo.
+Remove the previous doorway symbol, gold accent, and full OpenRoom wordmark. No additional text, no Adobe wordmark, no Adobe A symbol, no Lr letters, no shadow, no glow, no gradients, no texture, no 3D, no mockup, no multiple alternatives. Solid opaque black background. Render one high-resolution square production icon.
