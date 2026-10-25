@@ -1155,7 +1155,7 @@ mod development_tests {
         let photo = photos.join("sample.jpg");
         std::fs::write(&photo, b"photo").unwrap();
         let mut catalog = Catalog::open(directory.path().join("catalog.db")).unwrap();
-        catalog.add_root(&photos).unwrap();
+        let root = catalog.add_root(&photos).unwrap();
         catalog.scan(&AtomicBool::new(false), |_| {}).unwrap();
         let id = catalog.page(&Query::default(), 1, None).unwrap().items[0].id;
         std::fs::remove_file(&photo).unwrap();
@@ -1169,7 +1169,7 @@ mod development_tests {
         std::fs::remove_dir(&photos).unwrap();
         let message = catalog.source_path(id).unwrap_err().to_string();
         assert!(message.contains("ドライブ・共有フォルダの接続を確認"));
-        assert!(message.contains(photos.to_str().unwrap()));
+        assert!(message.contains(&root.path));
         std::fs::create_dir(&photos).unwrap();
         std::fs::write(&photo, b"photo").unwrap();
         assert_eq!(
