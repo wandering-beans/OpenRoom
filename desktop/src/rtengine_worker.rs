@@ -376,16 +376,16 @@ pub fn run() -> Result<()> {
                     Some(base) => base,
                     None => engine::prepare(&request.source, request.bound)?,
                 };
-                resident = Some((key, base));
+                resident = Some((key, engine::PreviewRenderer::new(base)));
             }
             if request.prepare {
                 return Ok(None);
             }
-            engine::render(&resident.as_ref().unwrap().1, &request.settings, &|| false).map(Some)
+            resident.as_mut().unwrap().1.render(&request.settings, &|| false).map(Some)
         });
         let (header, bytes) = match result {
             Ok(None) => {
-                let base = &resident.as_ref().unwrap().1;
+                let base = resident.as_ref().unwrap().1.working();
                 serde_json::to_writer(
                     &mut output,
                     &Header {

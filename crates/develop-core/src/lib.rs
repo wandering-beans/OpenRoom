@@ -46,6 +46,79 @@ pub struct WorkingImage {
     pub pixels: Rgba32FImage,
     pub info: BaseInfo,
 }
+
+/// Owns one immutable source and reuses its native stage while Rust-only sliders change.
+pub struct PreviewRenderer {
+    working: WorkingImage,
+    #[cfg(all(target_os = "macos", feature = "rtengine"))]
+    native_preview: Option<NativePreview>,
+}
+
+#[cfg(all(target_os = "macos", feature = "rtengine"))]
+struct NativePreview {
+    adjustments: advanced_explorer_rtengine::Adjustments,
+    source_size: u64,
+    source_modified: std::time::SystemTime,
+    working: Option<WorkingImage>,
+}
+
+impl PreviewRenderer {
+    pub fn new(working: WorkingImage) -> Self {
+        Self {
+            working,
+            #[cfg(all(target_os = "macos", feature = "rtengine"))]
+            native_preview: None,
+        }
+    }
+
+    pub fn working(&self) -> &WorkingImage {
+        &self.working
+    }
+
+    pub fn render(
+        &mut self,
+        settings: &Settings,
+        cancelled: &(dyn Fn() -> bool + Sync),
+    ) -> Result<RenderedImage> {
+        #[cfg(all(target_os = "macos", feature = "rtengine"))]
+        if self.working.pixels.width().max(self.working.pixels.height()) <= 1600
+            && rtengine::required(&self.working, settings)
+        {
+            let start = Instant::now();
+            settings.validate()?;
+            ensure!(!cancelled(), "現像対象が変更されました。");
+            let adjustments = rtengine::preview_adjustments(&self.working, settings);
+            let metadata = std::fs::metadata(self.working.info.native_source.as_ref().unwrap())?;
+            let source_modified = metadata.modified()?;
+            if self.native_preview.as_ref().is_none_or(|previous| {
+                previous.adjustments != adjustments
+                    || previous.source_size != metadata.len()
+                    || previous.source_modified != source_modified
+            }) {
+                self.native_preview = Some(NativePreview {
+                    adjustments,
+                    source_size: metadata.len(),
+                    source_modified,
+                    working: None,
+                });
+                // Changing exposure/WB every frame should not pay for a cache copy with no reuse.
+                return render(&self.working, settings, cancelled);
+            }
+            let cached = self.native_preview.as_mut().unwrap();
+            if cached.working.is_none() {
+                let prepared = rtengine::render(&self.working, settings)?;
+                ensure!(!cancelled(), "現像対象が変更されました。");
+                // Retain one 1600px RGBA32F frame (41 MB); larger images stay uncached.
+                cached.working = Some(prepared);
+            }
+            let remaining = rtengine::remaining(settings, self.working.info.raw.is_some());
+            let mut frame = render(cached.working.as_ref().unwrap(), &remaining, cancelled)?;
+            frame.info.elapsed_ms = start.elapsed().as_secs_f64() * 1000.;
+            return Ok(frame);
+        }
+        render(&self.working, settings, cancelled)
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RenderInfo {
     pub width: u32,
@@ -502,12 +575,7 @@ fn process(
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<Rgba32FImage> {
     #[cfg(all(target_os = "macos", feature = "rtengine"))]
-    if working.info.native_source.is_some()
-        && (working.info.raw.is_some()
-            || settings.sharpen > 0.
-            || settings.noise_luma > 0.
-            || settings.noise_color > 0.)
-    {
+    if rtengine::required(&working, settings) {
         settings.validate()?;
         ensure!(!cancelled(), "現像対象が変更されました。");
         let base = rtengine::render(&working, settings)?;

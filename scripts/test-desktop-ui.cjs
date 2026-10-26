@@ -415,6 +415,7 @@ async function run() {
     await checkAdjustmentBadge('.film-tile[title="photo-0004.tif"]');
     if (process.env.AE_UI_SCREENSHOT) await page.screenshot({ path: process.env.AE_UI_SCREENSHOT });
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--slider-benchmark')) { await require('./benchmark-slider-controls.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.env.AE_DEVELOP_ENDPOINT) {
       await require(process.env.AE_SAVE_BENCH ? './benchmark-autosave-ui.cjs' : './benchmark-develop-ui.cjs').measure(page);
       return;

@@ -183,11 +183,7 @@ pub fn render(working: &WorkingImage, settings: &Settings) -> Result<WorkingImag
         .context("Missing rtengine source")?;
     let bound = working.info.width.max(working.info.height);
     let is_raw = working.info.source_kind == "raw-rtengine-linear";
-    let adjustments = adjustments(
-        settings,
-        is_raw,
-        bound as f32 / working.info.source_width.max(working.info.source_height) as f32,
-    );
+    let adjustments = preview_adjustments(working, settings);
     let mut rendered = native(
         source,
         (!is_raw).then_some(&working.pixels),
@@ -225,6 +221,23 @@ pub fn render(working: &WorkingImage, settings: &Settings) -> Result<WorkingImag
         pixels: rendered.pixels,
         info,
     })
+}
+
+pub(crate) fn required(working: &WorkingImage, settings: &Settings) -> bool {
+    working.info.native_source.is_some()
+        && (working.info.raw.is_some()
+            || settings.sharpen > 0.
+            || settings.noise_luma > 0.
+            || settings.noise_color > 0.)
+}
+
+pub(crate) fn preview_adjustments(working: &WorkingImage, settings: &Settings) -> Adjustments {
+    adjustments(
+        settings,
+        working.info.source_kind == "raw-rtengine-linear",
+        working.info.width.max(working.info.height) as f32
+            / working.info.source_width.max(working.info.source_height) as f32,
+    )
 }
 
 fn adjustments(settings: &Settings, is_raw: bool, scale: f32) -> Adjustments {

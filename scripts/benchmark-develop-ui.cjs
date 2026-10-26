@@ -43,7 +43,8 @@ async function measure(page) {
               }
               requestAnimationFrame(() => requestAnimationFrame(() => {
                 clearTimeout(timeout);
-                resolve({loaded,paint:performance.now()-started});
+                const request = calls.filter(call => call.command === 'develop_preview').at(-1);
+                resolve({loaded,paint:performance.now()-started,render:request.render_ms,request:request.end-request.start});
               }));
             }, {once:true});
             // Unique settings prevent disk-cache hits from masquerading as fast rendering.
@@ -60,7 +61,7 @@ async function measure(page) {
         const values=samples.map(sample=>sample[key]).sort((a,b)=>a-b);
         return {median_ms:(values[9]+values[10])/2,p95_ms:values[18]};
       };
-      results.push({bound,settings:name,slider:field,samples:20,dimensions:samples[0].dimensions,image_loaded:stats('loaded'),paint_opportunity:stats('paint'),timings:samples});
+      results.push({bound,settings:name,slider:field,samples:20,dimensions:samples[0].dimensions,image_loaded:stats('loaded'),paint_opportunity:stats('paint'),render:stats('render'),request:stats('request'),timings:samples});
       console.log(JSON.stringify(results.at(-1)));
       await page.waitForTimeout(600);
       await page.waitForFunction(() => window.realPreviewPending === 0, null, {timeout:120000});
@@ -76,19 +77,19 @@ async function measureContinuous(page) {
   const results = [];
   for (const bound of [1600, 0]) {
     if (bound === 0) await page.click('#high-quality');
-    for (const detail of [false, true]) {
+    for (const detail of [false, true]) for (const field of ['exposure', 'contrast']) {
       await page.evaluate(detail => {
-        for (const [field,value] of Object.entries({exposure:0,sharpen:detail?40:0,noise_luma:detail?15:0,texture:detail?15:0,clarity:detail?10:0})) {
+        for (const [field,value] of Object.entries({exposure:0,contrast:0,sharpen:detail?40:0,noise_luma:detail?15:0,texture:detail?15:0,clarity:detail?10:0})) {
           const slider=document.getElementById(`develop-${field}`);
           slider.value=value; slider.dispatchEvent(new Event('input', {bubbles:true})); slider.dispatchEvent(new Event('change', {bubbles:true}));
         }
       }, detail);
       await page.waitForTimeout(800);
       await page.waitForFunction(() => realPreviewPending===0 && document.getElementById('full-image').complete, null, {timeout:120000});
-        const result=await page.evaluate(async ({bound}) => {
+        const result=await page.evaluate(async ({bound,field}) => {
           const image=document.getElementById('full-image');
           const dimensions=[image.naturalWidth,image.naturalHeight];
-          const input=document.getElementById('develop-exposure');
+          const input=document.getElementById(`develop-${field}`);
           const frames=[], started=performance.now(), firstCall=calls.length;
           let qualityChanged=false;
           const loaded=()=>{
@@ -98,7 +99,7 @@ async function measureContinuous(page) {
           image.addEventListener('load',loaded);
           input.focus(); input.dispatchEvent(new PointerEvent('pointerdown'));
           for(let i=0;i<60;i++) {
-            input.value=String(-1.47+i*.05);
+            input.value=String(field === 'exposure' ? -1.45+i*.05 : -29+i);
             input.dispatchEvent(new Event('input', {bubbles:true}));
             await new Promise(resolve=>setTimeout(resolve,50));
           }
@@ -116,6 +117,7 @@ async function measureContinuous(page) {
           if (qualityChanged || !frames.length) throw Error('Preview quality or progress failed');
           const requests=calls.slice(firstCall).filter(c=>c.command==='develop_preview');
           if(!requests.every(c=>c.args.bound===bound))throw Error('Preview bound changed');
+          if(requests.at(-1)?.args.settings[field]!==Number(input.value))throw Error('Final slider value was not rendered');
           const during=frames.filter(t=>t<released);
           const gaps=during.slice(1).map((t,i)=>t-during[i]).sort((a,b)=>a-b);
           return {mode:'drag',bound,dimensions,inputs:60,input_duration_ms:released,frames:frames.length,during: during.length,
@@ -123,8 +125,8 @@ async function measureContinuous(page) {
             frame_interval_median_ms:gaps.length?gaps[Math.floor(gaps.length/2)]:null,
             frame_interval_p95_ms:gaps.length?gaps[Math.floor(gaps.length*.95)]:null,
             requests:requests.length,cancellations:calls.slice(firstCall).filter(c=>c.command==='cancel_develop_preview').length};
-        }, {bound});
-        results.push({...result,detail}); console.log(JSON.stringify(results.at(-1)));
+        }, {bound,field});
+        results.push({...result,detail,slider:field}); console.log(JSON.stringify(results.at(-1)));
     }
   }
   await writeFile(process.env.AE_LATENCY_REPORT,JSON.stringify({surface:'Chromium + real Rust worker; image load timestamps during 60 continuous inputs',results},null,2));

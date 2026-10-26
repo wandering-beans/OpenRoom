@@ -14,7 +14,7 @@ static INITIALIZED: OnceLock<Result<(), String>> = OnceLock::new();
 pub const VERSION: &str = "rtengine-5.13-19241791-v5";
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Adjustments {
     pub exposure: f32,
     pub temperature: f32,
