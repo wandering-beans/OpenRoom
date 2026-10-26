@@ -972,8 +972,9 @@ fn filter(q: &Query) -> Result<(String, Vec<Value>)> {
         "Invalid photo IDs"
     );
     if !q.ids.is_empty() {
-        conditions.push(format!("id IN ({})", vec!["?"; q.ids.len()].join(",")));
-        args.extend(q.ids.iter().copied().map(Value::Integer));
+        // Keep the 10,000-photo selection within SQLite's bound-parameter budget.
+        conditions.push("id IN (SELECT value FROM json_each(?))".into());
+        args.push(Value::Text(serde_json::to_string(&q.ids)?));
     }
     let terms: Vec<String> = normalize(&q.text)
         .split_whitespace()

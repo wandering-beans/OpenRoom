@@ -56,6 +56,37 @@ fn all(c: &Catalog, q: &Query) -> Vec<Item> {
     }
 }
 #[test]
+fn large_photo_selections_support_search_counts_and_facets() {
+    let (root, _db, mut catalog) = setup();
+    for name in ["first.jpg", "second.jpg", "other.png", "unselected.jpg"] {
+        std::fs::write(root.path().join(name), b"fixture").unwrap();
+    }
+    scan(&mut catalog);
+    let photos = all(&catalog, &Query::default());
+    let mut query = Query {
+        ids: photos
+            .iter()
+            .filter(|photo| photo.name != "unselected.jpg")
+            .map(|photo| photo.id)
+            .collect(),
+        extensions: vec!["jpg".into()],
+        ..Default::default()
+    };
+    query.ids.extend(100..10_097);
+    assert_eq!(query.ids.len(), 10_000);
+    assert_eq!(catalog.count(&query).unwrap(), 2);
+    let first = catalog.page(&query, 1, None).unwrap();
+    let second = catalog.page(&query, 1, first.next.as_ref()).unwrap();
+    assert_ne!(first.items[0].id, second.items[0].id);
+    assert!(second.next.is_none());
+    let facets = catalog.metadata_facets(&query, "extension").unwrap();
+    assert_eq!(facets.iter().map(|facet| facet.count).sum::<i64>(), 3);
+    query.ids.push(20_000);
+    assert!(catalog.count(&query).is_err());
+    query.ids = vec![0];
+    assert!(catalog.count(&query).is_err());
+}
+#[test]
 fn search_matches_reference_and_pagination() {
     let (root, _db, mut c) = setup();
     let names = [

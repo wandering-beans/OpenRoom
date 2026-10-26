@@ -1688,7 +1688,8 @@ mod tests {
         catalog
             .save_develop_recipe(id, &settings.catalog_recipe().unwrap(), 0)
             .unwrap();
-        state.library.generate(&state, id, &|| false, true).unwrap();
+        assert!(!state.library.generate(&state, id, &|| false, true).unwrap());
+        assert!(state.library.generate_explicit(&state, id).unwrap());
         let edited = state.library.lookup(&catalog, id, 1600).unwrap().unwrap();
         assert_ne!(edited.path, library.path);
         assert_eq!(original, std::fs::read(&source).unwrap());

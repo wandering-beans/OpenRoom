@@ -34,6 +34,12 @@ export function AdjustmentSlider(props: Props) {
     if (element.value !== '' && Number.isFinite(value) && value >= props.min && value <= props.max) props.input(value, element, numeric);
   }
   function finish(element: HTMLInputElement) { props.finish(element); if (props.angle) props.levelGrid(false); }
+  function reset(event: React.MouseEvent<HTMLInputElement>) {
+    event.preventDefault();
+    props.reset();
+    const value = props.state().value;
+    setText(props.angle ? value.toFixed(2) : String(value));
+  }
   return <label className="develop-slider" title={props.title} hidden={state.hidden}>
     <span>{props.label}</span>
     <input ref={range} id={props.id} type="range" min={props.kelvin ? 0 : props.min} max={props.kelvin ? 1000 : props.max} step={props.kelvin ? 1 : props.step}
@@ -44,12 +50,12 @@ export function AdjustmentSlider(props: Props) {
       onPointerUp={event => finish(event.currentTarget)} onPointerCancel={event => finish(event.currentTarget)}
       onBlur={event => { finish(event.currentTarget); props.sync(); }}
       onKeyDown={event => { if (props.angle && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) props.levelGrid(true); }}
-      onKeyUp={event => finish(event.currentTarget)} onDoubleClick={event => { event.preventDefault(); props.reset(); }} />
+      onKeyUp={event => finish(event.currentTarget)} onDoubleClick={reset} />
     <input ref={number} id={`${props.id}-value`} type="number" min={props.min} max={props.max} step={props.step} value={text} disabled={state.disabled}
       aria-label={(props.local ? t('マスクの') : '') + props.label + t('の数値')}
       onFocus={event => props.prepare(event.currentTarget)} onPointerDown={event => props.prepare(event.currentTarget)}
       onInput={event => change(event.currentTarget, true)} onChange={() => {}}
       onPointerUp={event => finish(event.currentTarget)} onPointerCancel={event => finish(event.currentTarget)}
-      onBlur={event => { finish(event.currentTarget); props.sync(); }} onDoubleClick={event => { event.preventDefault(); props.reset(); }} />
+      onBlur={event => { finish(event.currentTarget); props.sync(); }} onDoubleClick={reset} />
   </label>;
 }

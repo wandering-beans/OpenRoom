@@ -972,6 +972,11 @@ async function run() {
     assert.equal(await page.inputValue('#develop-saturation'), '300');
     await page.click('#develop-undo');
     await page.waitForFunction(() => document.getElementById('develop-saturation-value').value === '0');
+    await page.fill('#develop-saturation-value', '125');
+    await page.locator('#develop-saturation-value').dblclick();
+    assert.equal(await page.inputValue('#develop-saturation'), '0', 'double-click resets the adjustment');
+    assert.equal(await page.inputValue('#develop-saturation-value'), '0', 'focused numeric input must show the reset value immediately');
+    await page.locator('#develop-saturation-value').blur();
     assert.match(await page.locator('#develop-sharpen_radius').locator('..').getAttribute('title'), /シャープ量/);
     await page.evaluate(() => {
       const range = document.getElementById('develop-texture');

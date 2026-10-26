@@ -1269,14 +1269,30 @@ mod tests {
             .map(|(a, b)| a.abs_diff(*b) as f64)
             .sum::<f64>()
             / actual.as_raw().len() as f64;
-        // Compare the codec output exactly; textured photos need not meet a fixed RGB-error limit.
+        // Compare decoded codec output: ICC profiles include their creation timestamp.
         let expected_bytes = advanced_explorer_media::preview::encode(
             &reference,
             false,
             preview.path.ends_with(".avif"),
         )
         .unwrap();
-        assert_eq!(std::fs::read(&preview.path).unwrap(), expected_bytes);
+        let expected = dir.path().join(if preview.path.ends_with(".avif") {
+            "expected.avif"
+        } else {
+            "expected.jpg"
+        });
+        std::fs::write(&expected, expected_bytes).unwrap();
+        let expected_decoded = dir.path().join("expected.tif");
+        state
+            .renderer
+            .render(&expected, &expected_decoded, 1600, &|| false)
+            .unwrap();
+        let expected_pixels =
+            advanced_explorer_media::preview::read_srgb(&expected_decoded).unwrap();
+        assert!(
+            actual == expected_pixels,
+            "Library pixels differ from encoded development output"
+        );
         assert_eq!(catalog.develop_recipe(id).unwrap(), (None, 0));
         assert!(catalog.develop_history(id, None).unwrap().is_empty());
         let started = std::time::Instant::now();
