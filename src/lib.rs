@@ -759,14 +759,15 @@ PRAGMA user_version=9; COMMIT;")?;
         let search_memo = patch.memo.as_ref().map(|memo| normalize(memo));
         let tx = self.conn.transaction()?;
         for id in ids {
-            ensure!(tx.execute(
-                "UPDATE items SET tags=coalesce(?,tags),tags_norm=coalesce(?,tags_norm),rating=coalesce(?,rating),memo=coalesce(?,memo),memo_norm=coalesce(?,memo_norm) WHERE id=?",
+            ensure!(tx.prepare_cached(
+                "UPDATE items SET tags=coalesce(?,tags),tags_norm=coalesce(?,tags_norm),rating=coalesce(?,rating),memo=coalesce(?,memo),memo_norm=coalesce(?,memo_norm) WHERE id=?"
+            )?.execute(
                 params![tags_json, search_tags, patch.rating, patch.memo, search_memo, id]
             )? == 1, "item not found: {id}");
             if let Some(tags) = &norm_tags {
-                tx.execute("DELETE FROM item_tags WHERE item_id=?", [id])?;
+                tx.prepare_cached("DELETE FROM item_tags WHERE item_id=?")?.execute([id])?;
                 for tag in tags {
-                    tx.execute("INSERT INTO item_tags VALUES(?,?)", params![id, tag])?;
+                    tx.prepare_cached("INSERT INTO item_tags VALUES(?,?)")?.execute(params![id, tag])?;
                 }
             }
         }

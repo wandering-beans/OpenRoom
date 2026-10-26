@@ -53,7 +53,8 @@ impl ColorTransform {
             ]
             .iter()
             .any(|value| *value != 0.);
-        let tone = (0..=4096)
+        let tone_samples = if has_tone { 4097 } else { 0 };
+        let tone = (0..tone_samples)
             .map(|index| {
                 let input = (index as f32 / 4096.).powi(2) * 16.;
                 // Blend the calibrated RAW curve with linear light to retain shadow separation.

@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-26",
+  "baseline_commit": "39260bf",
+  "environment": {
+    "os": "macOS 27.0",
+    "architecture": "arm64",
+    "rustc": "1.98.1",
+    "build": "release",
+    "render_threads": 4
+  },
+  "method": [
+    "Synthetic disposable catalogs and deterministic image fixtures; no user photos or catalogs.",
+    "Baseline binaries were built before production changes and saved separately.",
+    "Baseline and changed benchmarks ran sequentially, without concurrent builds or test suites.",
+    "Two image benchmark rounds are retained because the first changed run showed timing drift even in unchanged controls.",
+    "Elapsed times are milliseconds on this host, not application-wide speed guarantees.",
+    "The batch benchmark uses 21 measured updates after one warmup; image mask benchmarks use 11 samples after one warmup.",
+    "The render benchmark uses 20 samples after one warmup."
+  ],
+  "reproduce": [
+    "Copy examples/batch_update_benchmark.rs into the baseline checkout to benchmark the same workload.",
+    "./scripts/cargo-local.sh run --locked --release --example batch_update_benchmark",
+    "./scripts/cargo-local.sh run --locked --release --manifest-path crates/develop-core/Cargo.toml --example mask_benchmark",
+    "./scripts/cargo-local.sh run --locked --release --manifest-path crates/develop-core/Cargo.toml --example benchmark"
+  ],
+  "batch": {
+    "before": {
+      "annotations_500_with_10_tags": {
+        "median_ms": 42.625459,
+        "p95_ms": 44.866,
+        "samples": 21
+      },
+      "attributes_10000": {
+        "median_ms": 56.939875,
+        "p95_ms": 61.044624999999996,
+        "samples": 21
+      },
+      "synthetic": true
+    },
+    "after": {
+      "annotations_500_with_10_tags": {
+        "median_ms": 34.694125,
+        "p95_ms": 37.626875,
+        "samples": 21
+      },
+      "attributes_10000": {
+        "median_ms": 26.13425,
+        "p95_ms": 28.74875,
+        "samples": 21
+      },
+      "synthetic": true
+    }
+  },
+  "validation": {
+    "core_tests_passed": 37,
+    "develop_tests_passed": 70,
+    "desktop_tests_passed": 50,
+    "desktop_ignored_tests_not_run": 15,
+    "http_test": "Passed with local socket permission after sandbox denied bind.",
+    "clippy": "All targets in core, develop-core and desktop passed with -D warnings.",
+    "mask_values": "Exact scalar equality for linear, radial, color and luminance masks, including crop, combination and inversion; brush tolerance unchanged.",
+    "image_output": "All 12 mask render hashes match the baseline in both rounds.",
+    "not_checked": [
+      "Windows/Linux",
+      "Manual GUI interactions",
+      "Real-photo performance"
+    ]
+  },
+  "mask_columns": ["round", "width", "height", "mask", "detail", "weights_before_median_ms", "weights_after_median_ms", "render_before_median_ms", "render_after_median_ms", "matching_pixel_hash"],
+  "mask_results": [
+    [1, 1600, 1067, "linear", false, 2.969, 2.86, 30.323, 32.681, "8cdd83ebf5d6ce55"],
+    [1, 1600, 1067, "linear", true, 2.969, 2.86, 37.724, 43.62, "5df2aabba13d956f"],
+    [1, 1600, 1067, "radial", false, 3.378, 2.783, 23.605, 25.955, "d068f728a8286d54"],
+    [1, 1600, 1067, "radial", true, 3.378, 2.783, 33.672, 35.486, "a7eaa65cfa990538"],
+    [1, 1600, 1067, "brush", false, 3.811, 4.168, 17.8, 20.148, "abecf8cdfd0e82b5"],
+    [1, 1600, 1067, "brush", true, 3.811, 4.168, 25.15, 29.381, "fd8e197e74341424"],
+    [1, 6000, 4000, "linear", false, 44.533, 35.462, 430.946, 481.377, "a74b643dd47b3b65"],
+    [1, 6000, 4000, "linear", true, 44.533, 35.462, 631.365, 682.651, "2683e78c13fd0f0d"],
+    [1, 6000, 4000, "radial", false, 50.927, 40.378, 339.792, 339.383, "f436e691d1c57eca"],
+    [1, 6000, 4000, "radial", true, 50.927, 40.378, 562.929, 573.764, "0909985ece0817fe"],
+    [1, 6000, 4000, "brush", false, 60.936, 64.256, 246.436, 271.209, "822243f2ca8b105b"],
+    [1, 6000, 4000, "brush", true, 60.936, 64.256, 450.256, 495.205, "7662ac335f4ab552"],
+    [2, 1600, 1067, "linear", false, 2.971, 1.788, 30.341, 31.561, "8cdd83ebf5d6ce55"],
+    [2, 1600, 1067, "linear", true, 2.971, 1.788, 37.815, 34.648, "5df2aabba13d956f"],
+    [2, 1600, 1067, "radial", false, 3.379, 2.053, 23.334, 21.624, "d068f728a8286d54"],
+    [2, 1600, 1067, "radial", true, 3.379, 2.053, 30.723, 30.125, "a7eaa65cfa990538"],
+    [2, 1600, 1067, "brush", false, 3.818, 3.819, 17.602, 17.167, "abecf8cdfd0e82b5"],
+    [2, 1600, 1067, "brush", true, 3.818, 3.819, 30.733, 24.453, "fd8e197e74341424"],
+    [2, 6000, 4000, "linear", false, 44.988, 27.371, 427.705, 408.737, "a74b643dd47b3b65"],
+    [2, 6000, 4000, "linear", true, 44.988, 27.371, 637.068, 598.287, "2683e78c13fd0f0d"],
+    [2, 6000, 4000, "radial", false, 55.533, 31.449, 337.861, 305.673, "f436e691d1c57eca"],
+    [2, 6000, 4000, "radial", true, 55.533, 31.449, 569.887, 544.197, "0909985ece0817fe"],
+    [2, 6000, 4000, "brush", false, 60.969, 61.043, 247.221, 246.918, "822243f2ca8b105b"],
+    [2, 6000, 4000, "brush", true, 60.969, 61.043, 450.119, 455.32, "7662ac335f4ab552"]
+  ],
+  "render_columns": ["round", "settings", "before_median_ms", "after_median_ms", "before_p95_ms", "after_p95_ms"],
+  "render_results": [
+    [1, "neutral", 11.469, 13.008, 11.919, 14.951],
+    [1, "tone_color", 49.116, 52.73, 49.259, 57.285],
+    [1, "tone_color_detail", 78.469, 89.912, 101.943, 117.524],
+    [2, "neutral", 11.545, 11.272, 12.19, 11.747],
+    [2, "tone_color", 49.087, 49.093, 49.514, 49.589],
+    [2, "tone_color_detail", 78.943, 79.212, 98.708, 92.967]
+  ]
+}

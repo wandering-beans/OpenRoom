@@ -117,6 +117,9 @@ impl Mask {
         use rayon::prelude::*;
         let (width, height) = pixels.dimensions();
         let mut combined = vec![0f32; width as usize * height as usize];
+        if combined.is_empty() {
+            return combined;
+        }
         for (index, shape) in self.shapes.iter().enumerate() {
             let combine = |total: &mut f32, weight: f32| {
                 let selection = weight * shape.opacity;
@@ -170,21 +173,27 @@ impl Mask {
                     .for_each(|(total, weight)| combine(total, weight));
             } else {
                 let needs_color = matches!(shape.kind.as_str(), "color" | "luminance");
-                combined.par_iter_mut().enumerate().for_each(|(i, total)| {
-                    let nx = crop[0]
-                        + (i as u32 % width) as f32 / width as f32 * crop[2]
-                        + 0.5 / width as f32 * crop[2];
-                    let ny = crop[1]
-                        + (i as u32 / width) as f32 / height as f32 * crop[3]
-                        + 0.5 / height as f32 * crop[3];
-                    let rgb = if needs_color {
-                        let pixel = pixels.as_raw();
-                        [pixel[i * 4], pixel[i * 4 + 1], pixel[i * 4 + 2]].map(crate::color::srgb)
-                    } else {
-                        [0.; 3]
-                    };
-                    combine(total, shape.weight(nx, ny, rgb, aspect));
-                });
+                combined
+                    .par_chunks_mut(width as usize)
+                    .enumerate()
+                    .for_each(|(y, row)| {
+                        let ny = crop[1]
+                            + y as f32 / height as f32 * crop[3]
+                            + 0.5 / height as f32 * crop[3];
+                        for (x, total) in row.iter_mut().enumerate() {
+                            let nx = crop[0]
+                                + x as f32 / width as f32 * crop[2]
+                                + 0.5 / width as f32 * crop[2];
+                            let rgb = if needs_color {
+                                let offset = (y * width as usize + x) * 4;
+                                let pixel = &pixels.as_raw()[offset..offset + 3];
+                                [pixel[0], pixel[1], pixel[2]].map(crate::color::srgb)
+                            } else {
+                                [0.; 3]
+                            };
+                            combine(total, shape.weight(nx, ny, rgb, aspect));
+                        }
+                    });
             }
         }
         combined.par_iter_mut().for_each(|weight| {
@@ -325,9 +334,22 @@ mod tests {
                         let y =
                             crop[1] + (i as u32 / 37) as f32 / 23. * crop[3] + 0.5 / 23. * crop[3];
                         let rgb = [pixel[0], pixel[1], pixel[2]].map(crate::color::srgb);
+                        let expected = mask.weight(x, y, rgb, 1.7);
+                        if kind != "brush" {
+                            assert_eq!(
+                                weights[i], expected,
+                                "{kind} {operation} invert={invert} pixel={i}"
+                            );
+                        }
                         assert!(
-                            (weights[i] - mask.weight(x, y, rgb, 1.7)).abs() < 1e-5,
+                            (weights[i] - expected).abs() < 1e-5,
                             "{kind} {operation} invert={invert} pixel={i}"
+                        );
+                    }
+                    for (width, height) in [(0, 0), (0, 23), (37, 0)] {
+                        assert!(
+                            mask.weights(&image::Rgba32FImage::new(width, height), crop, 1.7)
+                                .is_empty()
                         );
                     }
                 }

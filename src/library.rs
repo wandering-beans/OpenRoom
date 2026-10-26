@@ -38,7 +38,7 @@ impl Catalog {
         );
         let tx = self.conn.transaction()?;
         for id in ids {
-            ensure!(tx.execute("UPDATE items SET rating=coalesce(?,rating),flag=coalesce(?,flag),label=coalesce(?,label) WHERE id=?", params![rating,flag,label,id])? == 1,"Photo not found");
+            ensure!(tx.prepare_cached("UPDATE items SET rating=coalesce(?,rating),flag=coalesce(?,flag),label=coalesce(?,label) WHERE id=?")?.execute(params![rating,flag,label,id])? == 1,"Photo not found");
         }
         tx.execute("UPDATE state SET generation=generation+1 WHERE id=1", [])?;
         tx.commit()?;
