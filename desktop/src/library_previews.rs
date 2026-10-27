@@ -455,6 +455,11 @@ impl Store {
         Ok(())
     }
 
+    pub(crate) fn discard_work_directory(&self, path: &Path) {
+        let _workspace = self.workspace.write().unwrap();
+        let _ = std::fs::remove_dir_all(path);
+    }
+
     pub fn with_work_space<T>(
         &self,
         state: &AppState,

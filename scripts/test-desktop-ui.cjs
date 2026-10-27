@@ -336,6 +336,7 @@ async function run() {
               }
               return;
             }
+            if (command === 'set_develop_prefetch') return;
             if (command === 'arm_close_guard' || command === 'close_window' || command === 'cancel_preview' || command === 'cancel_develop_preview' || command === 'reveal' || command === 'reveal_catalog') return;
             throw Error('Unexpected command ' + command);
           },
@@ -937,12 +938,20 @@ async function run() {
     assert.ok(await page.evaluate(() => !calls.some(call => call.command === 'develop_preview')),
       'library selection and zoom must never start development');
     await page.evaluate(() => {window.holdOriginalLoad = true;});
+    assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), [1], 'library preloads only the selected photo');
     await page.click('#high-quality');
     await page.waitForFunction(() => window.releaseOriginalLoad);
     assert.equal(await page.locator('#full-image').isVisible(),false,'the library preview must not be presented as the completed development image');
     assert.match(await page.textContent('#develop-status'),/原本/);
     await page.evaluate(() => {window.holdOriginalLoad = false;window.releaseOriginalLoad();});
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-'));
+    await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-1-0-1600'));
+    assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), [1, 2, 3, 4], 'at the beginning, prefetch only the three available successors');
+    for (const [number, ids] of [[4, [4,5,3,6,2,7,1]], [8, [8,9,7,10,6,11,5]], [1, [1,2,3,4]]]) {
+      await page.locator('.film-tile').filter({has:page.locator('.film-number', {hasText:new RegExp(`^${number}$`)})}).click();
+      await page.waitForFunction(number => calls.filter(c => c.command === 'set_develop_prefetch').at(-1)?.args.ids[0] === number, number);
+      assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), ids, 'navigation replaces the window with nearest neighbors first');
+    }
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-1-0-1600'));
     assert.equal(await page.locator('#develop-panel').isVisible(), true);
     assert.equal(await page.locator('#sidebar').isVisible(), false, 'first Develop view gives the photo the left panel space');
@@ -1057,6 +1066,7 @@ async function run() {
     await page.waitForFunction(() => document.querySelector('.film-tile.selected img')?.src.includes('384-r3'));
     assert.equal(await page.evaluate(() => calls.filter(call => call.command === 'preview' && !call.args.large && call.args.id !== 1).length), otherCount, 'saving one recipe must not reload unrelated thumbnails');
     await page.click('#module-library');
+    assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), [1], 'returning to Library discards neighboring development inputs');
     await page.click('#module-develop');
     await page.waitForFunction(() => document.querySelector('#develop-exposure-value').value === '2');
     await page.waitForFunction(() => document.querySelector('#full-image').alt === document.querySelector('#view-title').textContent);

@@ -217,6 +217,7 @@ async function setModule(name: Module) {
   $('high-quality').title = isDevelop ? t("原本由来の画像を原寸で表示") : t("現像画面を開いて原本を読み込む");
   if (isDevelop) review.show('', [], null);
   await develop.activate(isDevelop, items[selected] || null);
+  updateDevelopPrefetch();
   updatePanelButton('develop-panel');
   await setViewMode('loupe');
 }
@@ -388,6 +389,7 @@ async function more(token = epoch, throwErrors = false) {
     for (const id of result.adjusted_ids) adjustedPhotos.add(id);
     cursor = result.next;
     hasMore = Boolean(cursor);
+    updateDevelopPrefetch();
     $('status').textContent = t("{0}枚を読み込み済み", items.length.toLocaleString());
   } catch (error) {
     if (token === epoch) { hasMore = false; showError(error); }
@@ -636,12 +638,23 @@ async function photoJob(item: Photo) {
   remember(photoMetadata, key, fields, 100);
   return fields;
 }
+function updateDevelopPrefetch() {
+  const offsets = develop.active ? [0, 1, -1, 2, -2, 3, -3] : [0];
+  const ids = items[selected] ? offsets.flatMap(offset => {
+    const photo = items[selected + offset];
+    return photo && !photo.missing ? [photo.id] : [];
+  }) : [];
+  // Send removals immediately; the backend delays and cancels speculative decoding.
+  void invoke('set_develop_prefetch', {ids}).catch(() => {});
+  if (develop.active && selected >= 0 && selected + 3 >= items.length && hasMore && !loading) void more();
+}
 function updateSelection() {
   pendingPhotoAnchor = capturePhotoAnchor();
   const token = ++selectionEpoch;
   const item = items[selected];
   if (item) invoke('set_preview_photo', {id:item.id}).catch(showError);
   if (develop.active) developSelectionTask = develop.select(item || null);
+  updateDevelopPrefetch();
   $('selection-empty').hidden = Boolean(item);
   $('selection-content').hidden = !item;
   $('selection-count').textContent = item ? t("/ {0}枚選択 /", selectedPhotos.size || 1) : '';

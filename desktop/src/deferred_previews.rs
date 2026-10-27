@@ -40,7 +40,7 @@ impl Updates {
         self.interrupt();
         Foreground(self)
     }
-    fn busy(&self) -> bool {
+    pub(crate) fn busy(&self) -> bool {
         self.foreground.load(Ordering::SeqCst) > 0
             || self.last_input.lock().unwrap().elapsed() < Duration::from_millis(1000)
     }

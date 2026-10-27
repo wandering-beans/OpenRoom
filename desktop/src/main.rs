@@ -723,6 +723,7 @@ fn main() {
             catalogs::restart_catalog,
             develop::develop_preview,
             develop::cancel_develop_preview,
+            develop::prefetch::set_develop_prefetch,
             develop::export_develop,
             roots,
             folders,
@@ -746,7 +747,10 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("desktop app failed")
         .run(|app, event| {
-            if matches!(event, tauri::RunEvent::Exit) { app.state::<mcp::McpState>().shutdown(); }
+            if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<mcp::McpState>().shutdown();
+                app.state::<develop::DevelopState>().shutdown();
+            }
             if let tauri::RunEvent::ExitRequested { api, .. } = event
                 && app.state::<CloseGuard>().0.load(Ordering::SeqCst)
             {

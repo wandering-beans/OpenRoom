@@ -17,6 +17,8 @@ use std::{
 use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 
+pub mod prefetch;
+
 struct Resident {
     key: PathBuf,
     source_key: PathBuf,
@@ -42,14 +44,20 @@ fn render_frame(
     }
 }
 pub struct DevelopState {
+    prefetch: Arc<prefetch::Prefetch>,
     generation: Arc<AtomicUsize>,
     jobs: Arc<tokio::sync::Semaphore>,
     resident: Arc<Mutex<Option<Resident>>>,
     pool: Arc<rayon::ThreadPool>,
 }
 impl DevelopState {
+    pub fn shutdown(&self) {
+        self.generation.fetch_add(1, Ordering::SeqCst);
+        tauri::async_runtime::block_on(self.prefetch.shutdown());
+    }
     pub fn new() -> Result<Self> {
         Ok(Self {
+            prefetch: Arc::new(prefetch::Prefetch::default()),
             generation: Arc::new(AtomicUsize::new(0)),
             jobs: Arc::new(tokio::sync::Semaphore::new(1)),
             resident: Arc::new(Mutex::new(None)),
@@ -420,6 +428,22 @@ async fn preview_inner(
         }
     })
     .await?;
+    if bound == 1600 {
+        let entry = develop.prefetch.get(id, &request);
+        if let Some(entry) = entry {
+            let resident = develop.resident.clone();
+            let generation = generation.clone();
+            let request = request.clone();
+            let frame = work(move || {
+                let cancelled = || generation.load(Ordering::SeqCst) != version;
+                entry.preview(&request, &resident, &cancelled)
+            })
+            .await;
+            if let Ok(frame) = frame {
+                return Ok(frame);
+            }
+        }
+    }
     if let Some(hit) = hit {
         // A cached display still needs a resident linear base for the first slider gesture.
         if let Ok(permit) = develop.jobs.clone().try_acquire_owned() {
@@ -709,6 +733,7 @@ pub fn run_worker() -> bool {
         "--develop-base",
         "--develop-export",
         "--develop-agent-preview",
+        "--develop-prefetch",
     ]
     .contains(&flag)
     {
@@ -725,6 +750,14 @@ pub fn run_worker() -> bool {
             .build()?;
         pool.install(|| -> Result<()> {
             match flag {
+                "--develop-prefetch" => {
+                    ensure!(args.len() == 4, "Invalid prefetch arguments");
+                    let settings: Settings = serde_json::from_slice(&std::fs::read(&args[3])?)?;
+                    let preview = prefetch::render_worker(
+                        Path::new(&args[1]), Path::new(&args[2]), &settings,
+                    )?;
+                    println!("{}", serde_json::to_string(&preview)?);
+                }
                 "--develop-base" => {
                     ensure!(
                         (3..=4).contains(&args.len()),
@@ -919,7 +952,7 @@ mod tests {
         }
     }
 
-    fn fixture() -> (tempfile::TempDir, Arc<AppState>, i64) {
+    pub(super) fn fixture() -> (tempfile::TempDir, Arc<AppState>, i64) {
         let directory = tempfile::tempdir().unwrap();
         let root = directory.path().join("photos");
         let cache = directory.path().join("cache");
