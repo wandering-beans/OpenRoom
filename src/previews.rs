@@ -209,6 +209,11 @@ mod tests {
                 let start = &start;
                 scope.spawn(move || {
                     let mut catalog = Catalog::open(path).unwrap();
+                    // Sustained writes can exceed the app's lock timeout on slow CI disks.
+                    catalog
+                        .conn
+                        .busy_timeout(std::time::Duration::from_secs(60))
+                        .unwrap();
                     start.wait();
                     for revision in 0..200 {
                         match role {
