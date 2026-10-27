@@ -109,7 +109,7 @@ async function run() {
       window.__TAURI__ = {
         core: {
           convertFileSrc: preview => {
-            if (window.failImageOnce && preview.endsWith('-384')) {
+            if (window.failImageOnce && preview === `preview-${window.failImageOnce}-384`) {
               window.failImageOnce = false; window.failedPreview = preview; rejectedPreviews.add(preview);
             }
             if (rejectedPreviews.has(preview)) return '/missing-preview.png';
@@ -278,7 +278,7 @@ async function run() {
             }
             if (command === 'preview') {
               if (args.large && window.failReviewPreviewIds?.includes(args.id)) throw Error('Injected review preview failure');
-              if (!args.large && window.failThumbnailOnce) {
+              if (!args.large && args.id === window.failThumbnailOnce) {
                 window.failThumbnailOnce = false; window.failedThumbnailId = args.id;
                 throw Error('Injected temporary thumbnail failure');
               }
@@ -897,7 +897,7 @@ async function run() {
     await page.getByRole('button', { name: /^フィルム photo-0200.jpg/ }).click();
     await page.waitForFunction(() => document.querySelector('#view-title').textContent.includes('0200'));
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('preview-201-1600') && document.querySelector('#view-message').hidden);
-    await page.evaluate(() => { window.failImageOnce = true; document.querySelector('#filmstrip').scrollLeft = 300 * 83; });
+    await page.evaluate(() => { window.failImageOnce = 301; document.querySelector('#filmstrip').scrollLeft = 300 * 83; });
     await page.waitForFunction(() => !window.failImageOnce
       && [...document.querySelectorAll('.film-tile img')].some(image => image.src.includes(`${window.failedPreview}-jpeg`)
         && image.complete && image.naturalWidth > 0)
@@ -911,7 +911,7 @@ async function run() {
     }), 'failed thumbnail must be requested again');
     assert.ok(await page.evaluate(() => [...document.querySelectorAll('.film-tile img')].some(image => image.src.includes(`${window.failedPreview}-jpeg`))),
       'browser-rejected preview must use the repaired JPEG path');
-    await page.evaluate(() => { window.failThumbnailOnce = true; document.querySelector('#filmstrip').scrollLeft = 350 * 83; });
+    await page.evaluate(() => { window.failThumbnailOnce = 351; document.querySelector('#filmstrip').scrollLeft = 350 * 83; });
     await page.waitForFunction(() => !window.failThumbnailOnce && [...document.querySelectorAll('.film-tile')].every(tile => {
       const image = tile.querySelector('img');
       return image?.complete && image.naturalWidth > 0;
