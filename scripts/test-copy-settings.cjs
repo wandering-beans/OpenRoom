@@ -56,13 +56,19 @@ module.exports = async function testCopySettings(page) {
   const savesBeforeTextPaste = await page.evaluate(() => calls.filter(c=>c.command==='save_develop').length);
   await page.locator('#search').evaluate(input => input.dispatchEvent(new KeyboardEvent('keydown',{key:'v',ctrlKey:true,bubbles:true})));
   assert.equal(await page.evaluate(() => calls.filter(c=>c.command==='save_develop').length),savesBeforeTextPaste);
+  const searchStart = await page.evaluate(() => calls.length);
   await page.locator('#search').fill('');
   await page.locator('#search').press('Tab');
+  // Wait for the debounced refresh before selecting the paste destination.
+  await page.waitForFunction(start => calls.slice(start).some(c => c.command === 'search' && c.args.query.text === '')
+    && document.querySelector('#view-title').textContent === 'photo-0000.jpg'
+    && document.querySelector('#result-count').textContent === '2,000枚の写真', searchStart);
   await photo(2).click();
 
   // The same clipboard works in Develop and uses its undo/save path.
   await page.click('#module-develop');
-  await page.waitForFunction(() => !document.querySelector('#develop-controls').disabled);
+  await page.waitForFunction(() => !document.querySelector('#develop-controls').disabled
+    && document.querySelector('#view-title').textContent === 'photo-0001.jpeg');
   await page.locator('#develop-exposure-value').fill('0.25');
   await page.locator('#develop-exposure-value').press('Tab');
   await photo(2).click();
