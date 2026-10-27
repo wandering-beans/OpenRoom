@@ -1069,8 +1069,25 @@ fn prepare_batch(
                                     && record.stamp == catalog.preview_stamp(id)?
                                     && images.is_some_and(|images| {
                                         images.version == VERSION
+                                            && ["avif", "jpg"].contains(&images.extension.as_str())
                                             && images.large_bytes > 0
                                             && images.thumbnail_bytes > 0
+                                            && [
+                                                (384, images.thumbnail_bytes),
+                                                (1600, images.large_bytes),
+                                            ]
+                                            .into_iter()
+                                            .all(|(bound, bytes)| {
+                                                let path = state.library.path(
+                                                    &record.stamp,
+                                                    &images.extension,
+                                                    bound,
+                                                    &images.render_version,
+                                                );
+                                                std::fs::symlink_metadata(path).is_ok_and(|metadata| {
+                                                    metadata.is_file() && metadata.len() == bytes
+                                                })
+                                            })
                                     })
                                 {
                                     return Ok(Some(false));
