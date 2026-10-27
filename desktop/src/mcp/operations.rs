@@ -433,7 +433,7 @@ impl Operations {
                         let previews = if report.cancelled {
                             crate::library_previews::Progress::default()
                         } else {
-                            crate::library_previews::prepare(&operations.state, input.root_id, |preview| {
+                            crate::library_previews::prepare_import(&operations.state, input.root_id, |preview| {
                                 if cancel.load(Ordering::SeqCst) || operations.stop.is_cancelled() {
                                     shared_cancel.store(true, Ordering::SeqCst);
                                 }

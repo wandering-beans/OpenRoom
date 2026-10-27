@@ -56,7 +56,7 @@ export const english = {
   "{0}枚の写真": "{0} photos",
   "{0}枚の写真を書き出します。": "Export {0} photos.",
   "{0}枚の索引を更新{1}": "Indexed {0} photos{1}",
-  "{0}枚を更新・{1}枚は変更なし{2}": "Updated {0} photos · {1} unchanged{2}",
+  "{0}枚を追加・更新／読み込み済み{1}枚をスキップ{2}": "Added/updated {0} photos · Skipped {1} already imported{2}",
   "{0}枚を読み込み済み": "{0} photos loaded",
   "{0}：情報なし": "{0}: unavailable",
   "{name}＝元の名前、{seq}＝4桁の連番、{id}＝写真ID。同名ファイルがある場合は末尾に番号を付けます。": "{name} = original name, {seq} = four-digit sequence, {id} = photo ID. A number is appended if the filename already exists.",

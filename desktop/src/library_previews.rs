@@ -994,6 +994,23 @@ pub fn prepare(
     root: Option<i64>,
     progress: impl Fn(&Progress),
 ) -> Result<Progress> {
+    prepare_batch(state, root, false, progress)
+}
+
+pub fn prepare_import(
+    state: &AppState,
+    root: Option<i64>,
+    progress: impl Fn(&Progress),
+) -> Result<Progress> {
+    prepare_batch(state, root, true, progress)
+}
+
+fn prepare_batch(
+    state: &AppState,
+    root: Option<i64>,
+    skip_imported: bool,
+    progress: impl Fn(&Progress),
+) -> Result<Progress> {
     let catalog = Catalog::open(&state.db)?;
     let total = catalog.count(&crate::Query {
         root_id: root,
@@ -1040,6 +1057,25 @@ pub fn prepare(
                             break;
                         };
                         let result = (|| -> Result<Option<bool>> {
+                            if skip_imported
+                                && let Some(record) = catalog.library_preview(id)?
+                            {
+                                let images = record
+                                    .data
+                                    .as_deref()
+                                    .and_then(|data| serde_json::from_str::<Images>(data).ok());
+                                // Re-imports keep completed previews; interrupted imports still resume.
+                                if record.error.is_none()
+                                    && record.stamp == catalog.preview_stamp(id)?
+                                    && images.is_some_and(|images| {
+                                        images.version == VERSION
+                                            && images.large_bytes > 0
+                                            && images.thumbnail_bytes > 0
+                                    })
+                                {
+                                    return Ok(Some(false));
+                                }
+                            }
                             if state.library.retains_thumbnail_only(&catalog, id)? {
                                 return Ok(None);
                             }
@@ -1064,7 +1100,9 @@ pub fn prepare(
                     Ok(None) => report.retained += 1,
                     Ok(Some(generated)) => {
                         report.ready += 1;
-                        report.last_ready_id = Some(id);
+                        if generated {
+                            report.last_ready_id = Some(id);
+                        }
                         report.generated += usize::from(generated);
                     }
                     Err(error) if !stopped.load(Ordering::SeqCst) => {
@@ -1905,16 +1943,137 @@ mod tests {
     }
 
     #[test]
+    fn repeated_import_preserves_catalog_and_cache_then_only_adds_new_photos() {
+        let (dir, state, root) = fixture();
+        let mut catalog = Catalog::open(&state.db).unwrap();
+        let root_id = catalog.roots().unwrap()[0].id;
+        assert_eq!(
+            prepare_import(&state, Some(root_id), |_| {})
+                .unwrap()
+                .generated,
+            2
+        );
+        let ids = catalog.preview_items(None, 0).unwrap();
+        catalog
+            .save_develop_recipe(ids[0], r#"{"version":1,"exposure":0.5}"#, 0)
+            .unwrap();
+        state.library.generate_explicit(&state, ids[0]).unwrap();
+        catalog
+            .annotate(
+                &[ids[0]],
+                &advanced_explorer::Annotation {
+                    tags: vec!["keep".into()],
+                    rating: 5,
+                    memo: "keep this edit".into(),
+                },
+            )
+            .unwrap();
+        // A completed older render must not be rebuilt just because its folder is re-imported.
+        let record = catalog.library_preview(ids[0]).unwrap().unwrap();
+        let mut images: Images = serde_json::from_str(record.data.as_ref().unwrap()).unwrap();
+        for bound in [384, 1600] {
+            let old = state.library.path(
+                &record.stamp,
+                &images.extension,
+                bound,
+                &images.render_version,
+            );
+            let previous =
+                state
+                    .library
+                    .path(&record.stamp, &images.extension, bound, "previous-render");
+            std::fs::create_dir_all(previous.parent().unwrap()).unwrap();
+            std::fs::rename(old, previous).unwrap();
+        }
+        images.render_version = "previous-render".into();
+        catalog
+            .save_library_preview(
+                ids[0],
+                &record.stamp,
+                Some(&serde_json::to_string(&images).unwrap()),
+                None,
+            )
+            .unwrap();
+        let snapshot = || {
+            let mut paths = Vec::new();
+            files(&state.library.directory, &mut paths).unwrap();
+            paths.sort();
+            paths
+                .into_iter()
+                .map(|path| {
+                    let modified = std::fs::metadata(&path).unwrap().modified().unwrap();
+                    let bytes = std::fs::read(&path).unwrap();
+                    (path, modified, bytes)
+                })
+                .collect::<Vec<_>>()
+        };
+        let cached = snapshot();
+        let before = dir.path().join("before.openroom");
+        catalog.backup(&before).unwrap();
+        let database_size = database_bytes(&state.db).unwrap();
+        for _ in 0..3 {
+            assert_eq!(catalog.add_root(&root).unwrap().id, root_id);
+            let scan = catalog.scan_root(root_id, &state.cancel, |_| {}).unwrap();
+            assert_eq!((scan.indexed, scan.unchanged), (0, 2));
+            let previews = prepare_import(&state, Some(root_id), |_| {}).unwrap();
+            assert_eq!(
+                (previews.generated, previews.failed, previews.last_ready_id),
+                (0, 0, None)
+            );
+            assert_eq!(
+                snapshot(),
+                cached,
+                "re-import must not write or duplicate cache files"
+            );
+            assert_eq!(database_bytes(&state.db).unwrap(), database_size);
+        }
+        let after = dir.path().join("after.openroom");
+        catalog.backup(&after).unwrap();
+        assert_eq!(
+            std::fs::read(before).unwrap(),
+            std::fs::read(after).unwrap(),
+            "catalog rows, metadata and edit history must stay unchanged"
+        );
+        image::RgbImage::new(48, 32)
+            .save(root.join("new.png"))
+            .unwrap();
+        let scan = catalog.scan_root(root_id, &state.cancel, |_| {}).unwrap();
+        assert_eq!((scan.indexed, scan.unchanged), (1, 2));
+        let previews = prepare_import(&state, Some(root_id), |_| {}).unwrap();
+        assert_eq!((previews.generated, previews.failed), (1, 0));
+        assert_eq!(catalog.preview_items(None, 0).unwrap().len(), 3);
+        for (path, modified, bytes) in cached {
+            assert_eq!(std::fs::read(&path).unwrap(), bytes);
+            assert_eq!(
+                std::fs::metadata(path).unwrap().modified().unwrap(),
+                modified
+            );
+        }
+        image::RgbImage::new(72, 48)
+            .save(root.join("new.png"))
+            .unwrap();
+        let scan = catalog.scan_root(root_id, &state.cancel, |_| {}).unwrap();
+        assert_eq!((scan.indexed, scan.unchanged), (1, 2));
+        assert_eq!(
+            prepare_import(&state, Some(root_id), |_| {})
+                .unwrap()
+                .generated,
+            1
+        );
+        assert_eq!(catalog.preview_items(None, 0).unwrap().len(), 3);
+    }
+
+    #[test]
     fn import_records_failures_resumes_and_repairs_truncated_previews() {
         let (_dir, state, root) = fixture();
         std::fs::write(root.join("broken.jpg"), b"invalid photo").unwrap();
         let mut catalog = Catalog::open(&state.db).unwrap();
         catalog.scan(&state.cancel, |_| {}).unwrap();
         state.cancel.store(true, Ordering::SeqCst);
-        let cancelled = prepare(&state, None, |_| {}).unwrap();
+        let cancelled = prepare_import(&state, None, |_| {}).unwrap();
         assert!(cancelled.cancelled && cancelled.ready == 0);
         state.cancel.store(false, Ordering::SeqCst);
-        let report = prepare(&state, None, |_| {}).unwrap();
+        let report = prepare_import(&state, None, |_| {}).unwrap();
         assert_eq!((report.ready, report.failed), (2, 1));
         let ids = catalog.preview_items(None, 0).unwrap();
         assert!(ids.iter().any(|id| {

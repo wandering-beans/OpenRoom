@@ -594,10 +594,12 @@ async function scan(scanRootIds: (number | null)[] = [null]) {
   try {
     for (const id of scanRootIds) {
       const result = await invoke('scan', { rootId: id });
-      thumbnailRequests.clear(); readyThumbnails.clear(); largePreviews.clear(); photoMetadata.clear();
+      if (result.indexed || result.missing || result.previews?.generated) {
+        thumbnailRequests.clear(); readyThumbnails.clear(); largePreviews.clear(); photoMetadata.clear();
+      }
       await loadFolders();
       await refresh(items[selected]?.id);
-      $('status').textContent = result.cancelled ? t("読み込みを中止しました") : t("{0}枚を更新・{1}枚は変更なし{2}", result.indexed, result.unchanged, result.previews ? t("・プレビュー {0}/{1}枚を準備{2}", result.previews.ready, result.previews.total, result.previews.retained ? t("・{0}枚は一覧のみ保持", result.previews.retained) : '') : '');
+      $('status').textContent = result.cancelled ? t("読み込みを中止しました") : t("{0}枚を追加・更新／読み込み済み{1}枚をスキップ{2}", result.indexed, result.unchanged, result.previews?.generated ? t("・プレビュー {0}/{1}枚を準備{2}", result.previews.ready, result.previews.total, result.previews.retained ? t("・{0}枚は一覧のみ保持", result.previews.retained) : '') : '');
       if (result.previews?.cancelled) $('status').textContent += t("・プレビュー生成を中止しました");
       if (result.previews?.error) showError(result.previews.error);
       if (result.errors.length) showError(t("{0}件を読み込めませんでした。\n{1}", result.errors.length, result.errors.slice(0, 5).join('\n')));

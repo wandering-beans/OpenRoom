@@ -232,7 +232,7 @@ async fn scan(
         let previews = if report.cancelled {
             library_previews::Progress::default()
         } else {
-            library_previews::prepare(&preview_state, root_id, |report| {
+            library_previews::prepare_import(&preview_state, root_id, |report| {
                 let _ = app.emit("preview-progress", report);
             })?
         };

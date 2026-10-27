@@ -182,11 +182,12 @@ async function run() {
             }
             if (command === 'scan') {
               if (window.holdScan) await new Promise(resolve => {window.releaseScan = resolve;});
+              const existing = items.filter(item => args.rootId == null || item.root_id === args.rootId).length;
               if (args.rootId >= 2 && !items.some(item => item.root_id === args.rootId)) {
                 for (let i = 0; i < 42; i++) items.push({...items[0],id:args.rootId*3000+i,root_id:args.rootId,path:`IMGP${i}.JPG`,name:`IMGP${i}.JPG`,extension:'jpg',rating:0});
               }
               window.listeners['preview-progress']?.({payload:{total:42,ready:42,failed:0}});
-              return {indexed:42,unchanged:0,missing:0,visited:42,errors:[],cancelled:Boolean(window.cancelledScan),previews:{total:42,ready:42,generated:42,failed:0}};
+              return {indexed:existing ? 0 : 42,unchanged:existing,missing:0,visited:existing || 42,errors:[],cancelled:Boolean(window.cancelledScan),previews:{total:existing || 42,ready:existing || 42,generated:existing ? 0 : 42,failed:0}};
             }
             if (command === 'cancel_scan') {window.cancelledScan = true;window.releaseScan?.();return;}
             if (command === 'catalog_needs_creation') return new URL(location.href).searchParams.get('startup') === 'new';
@@ -1788,6 +1789,10 @@ async function run() {
     await page.waitForFunction(() => !document.querySelector('#scan').disabled);
     assert.equal(await page.evaluate(() => calls.filter(c=>c.command==='scan').at(-1).args.rootId), 2);
     // Import only selected folders, sequentially, and stop the queue on cancellation.
+    await page.click('#add-small');
+    await page.waitForFunction(() => !document.querySelector('#add-small').disabled
+      && document.querySelector('#status').textContent.includes('読み込み済み42枚をスキップ'));
+    assert.equal(await page.textContent('#result-count'), '42枚の写真');
     await page.evaluate(() => {window.folderChoices = [{id:2,path:'/new-photos'},{id:3,path:'/more-photos'}];});
     const batchStart = await page.evaluate(() => calls.filter(c => c.command === 'scan').length);
     await page.click('#add-small');
