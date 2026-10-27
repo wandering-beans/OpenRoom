@@ -131,7 +131,7 @@ input[type="range"]:disabled { cursor: default; opacity: .5; }
 .adjustment-badge path { fill: none; stroke: currentColor; stroke-width: 1.7; }
 .film-tile .adjustment-badge { width: 16px; height: 16px; }
 .tile-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 10px; margin-top: 8px; color: #333; }
-.tile-rating { color: #474747; font-size: 11px; letter-spacing: 1px; min-height: 15px; }
+.tile-rating { display: block; text-align: left; color: #f2f2f2; font-size: 11px; letter-spacing: 1px; min-height: 15px; }
 #viewer { position: absolute; inset: 0; clip-path: inset(0); }
 #image-area { height: 100%; padding: 17px 24px; overflow: auto; display: flex; align-items: safe center; justify-content: safe center; background: #949494; -webkit-user-select: none; user-select: none; }
 #image-area img { -webkit-user-drag: none; }
@@ -187,12 +187,12 @@ input[type="range"]:disabled { cursor: default; opacity: .5; }
 .filmstrip-filter select { padding: 0 4px; height: 18px; font-size: 9px; width: 125px; background: #222; color: #999; border-color: #555; }
 #filmstrip { flex: none; height: 96px; margin: 0 17px; background: #929292; border: 1px solid #515151; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: #aaa #292929; }
 #filmstrip-track { position: relative; height: 83px; min-width: 100%; }
-.film-tile { position: absolute; top: 0; height: 83px; width: 83px; border-right: 1px solid #767676; border-radius: 0; background: #999; color: #333; padding: 9px 7px 7px; contain: layout style paint; }
+.film-tile { position: absolute; top: 0; height: 83px; width: 83px; border-right: 1px solid #767676; border-radius: 0; background: #999; color: #333; padding: 14px 7px 15px; contain: layout style paint; }
 .film-tile:hover { background: #aaa; }
 .film-tile.selected { background: #c2c2c2; box-shadow: inset 0 0 0 2px #efefef; }
-.film-tile .thumb { height: 66px; }
+.film-tile .thumb { height: 52px; }
 .film-tile .thumb img { box-shadow: none; }
-.film-number { position: absolute; left: 4px; top: 1px; font-size: 9px; color: #444; z-index: 1; }
+.film-tile .tile-rating { position: absolute; left: 7px; bottom: 1px; min-height: 12px; line-height: 12px; font-size: 10px; letter-spacing: 0; }
 .film-tile .placeholder { font-size: 8px; }
 footer { height: 17px; flex: none; padding: 0 20px; background: #080808; display: flex; align-items: center; justify-content: space-between; position: relative; color: #676767; font-size: 9px; }
 #toggle-filmstrip { position: absolute; left: 50%; top: 0; transform: translateX(-50%); padding: 0 15px; font-size: 13px; line-height: 15px; }
@@ -324,8 +324,11 @@ footer { height: 17px; flex: none; padding: 0 20px; background: #080808; display
 .color-swatch[aria-pressed="true"] { opacity: 1; border-color: white; }
 [data-color="red"] { background: #b35b5b; } [data-color="yellow"] { background: #c7b157; } [data-color="green"] { background: #5f9c62; } [data-color="blue"] { background: #527dab; } [data-color="purple"] { background: #a072a3; }
 .tile { padding: 38px 17px 14px; }
-.grid-number { position: absolute; top: -8px; left: 8px; font-size: clamp(35px,5vw,100px); color: #ffffff25; line-height: 1; pointer-events: none; }
-.photo-flag { position: absolute; top: 5px; right: 7px; color: #222; z-index: 1; font-size: 13px; }
+.tile-heading { position: absolute; top: 1px; left: 4px; display: flex; align-items: center; gap: 2px; height: 12px; color: #444; font-size: 10px; font-weight: 600; line-height: 12px; pointer-events: none; }
+.photo-flag { width: 12px; height: 12px; fill: currentColor; stroke: currentColor; stroke-width: 1.7; }
+.flag-picked { color: #f5f5f5; }
+.flag-rejected { color: #252525; }
+.photo-flag .flag-cross { fill: none; stroke: #eee; }
 .rejected .thumb { opacity: .35; }
 .tile[data-label="red"], .film-tile[data-label="red"] { border-bottom: 4px solid #b35b5b; }
 .tile[data-label="yellow"], .film-tile[data-label="yellow"] { border-bottom: 4px solid #c7b157; }

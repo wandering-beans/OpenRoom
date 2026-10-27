@@ -861,6 +861,7 @@ async function run() {
     await page.evaluate(() => { window.slow = false; });
     await page.click('#rating-stars [data-rating="4"]');
     await page.waitForFunction(() => document.querySelector('#annotation-status').textContent === '保存しました');
+    assert.equal(await page.locator('.film-tile.active-photo .tile-rating').textContent(), '★★★★');
     await page.selectOption('#rating-filter', '4');
     await page.waitForFunction(() => document.querySelector('#result-count').textContent === '1枚の写真');
     assert.match(await page.textContent('#view-title'), /0003/);
@@ -1628,6 +1629,10 @@ async function run() {
     for (const [flag, active] of [[1,true],[1,false],[-1,true],[-1,false]]) {
       await page.click(`#photo-flags [data-flag="${flag}"]`);
       await page.waitForFunction(({flag, active}) => document.querySelector(`#photo-flags [data-flag="${flag}"]`).getAttribute('aria-pressed') === String(active), {flag, active});
+      const tile = page.locator('.film-tile.active-photo');
+      assert.equal(await tile.locator('.photo-flag').count(), active ? 1 : 0);
+      if (active) assert.equal(await tile.locator('.photo-flag').getAttribute('aria-label'), flag === 1 ? '採用' : '除外');
+      assert.equal(await tile.locator('.thumb').evaluate(node => getComputedStyle(node).opacity), flag === -1 && active ? '0.35' : '1');
     }
     assert.equal(await page.evaluate(() => {
       const before = flagUiBefore, area = document.querySelector('#image-area');
@@ -1895,6 +1900,41 @@ async function run() {
     await checkAdjustmentBadge('.film-tile.selected');
     await require('./test-copy-settings.cjs')(page);
     await require('./test-language-ui.cjs')(page, `http://127.0.0.1:${server.address().port}`);
+    await page.goto(`http://127.0.0.1:${server.address().port}`);
+    await page.locator('.film-tile[title="photo-0000.jpg"] img').waitFor();
+    await page.click('#photo-flags [data-flag="1"]');
+    await page.locator('.film-tile[title="photo-0000.jpg"] .flag-picked').waitFor();
+    await page.click('#film-next');
+    await page.click('#photo-flags [data-flag="-1"]');
+    await page.locator('.film-tile[title="photo-0001.jpeg"] .flag-rejected').waitFor();
+    await page.click('#film-next');
+    await page.click('#rating-stars [data-rating="5"]');
+    await page.waitForFunction(() => document.querySelector('.film-tile.active-photo .tile-rating').textContent === '★★★★★');
+    await page.click('#grid-view');
+    for (const selector of ['.tile', '.film-tile']) {
+      const picked = page.locator(`${selector}[title="photo-0000.jpg"]`);
+      const rejected = page.locator(`${selector}[title="photo-0001.jpeg"]`);
+      const rated = page.locator(`${selector}[title="photo-0002.psd"]`);
+      assert.equal(await picked.locator('.flag-picked').count(), 1);
+      assert.equal(await rejected.locator('.flag-rejected .flag-cross').count(), 1);
+      assert.equal(await rated.locator('.tile-rating').textContent(), '★★★★★');
+      assert.match(await rated.getAttribute('aria-label'), /評価 5\/5/);
+      assert.equal(await picked.evaluate(tile => {
+        const flag = tile.querySelector('.photo-flag').getBoundingClientRect();
+        const number = tile.querySelector('.film-number, .grid-number').getBoundingClientRect();
+        const thumb = tile.querySelector('.thumb').getBoundingClientRect();
+        return flag.right <= number.left && flag.bottom <= thumb.top;
+      }), true, 'flag belongs before the number and above the photo');
+      assert.equal(await rated.evaluate(tile => {
+        const stars = tile.querySelector('.tile-rating').getBoundingClientRect();
+        const thumb = tile.querySelector('.thumb').getBoundingClientRect();
+        return stars.top >= thumb.bottom && stars.bottom <= tile.getBoundingClientRect().bottom;
+      }), true, 'five stars must fit below the photo without clipping');
+    }
+    if (process.env.AE_UI_SCREENSHOT) {
+      const strip = await page.locator('#filmstrip').boundingBox();
+      await page.screenshot({path:process.env.AE_UI_SCREENSHOT.replace('.png', '-photo-status.png'), clip:{x:strip.x,y:strip.y,width:249,height:83}});
+    }
     assert.deepEqual(failures, []);
     console.log(JSON.stringify({ checks: ['MCP settings, modal and unsaved guards, off-page selection, attributes, development and expired requests', 'portrait and landscape thumbnails fit immediately with stable preview upgrades', 'new folder scans only its own root, clears filters and selects imported photos', 'LRC metadata columns, folder-scoped indexing and cancellation, rating comparisons and reject flag', 'movable smooth tone curve persisted', 'reference layout', 'loupe/grid keyboard navigation', 'virtual filmstrip and grid', 'nested folders and counts', 'file format filtering consolidated into metadata, reset and unsaved-edit protection', 'unsaved and failed-save protection', 'annotation persistence and search', 'ratings and filter', 'library uses stored 1600px previews; development requests originals', 'metadata/navigation races', 'filmstrip paging past 200 photos', 'failed thumbnail retry', '900px and 1320px layouts', 'development recipe sliders, stale renders, undo/redo, before comparison', 'development autosave failure blocks navigation and close', 'library/develop context-menu export, settings, cancellation, failures and modal guards', 'saved thumbnail race and targeted invalidation', 'crop reset bounds', 'debounced autosave and edits during an in-flight save', 'flush before photo selection, catalog snapshot and normal close', 'catalog file location and copy controls', 'persistent gesture history and nondestructive restore', 'catalog switch flush, cancellation, failure and restart isolation', 'direct crop and local mask gestures, persistent presets and snapshots, before comparison, multi-selection sync and batch export'], preview_fit_checks: previewFitChecks, cached_tiles_ms: Math.round(cacheMilliseconds), page_errors: failures }, null, 2));
   } finally {

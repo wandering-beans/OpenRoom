@@ -13,6 +13,8 @@ interface TileProps {
   element(node: HTMLButtonElement | null): void;
 }
 export function PhotoTile({ photo, index, film, selected, active, adjusted, style, source, load, sizeLabel, select, menu, open, element }: TileProps) {
+  const flagLabel = photo.flag === -1 ? t('除外') : photo.flag === 1 ? t('採用') : '';
+  const ratingLabel = photo.rating ? `${t('評価')} ${photo.rating}/5` : '';
   const [preview, setPreview] = useState<Preview | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [failure, setFailure] = useState('');
@@ -42,10 +44,17 @@ export function PhotoTile({ photo, index, film, selected, active, adjusted, styl
     return () => { mounted = false; };
   }, [photo.id, photo.modified, photo.size, attempt, load]);
   return <button ref={element} className={`${film ? 'film-tile' : 'tile'}${selected ? ' selected' : ''}${active ? ' active-photo' : ''}${photo.flag === -1 ? ' rejected' : ''}`}
-    aria-label={`${film ? t('フィルム ') : ''}${photo.name}、${sizeLabel}${adjusted ? '、' + t('調整済み') : ''}`} aria-pressed={selected} aria-haspopup="menu" title={photo.name} data-label={photo.label || ''} style={style}
+    aria-label={[`${film ? t('フィルム ') : ''}${photo.name}`, sizeLabel, flagLabel, ratingLabel, adjusted ? t('調整済み') : ''].filter(Boolean).join('、')} aria-pressed={selected} aria-haspopup="menu" title={photo.name} data-label={photo.label || ''} style={style}
     onClick={event => { void select(event); }} onContextMenu={menu} onDoubleClick={() => { void open(); }}
     onKeyDown={event => { if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) { event.stopPropagation(); menu(event); } }}>
-    {film && <span className="film-number">{index + 1}</span>}
+    <span className="tile-heading">
+      {flagLabel && <svg className={`photo-flag ${photo.flag === -1 ? 'flag-rejected' : 'flag-picked'}`} viewBox="0 0 24 24" role="img" aria-label={flagLabel}>
+        <title>{flagLabel}</title>
+        <path d="M5 21V3m0 1c5-4 9 4 14 0v10c-5 4-9-4-14 0" />
+        {photo.flag === -1 && <path className="flag-cross" d="m9 6 6 6m0-6-6 6" />}
+      </svg>}
+      <span className={film ? 'film-number' : 'grid-number'}>{index + 1}</span>
+    </span>
     <div ref={thumb} className="thumb" title={failure || undefined}>
       {preview && <img ref={image} src={source(preview.path)} alt="" decoding="async" onLoad={() => setLoaded(true)} onError={() => {
         setPreview(null); setLoaded(false); setFailure(t('プレビュー不可')); if (!attempt) setAttempt(1);
@@ -57,9 +66,8 @@ export function PhotoTile({ photo, index, film, selected, active, adjusted, styl
         <path d="M3 3h18v18H3zM4 20 20 4M6 9h6M9 6v6M13 16h5" />
       </svg>}
     </div>
-    {!film && <><div className="tile-name">{photo.name}</div><div className="tile-rating">{'★'.repeat(photo.rating)}</div></>}
-    <span className="photo-flag">{photo.flag === -1 ? '⚑×' : photo.flag === 1 ? '⚑' : ''}</span>
-    {!film && <span className="grid-number">{index + 1}</span>}
+    {!film && <div className="tile-name">{photo.name}</div>}
+    <span className="tile-rating" role={photo.rating ? 'img' : undefined} aria-label={ratingLabel || undefined} title={ratingLabel || undefined}>{'★'.repeat(photo.rating)}</span>
   </button>;
 }
 
