@@ -46,6 +46,25 @@ impl Drop for IndexGuard {
         self.0.store(false, Ordering::SeqCst);
     }
 }
+
+#[tauri::command]
+pub async fn remove_from_catalog(
+    state: State<'_, AppState>,
+    develop: State<'_, crate::develop::DevelopState>,
+    selection: advanced_explorer::removal::Removal,
+) -> Reply<usize> {
+    if state.scanning.swap(true, Ordering::SeqCst) {
+        return Err("読み込みを中止するか、完了してからカタログから削除してください。".into());
+    }
+    let _scan = IndexGuard(state.scanning.clone());
+    let _foreground = state.library.updates.foreground();
+    state.preview_version.fetch_add(1, Ordering::SeqCst);
+    state.metadata_version.fetch_add(1, Ordering::SeqCst);
+    develop.discard_previews().await;
+    let _metadata = state.metadata_jobs.acquire().await.map_err(|error| error.to_string())?;
+    let copied = (*state).clone();
+    work(move || copied.library.remove_catalog_items(&copied, &selection)).await
+}
 #[derive(Serialize)]
 pub struct IndexProgress {
     processed: usize,

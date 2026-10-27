@@ -1,25 +1,27 @@
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal, flushSync } from 'react-dom';
-import { command, listen, type ExportFormat, type ExportReport, type Unlisten } from '../backend';
+import { command, listen, type CatalogRemoval, type ExportFormat, type ExportReport, type Unlisten } from '../backend';
 import { errorText, t } from '../i18n';
 
 interface ExportActions {
   prepare(): Promise<boolean>;
   error(failure: unknown): void;
+  remove(selection: CatalogRemoval): Promise<void>;
 }
 interface PhotoExportHandle {
   readonly busy: boolean;
-  menu(selection: number[], x: number, y: number, tile: HTMLElement): void;
+  menu(selection: CatalogRemoval, x: number, y: number, tile: HTMLElement): void;
 }
 type Phase = 'idle' | 'choosing' | 'running';
 
-function PhotoExport({ prepare, error, ref }: ExportActions & { ref: Ref<PhotoExportHandle> }) {
+function PhotoExport({ prepare, error, remove, ref }: ExportActions & { ref: Ref<PhotoExportHandle> }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const browse = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const ids = useRef<number[]>([]);
+  const [selection, setSelection] = useState<CatalogRemoval>({ kind: 'photos', ids: [] });
   const opening = useRef(false);
   const phaseRef = useRef<Phase>('idle');
   const [phase, setPhase] = useState<Phase>('idle');
@@ -48,15 +50,15 @@ function PhotoExport({ prepare, error, ref }: ExportActions & { ref: Ref<PhotoEx
     get busy() { return dialog.current?.open ?? false; },
     menu(selection, x, y, tile) {
       if (opening.current || dialog.current?.open) return;
-      ids.current = [...selection];
+      ids.current = selection.kind === 'photos' ? [...selection.ids] : [];
       returnFocus.current = tile;
-      flushSync(() => setMenuOpen(true));
+      flushSync(() => { setSelection(selection); setMenuOpen(true); });
       const element = menu.current!;
       flushSync(() => setPosition({
         left: Math.max(0, Math.min(x, window.innerWidth - element.offsetWidth)),
         top: Math.max(0, Math.min(y, window.innerHeight - element.offsetHeight)),
       }));
-      element.querySelector('button')?.focus();
+      element.querySelector<HTMLButtonElement>('button:not([hidden])')?.focus();
     },
   }));
 
@@ -151,8 +153,16 @@ function PhotoExport({ prepare, error, ref }: ExportActions & { ref: Ref<PhotoEx
   }
 
   return <>
-    <div id="photo-menu" ref={menu} role="menu" aria-label={t('写真の操作')} hidden={!menuOpen} style={position}>
-      <button id="photo-export" role="menuitem" onClick={open}>{t('書き出し…')}</button>
+    <div id="photo-menu" ref={menu} role="menu" aria-label={selection.kind === 'photos' ? t('写真の操作') : t('フォルダの操作')} hidden={!menuOpen} style={position}
+      onKeyDown={event => {
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([hidden])')];
+        const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        buttons[event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowUp' ? -1 : 1) + buttons.length) % buttons.length]?.focus();
+      }}>
+      <button id="photo-export" role="menuitem" hidden={selection.kind !== 'photos'} onClick={open}>{t('書き出し…')}</button>
+      <button id="catalog-remove" role="menuitem" onClick={() => { closeMenu(); void remove(selection).catch(error).finally(focusPhoto); }}>{t('カタログから削除…')}</button>
     </div>
     <dialog id="export-dialog" ref={dialog} aria-labelledby="export-title" onClose={focusPhoto}
       onCancel={event => { if (phaseRef.current !== 'idle') event.preventDefault(); }}>

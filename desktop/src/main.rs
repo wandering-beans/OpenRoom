@@ -182,9 +182,11 @@ async fn photo_metadata(
         .acquire_owned()
         .await
         .map_err(|e| e.to_string())?;
+    let db = state.db.clone();
     work(move || {
         let cancelled = || generation.load(Ordering::SeqCst) != version;
         anyhow::ensure!(!cancelled(), "選択対象が変更されました。");
+        Catalog::open(db)?.detail(id)?;
         let result = media::read_metadata(&request.source, &cancelled)?;
         std::fs::write(metadata_path, serde_json::to_vec(&result)?)?;
         Ok(result)
@@ -704,6 +706,7 @@ fn main() {
             mcp::mcp_ready, mcp::mcp_status, mcp::mcp_configure, mcp::mcp_token, mcp::mcp_rotate,
             mcp::mcp_claim, mcp::mcp_execute, mcp::mcp_complete,
             library::set_photo_attributes, library::metadata_facets, library::index_metadata_batch, library::cancel_metadata_index,
+            library::remove_from_catalog,
             preferences::get_language, preferences::set_language,
             arm_close_guard,
             close_window,

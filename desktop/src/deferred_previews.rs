@@ -98,6 +98,9 @@ pub(crate) fn drain(state: &AppState, updated: impl Fn(i64)) -> anyhow::Result<(
             while state.library.updates.busy() {
                 std::thread::sleep(Duration::from_millis(100));
             }
+            if catalog.preview_update(id)? != Some((revision, true)) {
+                continue;
+            }
             if state.library.updates.active.load(Ordering::SeqCst) == id {
                 continue;
             }

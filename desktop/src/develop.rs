@@ -51,6 +51,12 @@ pub struct DevelopState {
     pool: Arc<rayon::ThreadPool>,
 }
 impl DevelopState {
+    pub async fn discard_previews(&self) {
+        self.generation.fetch_add(1, Ordering::SeqCst);
+        self.prefetch.shutdown().await;
+        let _permit = self.jobs.acquire().await;
+        *self.resident.lock().unwrap() = None;
+    }
     pub fn shutdown(&self) {
         self.generation.fetch_add(1, Ordering::SeqCst);
         tauri::async_runtime::block_on(self.prefetch.shutdown());
@@ -533,6 +539,7 @@ async fn preview_inner(
         let operation = || {
             pool.install(|| {
                 ensure!(!cancelled(), "現像対象が変更されました。");
+                Catalog::open(&copied.db)?.detail(id)?;
                 if let Some(hit) = cached(&request) {
                     return Ok(hit);
                 }

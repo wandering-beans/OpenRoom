@@ -1,5 +1,13 @@
 // UI text only. User filenames, tags, notes, and custom names are never translated.
 export const english = {
+  "フォルダの操作": "Folder actions",
+  "フォルダー「{0}」内のすべての写真（サブフォルダーを含む）": "all photos in “{0}” and its subfolders",
+  "カタログから削除…": "Remove from catalog…",
+  "カタログから削除": "Remove from catalog",
+  "{0}をカタログから削除します。原本ファイルは削除しません。プレビュー、現像設定、編集履歴、評価などの登録情報は削除され、元に戻せません。": "Remove {0} from the catalog? Original files will remain. Previews, development settings, edit history, ratings and other catalog data will be permanently removed.",
+  "{0}枚をカタログから削除しました。原本は残しています。": "Removed {0} photos from the catalog. Original files remain.",
+  "読み込みを中止するか、完了してからカタログから削除してください。": "Stop importing or wait for it to finish before removing photos from the catalog.",
+
   "ポイントカーブ": "Point Curve",
   "粒子": "Grain",
   "HSL": "HSL",

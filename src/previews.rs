@@ -10,6 +10,13 @@ pub struct PreviewRecord {
 }
 
 impl Catalog {
+    pub fn library_preview_records(&self) -> Result<Vec<PreviewRecord>> {
+        Ok(self.conn.prepare("SELECT stamp,data,error FROM library_previews")?
+            .query_map([], |row| Ok(PreviewRecord {
+                stamp: row.get(0)?, data: row.get(1)?, error: row.get(2)?,
+            }))?.collect::<rusqlite::Result<_>>()?)
+    }
+
     pub fn preview_update(&self, id: i64) -> Result<Option<(i64, bool)>> {
         Ok(self
             .conn

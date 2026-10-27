@@ -170,7 +170,20 @@ async function run() {
               return {catalog:'/catalogs/catalog.db',jobs:[]};
             }
             if (command === 'mcp_complete') { mcpReplies.get(args.id)({value:args.value,error:args.error}); return; }
-            if (command === 'roots') return [{ id: 1, path: '/photo-library' }, ...(window.addedRoots || [])];
+            if (command === 'roots') return [{ id: 1, path: '/photo-library' }, ...(window.addedRoots || [])].filter(root => !window.removedRootIds?.includes(root.id));
+            if (command === 'remove_from_catalog') {
+              if (window.failRemoval) throw Error('Injected catalog removal failure');
+              const selection = args.selection;
+              const matches = item => selection.kind === 'photos' ? selection.ids.includes(item.id) : item.root_id === selection.root_id && (!selection.path || item.path.startsWith(selection.path + '/'));
+              const removed = items.filter(matches);
+              for (const item of removed) {
+                items.splice(items.indexOf(item), 1);
+                recipes.delete(item.id); histories.delete(item.id); annotations.delete(item.id); libraryRevisions.delete(item.id);
+              }
+              if (selection.kind === 'folder' && !selection.path) (window.removedRootIds ||= []).push(selection.root_id);
+              window.catalogGeneration++;
+              return removed.length;
+            }
             if (command === 'choose_folder') {
               const selected = window.folderChoices ?? [{id:2,path:'/new-photos'}];
               window.addedRoots = selected;
@@ -231,7 +244,7 @@ async function run() {
               { root_id: 1, path: '', count: 2000 }, { root_id: 1, path: '20261019撮影', count: 1200 },
               { root_id: 1, path: '20261019撮影/選定', count: 400 }, { root_id: 1, path: '20261020撮影', count: 800 },
               ...(window.addedRoots || []).map(root => ({root_id:root.id,path:'',count:items.filter(item=>item.root_id===root.id).length})),
-            ];
+            ].filter(folder => !window.removedRootIds?.includes(folder.root_id)).map(folder => ({...folder, count:items.filter(item => item.root_id === folder.root_id && (!folder.path || item.path.startsWith(folder.path + '/'))).length})).filter(folder => !folder.path || folder.count);
             if (command === 'count') return filter(args.query).length;
             if (command === 'search') {
               if (args.cursor && args.cursor.generation !== window.catalogGeneration) {
@@ -1965,6 +1978,7 @@ async function run() {
       const strip = await page.locator('#filmstrip').boundingBox();
       await page.screenshot({path:process.env.AE_UI_SCREENSHOT.replace('.png', '-photo-status.png'), clip:{x:strip.x,y:strip.y,width:249,height:83}});
     }
+    await require('./test-catalog-removal.cjs')(page);
     assert.deepEqual(failures, []);
     console.log(JSON.stringify({ checks: ['MCP settings, modal and unsaved guards, off-page selection, attributes, development and expired requests', 'portrait and landscape thumbnails fit immediately with stable preview upgrades', 'new folder scans only its own root, clears filters and selects imported photos', 'LRC metadata columns, folder-scoped indexing and cancellation, rating comparisons and reject flag', 'movable smooth tone curve persisted', 'reference layout', 'loupe/grid keyboard navigation', 'virtual filmstrip and grid', 'nested folders and counts', 'file format filtering consolidated into metadata, reset and unsaved-edit protection', 'unsaved and failed-save protection', 'annotation persistence and search', 'ratings and filter', 'library uses stored 1600px previews; development requests originals', 'metadata/navigation races', 'filmstrip paging past 200 photos', 'failed thumbnail retry', '900px and 1320px layouts', 'development recipe sliders, stale renders, undo/redo, before comparison', 'development autosave failure blocks navigation and close', 'library/develop context-menu export, settings, cancellation, failures and modal guards', 'saved thumbnail race and targeted invalidation', 'crop reset bounds', 'debounced autosave and edits during an in-flight save', 'flush before photo selection, catalog snapshot and normal close', 'catalog file location and copy controls', 'persistent gesture history and nondestructive restore', 'catalog switch flush, cancellation, failure and restart isolation', 'direct crop and local mask gestures, persistent presets and snapshots, before comparison, multi-selection sync and batch export'], preview_fit_checks: previewFitChecks, cached_tiles_ms: Math.round(cacheMilliseconds), page_errors: failures }, null, 2));
   } finally {

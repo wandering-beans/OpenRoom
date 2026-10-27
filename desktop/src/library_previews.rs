@@ -534,6 +534,35 @@ impl Store {
         )
     }
 
+    pub fn remove_catalog_items(&self, state: &AppState, selection: &advanced_explorer::removal::Removal) -> Result<usize> {
+        let _workspace = self.workspace.write().unwrap();
+        let mut usage = self.usage.lock().unwrap();
+        Catalog::open(&state.db)?.remove_catalog_items(selection, |catalog| {
+            let mut retained = std::collections::HashSet::new();
+            for record in catalog.library_preview_records()? {
+                if let Some(data) = record.data {
+                    let images: Images = serde_json::from_str(&data)?;
+                    ensure!(["avif", "jpg"].contains(&images.extension.as_str()), "Invalid preview format");
+                    for bound in [384, 1600] {
+                        retained.insert(self.path(&record.stamp, &images.extension, bound, &images.render_version));
+                    }
+                }
+            }
+            let mut paths = Vec::new();
+            for folder in ["thumbnails", "large"] {
+                files(&self.directory.join(folder), &mut paths)?;
+            }
+            // Legacy working files have no photo ownership index; clear this disposable cache too.
+            files(&state.cache, &mut paths)?;
+            for path in paths.into_iter().filter(|path| !retained.contains(path)) {
+                Self::remove(&mut usage, &path)?;
+            }
+            self.early.lock().unwrap().clear();
+            *self.protected.lock().unwrap() = None;
+            Ok(())
+        })
+    }
+
     fn retains_thumbnail_only(&self, catalog: &Catalog, id: i64) -> Result<bool> {
         if self.lookup_stored(catalog, id, 384)?.is_none() {
             return Ok(false);
@@ -1250,6 +1279,63 @@ mod tests {
             metadata_version: Arc::new(AtomicUsize::new(0)),
         };
         (dir, state, root)
+    }
+
+    #[test]
+    fn catalog_removal_cleans_orphans_and_working_files_but_keeps_other_previews() {
+        let (_dir, state, root) = fixture();
+        prepare_import(&state, None, |_| {}).unwrap();
+        let mut catalog = Catalog::open(&state.db).unwrap();
+        let ids = catalog.preview_items(None, 0).unwrap();
+        catalog.save_develop_recipe(ids[0], "{\"version\":1,\"exposure\":1}", 0).unwrap();
+        let retained: Vec<_> = [384, 1600].into_iter().map(|bound| {
+            let preview = state.library.lookup(&catalog, ids[1], bound).unwrap().unwrap();
+            let bytes = std::fs::read(&preview.path).unwrap();
+            (PathBuf::from(preview.path), bytes)
+        }).collect();
+        let working = state.cache.join("old-development.png");
+        std::fs::write(&working, b"disposable").unwrap();
+        let orphan = state.library.directory.join("large/obsolete.jpg");
+        std::fs::write(&orphan, b"old preview").unwrap();
+        let originals: Vec<_> = std::fs::read_dir(&root).unwrap().map(|entry| {
+            let path = entry.unwrap().path();
+            (path.file_name().unwrap().to_owned(), std::fs::read(path).unwrap())
+        }).collect();
+        let offline = root.with_file_name("offline");
+        std::fs::rename(&root, &offline).unwrap();
+        assert_eq!(state.library.remove_catalog_items(&state, &advanced_explorer::removal::Removal::Photos { ids: vec![ids[0]] }).unwrap(), 1);
+        assert!(catalog.detail(ids[0]).is_err());
+        assert!(!orphan.exists() && !working.exists());
+        let mut paths = Vec::new();
+        files(&state.library.directory, &mut paths).unwrap();
+        assert_eq!(paths.len(), 2);
+        for (path, bytes) in retained {
+            assert_eq!(std::fs::read(path).unwrap(), bytes);
+        }
+        for (name, bytes) in originals {
+            assert_eq!(std::fs::read(offline.join(name)).unwrap(), bytes);
+        }
+        let root_id = catalog.roots().unwrap()[0].id;
+        state.library.remove_catalog_items(&state, &advanced_explorer::removal::Removal::Folder { root_id, path: String::new() }).unwrap();
+        paths.clear();
+        files(&state.library.directory, &mut paths).unwrap();
+        assert!(paths.is_empty());
+        assert_eq!(state.library.usage.lock().unwrap().bytes, 0);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn removal_rejects_cache_symlinks_without_losing_catalog_edits_or_originals() {
+        let (_dir, state, root) = fixture();
+        let mut catalog = Catalog::open(&state.db).unwrap();
+        let id = catalog.preview_items(None, 0).unwrap()[0];
+        catalog.save_develop_recipe(id, "{\"version\":1,\"exposure\":1}", 0).unwrap();
+        let original = root.join("landscape.png");
+        let bytes = std::fs::read(&original).unwrap();
+        std::os::unix::fs::symlink(&original, state.cache.join("unsafe.png")).unwrap();
+        assert!(state.library.remove_catalog_items(&state, &advanced_explorer::removal::Removal::Photos { ids: vec![id] }).is_err());
+        assert_eq!(catalog.develop_recipe(id).unwrap().1, 1);
+        assert_eq!(std::fs::read(original).unwrap(), bytes);
     }
 
     #[test]

@@ -1,7 +1,7 @@
 import { createView } from './components/view';
 import { PhotoTile, FolderBranch, Properties, type FolderNode, type ThumbnailLoader } from './components/Library';
 import type { ReactNode, CSSProperties } from 'react';
-import type { Commands } from './backend';
+import type { CatalogRemoval, Commands } from './backend';
 import type { Detail, Photo, Root, Folder, Cursor, Preview, PhotoMetadata, ViewMode, Module, Focus, Query, UiState, PreviewProgress, ScanProgress, Recipe } from './models';
 interface Anchor extends Focus { clientX: number; clientY: number }
 interface ThumbnailJob { item: Photo; key: string; token: number; alive(): boolean; complete(result: Preview): void; failed(error: unknown): void; repair: boolean }
@@ -149,7 +149,7 @@ async function rotatePhoto(turns: number) {
     for (const button of $('photo-rotation').querySelectorAll('button')) button.disabled = false;
   }
 }
-const photoExport = createPhotoExport({ prepare: allowChange, error: showError });
+const photoExport = createPhotoExport({ prepare: allowChange, error: showError, remove: removeFromCatalog });
 const review = createReview({
   preview: largeJob, src: convertFileSrc, key: itemKey,
   activate: id => selectPhoto(items.findIndex(item => item.id === id), { reviewFocus: true }),
@@ -176,7 +176,41 @@ async function photoMenu(index: number, event: { preventDefault(): void; current
   const rect = tile?.getBoundingClientRect();
   if (!selectedPhotos.has(items[index].id) && !await selectPhoto(index)) return;
   const ids = selectedPhotos.size ? [...selectedPhotos] : [items[index].id];
-  photoExport.menu(ids, (event.clientX ?? 0) || rect?.left || 0, (event.clientY ?? 0) || rect?.bottom || 0, tile ?? grid);
+  photoExport.menu({ kind: 'photos', ids }, (event.clientX ?? 0) || rect?.left || 0, (event.clientY ?? 0) || rect?.bottom || 0, tile ?? grid);
+}
+async function removeFromCatalog(selection: CatalogRemoval) {
+  if (!await allowChange()) return;
+  const target = selection.kind === 'photos' ? t('{0}枚の写真', selection.ids.length) : t('フォルダー「{0}」内のすべての写真（サブフォルダーを含む）', selection.path || roots.find(root => root.id === selection.root_id)?.path || '');
+  confirmingChange = true;
+  try {
+    if (!await confirmDiscard(t('{0}をカタログから削除します。原本ファイルは削除しません。プレビュー、現像設定、編集履歴、評価などの登録情報は削除され、元に戻せません。', target), t('カタログから削除'), t('カタログから削除'))) return;
+  } finally { confirmingChange = false; }
+  document.body.dataset.catalogBusy = 'true';
+  $('app-shell').inert = true;
+  ++epoch; ++selectionEpoch; ++viewEpoch; ++qualityEpoch;
+  clearTimeout(searchTimer);
+  thumbnailJobs.length = 0;
+  let failure: unknown, count: number | undefined;
+  try {
+    await developSelectionTask;
+    await develop.select(null);
+    await invoke('set_develop_prefetch', { ids: [] });
+    count = await invoke('remove_from_catalog', { selection });
+    if (selection.kind === 'folder') {
+      rootId = null; folderPath = null;
+      $('title').textContent = t('すべての写真');
+    }
+    aiIds = []; $('ai-selection').hidden = true;
+  } catch (error) { failure = error; }
+  finally {
+    readyThumbnails.clear(); thumbnailRequests.clear(); largePreviews.clear(); photoMetadata.clear();
+    delete document.body.dataset.catalogBusy;
+    $('app-shell').inert = false;
+  }
+  await loadFolders();
+  await refresh(null, true);
+  if (failure) throw failure;
+  $('status').textContent = t('{0}枚をカタログから削除しました。原本は残しています。', count ?? 0);
 }
 async function setModule(name: Module) {
   const isDevelop = name === 'develop';
@@ -274,8 +308,10 @@ function showError(error: unknown) {
   $('error').textContent = String(error);
   $('error').hidden = false;
 }
-function confirmDiscard(message: string) {
+function confirmDiscard(message: string, title = t('未保存の変更'), action = t('変更を破棄')) {
   const dialog = $('discard-dialog');
+  dialog.querySelector('h2')!.textContent = title;
+  dialog.querySelector('button[value="discard"]')!.textContent = action;
   $('discard-message').textContent = message;
   dialog.returnValue = 'cancel';
   return new Promise<boolean>(resolve => {
@@ -503,7 +539,7 @@ function thumbnail(item: Photo, repair = false) {
       ? invoke('invalidate_library_preview', { id: item.id, bound: 384 }).then(() => invoke('preview', { id: item.id, large: false }))
       : invoke('preview', { id: item.id, large: false });
     remember(thumbnailRequests, key, request, 600);
-    request.then(result => remember(readyThumbnails, key, result, 600)).catch(() => {
+    request.then(result => { if (thumbnailRequests.get(key) === request) remember(readyThumbnails, key, result, 600); }).catch(() => {
       if (thumbnailRequests.get(key) === request) thumbnailRequests.delete(key);
     });
   }
@@ -547,7 +583,13 @@ function renderFolders() {
       }
       node.count = folder.count;
     }
-    branches.push(<FolderBranch key={`${root.id}:${filter}`} root={root} node={tree} depth={0} filter={filter} rootId={rootId} folderPath={folderPath} choose={chooseFolder} />);
+    branches.push(<FolderBranch key={`${root.id}:${filter}`} root={root} node={tree} depth={0} filter={filter} rootId={rootId} folderPath={folderPath} choose={chooseFolder} menu={(root, node, event) => {
+      event.preventDefault();
+      if (document.body.dataset.catalogBusy || confirmingChange || photoExport.busy) return;
+      const target = event.currentTarget as HTMLElement;
+      const rect = target.getBoundingClientRect();
+      photoExport.menu({ kind: 'folder', root_id: root.id, path: node.path }, 'clientX' in event ? event.clientX : rect.left, 'clientY' in event ? event.clientY : rect.bottom, target.querySelector('button.folder-label') ?? target);
+    }} />);
   }
   foldersView.render(branches);
   updateFolderSelection();
@@ -676,8 +718,9 @@ function setProperties(target: HTMLElement, fields: PhotoMetadata) {
 async function photoJob(item: Photo) {
   const key = itemKey(item);
   if (photoMetadata.has(key)) return photoMetadata.get(key)!;
+  const token = epoch;
   const fields = await invoke('photo_metadata', { id: item.id });
-  remember(photoMetadata, key, fields, 100);
+  if (token === epoch) remember(photoMetadata, key, fields, 100);
   return fields;
 }
 function updateDevelopPrefetch() {
@@ -835,13 +878,14 @@ async function setViewMode(mode: ViewMode) {
   draw();
 }
 async function largeJob(item: Photo, bound: number, retry = false) {
+  const token = epoch;
   const key = `${itemKey(item)}:${bound}`;
   if (retry) {
     largePreviews.delete(key);
     await invoke('invalidate_library_preview', { id: item.id, bound });
   }
   const result = await invoke('preview', { id: item.id, large: true, bound });
-  if (!result.inline_image) remember(largePreviews, key, result, 32);
+  if (token === epoch && !result.inline_image) remember(largePreviews, key, result, 32);
   return result;
 }
 async function displayPhoto() {
