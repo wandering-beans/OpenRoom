@@ -898,10 +898,13 @@ async function run() {
     await page.waitForFunction(() => document.querySelector('#view-title').textContent.includes('0200'));
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('preview-201-1600') && document.querySelector('#view-message').hidden);
     await page.evaluate(() => { window.failImageOnce = true; document.querySelector('#filmstrip').scrollLeft = 300 * 83; });
-    await page.waitForFunction(() => !window.failImageOnce && [...document.querySelectorAll('.film-tile')].every(tile => {
-      const image = tile.querySelector('img');
-      return image?.complete && image.naturalWidth > 0;
-    }));
+    await page.waitForFunction(() => !window.failImageOnce
+      && [...document.querySelectorAll('.film-tile img')].some(image => image.src.includes(`${window.failedPreview}-jpeg`)
+        && image.complete && image.naturalWidth > 0)
+      && [...document.querySelectorAll('.film-tile')].every(tile => {
+        const image = tile.querySelector('img');
+        return image?.complete && image.naturalWidth > 0;
+      }));
     assert.ok(await page.evaluate(() => {
       const id = Number(window.failedPreview.split('-')[1]);
       return calls.filter(call => call.command === 'preview' && call.args.id === id && !call.args.large).length >= 2;
