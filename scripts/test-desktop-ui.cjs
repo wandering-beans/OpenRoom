@@ -89,6 +89,7 @@ async function run() {
         window.listeners['mcp-request']({payload:request});
       });
       window.calls = [];
+      window.catalogGeneration = 1;
       window.listeners = {};
       window.slow = false;
       window.realPreviewPending = 0;
@@ -232,10 +233,14 @@ async function run() {
             ];
             if (command === 'count') return filter(args.query).length;
             if (command === 'search') {
+              if (args.cursor && args.cursor.generation !== window.catalogGeneration) {
+                throw Error('stale or incompatible cursor; restart pagination');
+              }
               const all = filter(args.query), offset = args.cursor?.offset || 0;
               return { items: all.slice(offset, offset + 200).map(item => ({ ...item })),
                 adjusted_ids: all.slice(offset, offset + 200).filter(item => adjusted(item.id)).map(item => item.id),
-                next: offset + 200 < all.length ? { offset: offset + 200 } : null, generation: 1 };
+                next: offset + 200 < all.length ? { offset: offset + 200, generation: window.catalogGeneration } : null,
+                generation: window.catalogGeneration };
             }
             if (command === 'detail') {
               const item = items.find(item => item.id === args.id);
@@ -868,9 +873,26 @@ async function run() {
     await page.selectOption('#rating-filter', '');
     await page.waitForFunction(() => document.querySelector('#result-count').textContent === '2,000枚の写真');
 
-    // Selection and paging must work past the initial 200 catalog records.
-    await page.evaluate(() => { document.querySelector('#filmstrip').scrollLeft = 200 * 83; });
+    // A catalog update must restart paging without losing the selected photo or draft.
+    const pagingTitle = await page.textContent('#view-title');
+    const pagingImage = await page.getAttribute('#full-image', 'src');
+    await page.fill('#annotation-memo', 'Unsaved pagination draft');
+    const pagingStart = await page.evaluate(() => {
+      window.catalogGeneration++;
+      const start = calls.length;
+      document.querySelector('#filmstrip').scrollLeft = 200 * 83;
+      return start;
+    });
     await page.waitForFunction(() => document.querySelectorAll('.film-tile').length && [...document.querySelectorAll('.film-number')].some(number => Number(number.textContent) > 200));
+    assert.equal(await page.textContent('#view-title'), pagingTitle);
+    assert.equal(await page.getAttribute('#full-image', 'src'), pagingImage);
+    assert.equal(await page.inputValue('#annotation-memo'), 'Unsaved pagination draft');
+    assert.equal(await page.locator('#error').isVisible(), false);
+    assert.equal(await page.locator('#discard-dialog').isVisible(), false);
+    assert.deepEqual(await page.evaluate(start => calls.slice(start).filter(c => c.command === 'search').map(c => c.args.cursor?.offset || 0), pagingStart), [200, 0, 200]);
+    assert.equal(await page.locator('.film-tile').evaluateAll(tiles => new Set(tiles.map(tile => tile.getAttribute('aria-label'))).size === tiles.length), true);
+    await page.locator('#annotation-form').evaluate(form => form.requestSubmit());
+    await page.waitForFunction(() => document.querySelector('#annotation-status').textContent === '保存しました');
     await page.getByRole('button', { name: /^フィルム photo-0200.jpg/ }).click();
     await page.waitForFunction(() => document.querySelector('#view-title').textContent.includes('0200'));
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('preview-201-1600') && document.querySelector('#view-message').hidden);

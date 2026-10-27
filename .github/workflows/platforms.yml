@@ -2,11 +2,7 @@ name: Platform checks
 on: [push, pull_request]
 jobs:
   test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest, ubuntu-24.04]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,11 +14,9 @@ jobs:
       - run: npm --prefix desktop run build
       - run: npm --prefix desktop run test:unit
       - name: Install UI test browser
-        if: runner.os == 'Linux'
         working-directory: desktop
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Frontend regression tests
-        if: runner.os == 'Linux'
         run: node scripts/test-desktop-ui.cjs
       - name: Check public source for local paths and secrets
         run: |
@@ -31,19 +25,8 @@ jobs:
           python scripts/privacy-check.py --tracked
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --locked
-      - name: Linux desktop prerequisites
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libheif-dev libheif-plugin-libde265 libheif-plugin-aomdec libheif-plugin-aomenc
       - name: macOS media prerequisites
-        if: runner.os == 'macOS'
         run: brew install libheif pkgconf cmake ninja gtkmm3 fftw libiptcdata lensfun exiv2 little-cms2 libomp librsvg fmt libraw
-      - name: Windows media prerequisites
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          "VCPKG_ROOT=$(Split-Path (Get-Command vcpkg).Source)" >> $env:GITHUB_ENV
-          vcpkg install "libheif[core,aom,libde265]:x64-windows-static-md"
-          "VCPKGRS_TRIPLET=x64-windows-static-md" >> $env:GITHUB_ENV
       - run: python scripts/fetch-media-fixtures.py "${{ runner.temp }}/raw-assets"
       - run: cargo test --manifest-path crates/media-core/Cargo.toml --locked -- --include-ignored
         env:

@@ -383,7 +383,12 @@ async function more(token = epoch, throwErrors = false) {
   if (loading || !hasMore) return;
   loading = true;
   try {
-    const result = await invoke('search', { query: query(), cursor });
+    const result = await invoke('search', { query: query(), cursor }).catch(async error => {
+      if (!cursor || !String(error).includes('stale or incompatible cursor; restart pagination')) throw error;
+      await restartPages(token);
+      return null;
+    });
+    if (!result) return;
     if (token !== epoch) return;
     items.push(...result.items);
     for (const id of result.adjusted_ids) adjustedPhotos.add(id);
@@ -397,6 +402,41 @@ async function more(token = epoch, throwErrors = false) {
   } finally {
     if (token === epoch) { loading = false; updateEmpty(); draw(); }
   }
+}
+async function restartPages(token: number) {
+  const scope = query(), loadedCount = items.length;
+  const replacement: Photo[] = [], adjusted = new Set<number>();
+  let next: Cursor | null = null;
+  // Rebuild offscreen; never mix catalog generations or discard an unsaved edit.
+  do {
+    const page: Commands['search']['result'] = await invoke('search', {query: scope, cursor: next});
+    if (token !== epoch) return;
+    replacement.push(...page.items);
+    for (const id of page.adjusted_ids) adjusted.add(id);
+    next = page.next;
+  } while (next && replacement.length <= loadedCount);
+  const activeId = items[selected]?.id;
+  const kept = replacement.findIndex(item => item.id === activeId);
+  if (activeId != null && kept < 0 && !await allowChange()) { hasMore = false; return; }
+  if (token !== epoch) return;
+  items = replacement;
+  cursor = next;
+  hasMore = Boolean(next);
+  selected = kept;
+  const ids = new Set(items.map(item => item.id));
+  for (const id of selectedPhotos) if (!ids.has(id)) selectedPhotos.delete(id);
+  adjustedPhotos.clear();
+  for (const id of adjusted) adjustedPhotos.add(id);
+  if (activeId != null && kept < 0) {
+    if (items.length) await selectPhoto(0);
+    else updateSelection();
+  }
+  updateDevelopPrefetch();
+  updateNavigation();
+  updateRatingStars();
+  updatePhotoAttributes();
+  syncReview();
+  $('status').textContent = t("{0}枚を読み込み済み", items.length.toLocaleString());
 }
 function clearTiles() {
   gridView.render(null); filmView.render(null);
