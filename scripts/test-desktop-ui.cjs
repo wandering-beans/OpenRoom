@@ -330,6 +330,9 @@ async function run() {
             }
             if (command === 'develop_preview') {
               if (window.failDevelopPreview) throw Error('Injected preview failure');
+              if (window.holdDevelopPreview) await new Promise(resolve => {
+                window.releaseDevelopPreview = () => { window.releaseDevelopPreview = null; resolve(); };
+              });
               const held = window.holdOriginalLoad;
               if (held) { window.holdOriginalLoad = false; await new Promise(resolve => {window.releaseOriginalLoad = resolve;}); }
               await new Promise(resolve => setTimeout(resolve, window.previewDelay ?? (args.settings.exposure === 1 ? 200 : 20)));
@@ -1915,26 +1918,36 @@ async function run() {
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.click('#module-develop');
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-'));
-    const slowInput = await page.evaluate(async () => {
-      window.previewDelay=450;
-      const firstCall=calls.length, frames=[];
-      const image=document.getElementById('full-image');
-      const observer=new MutationObserver(()=>frames.push(image.src));
-      observer.observe(image,{attributes:true,attributeFilter:['src']});
+    const firstNumericCall = await page.evaluate(() => {
+      window.holdDevelopPreview=true;
+      window.previewDelay=0;
+      const firstCall=calls.length;
       const input=document.getElementById('develop-exposure-value');input.focus();
-      for(const value of [.2,.4,.6,.8]) {
-        input.value=value;input.dispatchEvent(new Event('input', {bubbles:true}));
-        await new Promise(resolve=>setTimeout(resolve,180));
-      }
-      const during=frames.length;
-      input.dispatchEvent(new Event('change', {bubbles:true}));input.blur();
-      await new Promise(resolve=>setTimeout(resolve,1200));observer.disconnect();
-      return {during,src:image.src,calls:calls.slice(firstCall)};
+      input.value=.2;input.dispatchEvent(new Event('input', {bubbles:true}));
+      return firstCall;
     });
-    assert.ok(slowInput.during>0,'slow frames must make progress while numeric input continues');
-    assert.ok(slowInput.src.includes('-0.8-1600'),'latest numeric value must eventually display');
-    assert.equal(slowInput.calls.filter(c=>c.command==='cancel_develop_preview').length,0);
-    assert.ok(slowInput.calls.filter(c=>c.command==='develop_preview').length<=3,'coalesce inputs without a duplicate release render');
+    await page.waitForFunction(() => typeof window.releaseDevelopPreview === 'function');
+    await page.evaluate(() => {
+      const input=document.getElementById('develop-exposure-value');
+      for(const value of [.4,.6,.8]) {
+        input.value=value;input.dispatchEvent(new Event('input', {bubbles:true}));
+      }
+      window.releaseDevelopPreview();
+    });
+    // Hold the next frame so the intermediate result cannot disappear between assertions.
+    await page.waitForFunction(() => document.getElementById('full-image').src.includes('-0.2-1600'));
+    assert.equal(await page.locator('#develop-exposure-value').inputValue(),'0.8');
+    await page.waitForFunction(() => typeof window.releaseDevelopPreview === 'function');
+    await page.evaluate(() => {
+      const input=document.getElementById('develop-exposure-value');
+      input.dispatchEvent(new Event('change', {bubbles:true}));input.blur();
+      window.holdDevelopPreview=false;
+      window.releaseDevelopPreview();
+    });
+    await page.waitForFunction(() => document.getElementById('full-image').src.includes('-0.8-1600'));
+    const numericCalls = await page.evaluate(start => calls.slice(start),firstNumericCall);
+    assert.equal(numericCalls.filter(c=>c.command==='cancel_develop_preview').length,0);
+    assert.equal(numericCalls.filter(c=>c.command==='develop_preview').length,2,'coalesce inputs without a duplicate release render');
     await page.click('#develop-reset');
     await page.click('#develop-save');
     await page.waitForFunction(() => document.querySelector('#develop-save').disabled && !document.querySelector('.film-tile.selected .adjustment-badge'));
