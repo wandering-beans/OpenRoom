@@ -50,7 +50,6 @@ interface Controls {
   'develop-curve-channel': HTMLSelectElement;
   'develop-flip-h': HTMLInputElement;
   'develop-flip-v': HTMLInputElement;
-  'develop-grading-channel': HTMLSelectElement;
   'develop-histogram': SVGSVGElement;
   'develop-history-more': HTMLButtonElement;
   'develop-history-panel': HTMLDetailsElement;

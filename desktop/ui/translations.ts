@@ -1,5 +1,12 @@
 // UI text only. User filenames, tags, notes, and custom names are never translated.
 export const english = {
+  "ブレンド": "Blending",
+  "カラーグレーディングをリセット": "Reset color grading",
+  "{0}のカラーグレーディングをリセット": "Reset {0} color grading",
+  "色相 {0}°・彩度 {1}。ダブルクリックでリセット": "Hue {0}°, saturation {1}. Double-click to reset.",
+  "{0}の色相と彩度。左右キーで色相、上下キーで彩度を調整": "{0} hue and saturation. Left/right: hue. Up/down: saturation.",
+  "3方向": "Three-way",
+  "色調補正:": "Adjust:",
   "フォルダの操作": "Folder actions",
   "フォルダー「{0}」内のすべての写真（サブフォルダーを含む）": "all photos in “{0}” and its subfolders",
   "カタログから削除…": "Remove from catalog…",

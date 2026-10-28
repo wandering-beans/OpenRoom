@@ -1,6 +1,7 @@
 import { flushSync } from 'react-dom';
 import { createView } from './components/view';
 import { AdjustmentSlider, type SliderHandle } from './components/AdjustmentSlider';
+import { ColorGrading } from './components/ColorGrading';
 import type { ReactNode } from 'react';
 import type { Invoke } from './backend';
 import type { Settings, SettingsPatch, SettingKey, NumericSetting, Photo, PhotoMetadata, DevelopedPreview, RawInfo, HistoryRow, ErrorHandler } from './models';
@@ -269,18 +270,22 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
   createView($('develop-mixer')).render(Array.from({length: 8}, (_, color) => <div key={color} data-mixer={color} hidden={color !== 0}>
     {[t('色相'), t('彩度'), t('輝度')].map((label, index) => slider(['mixer', color, index], label, -100, 100))}
   </div>));
-  createView($('develop-grading')).render(<>
-    {Array.from({length: 4}, (_, zone) => <div key={zone} data-grading={zone} hidden={zone !== 0}>
-      {slider(['grading', zone, 0], t('色相'), 0, 360)}{slider(['grading', zone, 1], t('彩度'), 0, 100)}{slider(['grading', zone, 2], t('輝度'), -100, 100)}
-    </div>)}
-    {slider(['grading_blending'], t('ブレンディング'), 0, 100)}{slider(['grading_balance'], t('バランス'), -100, 100)}
-  </>);
+  createView($('develop-grading')).render(<ColorGrading ref={handle => { if (handle) controls.push(handle); }}
+    values={() => (settings?.grading ?? Array.from({length: 4}, () => [0, 0, 0])).map(value => [...value])}
+    blocked={() => !settings || loading || leaving || exporting} begin={beginGesture} finish={finishGesture}
+    change={(zone, hue, saturation) => {
+      if (!settings || loading || leaving || exporting) return;
+      settings.grading[zone][0] = hue; settings.grading[zone][1] = saturation; changed();
+    }}
+    reset={zone => edit(settings => { settings.grading[zone] = [...(defaults?.grading[zone] ?? [0, 0, 0])]; }, t('カラーグレーディングをリセット'))}
+    sliders={Array.from({length: 4}, (_, zone) => [slider(['grading', zone, 0], t('色相'), 0, 360), slider(['grading', zone, 1], t('彩度'), 0, 100), slider(['grading', zone, 2], t('輝度'), -100, 100)])}
+    blending={slider(['grading_blending'], t('ブレンド'), 0, 100)} balance={slider(['grading_balance'], t('バランス'), -100, 100)} />);
   createView($('develop-crop')).render([t('左位置 %'), t('上位置 %'), t('幅 %'), t('高さ %')].map((label, index) => slider(['crop', index], label, index < 2 ? 0 : 1, index < 2 ? 99 : 100, .1, 100)));
   function chooseGroup(select: HTMLSelectElement, attribute: string) {
     for (const panel of document.querySelectorAll<HTMLElement>(`[data-${attribute}]`)) panel.hidden = panel.dataset[attribute] !== select.value;
     drawCurve();
   }
-  for (const name of ['curve', 'mixer', 'grading']) $(`develop-${name}-channel`).onchange = event => chooseGroup(event.target as HTMLSelectElement, name);
+  for (const name of ['curve', 'mixer']) $(`develop-${name}-channel`).onchange = event => chooseGroup(event.target as HTMLSelectElement, name);
   for (const button of document.querySelectorAll<HTMLButtonElement>('#curve-channel-buttons button')) button.onclick=()=>{
     $('develop-curve-channel').value=button.dataset.channel!;chooseGroup($('develop-curve-channel'),'curve');
   };

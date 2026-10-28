@@ -435,6 +435,7 @@ async function run() {
     await checkAdjustmentBadge('.film-tile[title="photo-0004.tif"]');
     if (process.env.AE_UI_SCREENSHOT) await page.screenshot({ path: process.env.AE_UI_SCREENSHOT });
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--grading')) { await require('./test-color-grading.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--slider-benchmark')) { await require('./benchmark-slider-controls.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.env.AE_DEVELOP_ENDPOINT) {
       await require(process.env.AE_SAVE_BENCH ? './benchmark-autosave-ui.cjs' : './benchmark-develop-ui.cjs').measure(page);
@@ -1978,6 +1979,7 @@ async function run() {
       const strip = await page.locator('#filmstrip').boundingBox();
       await page.screenshot({path:process.env.AE_UI_SCREENSHOT.replace('.png', '-photo-status.png'), clip:{x:strip.x,y:strip.y,width:249,height:83}});
     }
+    await require('./test-color-grading.cjs')(page);
     await require('./test-catalog-removal.cjs')(page);
     assert.deepEqual(failures, []);
     console.log(JSON.stringify({ checks: ['MCP settings, modal and unsaved guards, off-page selection, attributes, development and expired requests', 'portrait and landscape thumbnails fit immediately with stable preview upgrades', 'new folder scans only its own root, clears filters and selects imported photos', 'LRC metadata columns, folder-scoped indexing and cancellation, rating comparisons and reject flag', 'movable smooth tone curve persisted', 'reference layout', 'loupe/grid keyboard navigation', 'virtual filmstrip and grid', 'nested folders and counts', 'file format filtering consolidated into metadata, reset and unsaved-edit protection', 'unsaved and failed-save protection', 'annotation persistence and search', 'ratings and filter', 'library uses stored 1600px previews; development requests originals', 'metadata/navigation races', 'filmstrip paging past 200 photos', 'failed thumbnail retry', '900px and 1320px layouts', 'development recipe sliders, stale renders, undo/redo, before comparison', 'development autosave failure blocks navigation and close', 'library/develop context-menu export, settings, cancellation, failures and modal guards', 'saved thumbnail race and targeted invalidation', 'crop reset bounds', 'debounced autosave and edits during an in-flight save', 'flush before photo selection, catalog snapshot and normal close', 'catalog file location and copy controls', 'persistent gesture history and nondestructive restore', 'catalog switch flush, cancellation, failure and restart isolation', 'direct crop and local mask gestures, persistent presets and snapshots, before comparison, multi-selection sync and batch export'], preview_fit_checks: previewFitChecks, cached_tiles_ms: Math.round(cacheMilliseconds), page_errors: failures }, null, 2));
