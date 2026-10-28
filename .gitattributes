@@ -1,0 +1,5 @@
+# Preserve upstream license text byte-for-byte, including line endings and spacing.
+/LICENSE -text -whitespace
+/licenses/native/** -text -whitespace
+/licenses/npm/** -text -whitespace
+/licenses/rust/** -text -whitespace

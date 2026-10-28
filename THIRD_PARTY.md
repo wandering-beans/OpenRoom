@@ -1,4 +1,10 @@
-# Media dependencies
+# Third-party software and data
+
+OpenRoom's original code is licensed under GPL-3.0-or-later; see [COPYRIGHT.md](COPYRIGHT.md)
+and [LICENSE](LICENSE). Third-party code and data retain their original terms and notices.
+The macOS package inventory and collected verbatim notices are in [licenses/](licenses/README.md).
+The inventory includes build and test dependencies as well as runtime dependencies; it is
+not a claim that every listed dependency is shipped in executable form.
 
 ## Desktop frontend
 
@@ -11,7 +17,8 @@
 
 macOS local packages copy libheif and its linked dependencies into Contents/Frameworks. The exact libraries depend on the installed libheif build. Homebrew's build can also link encoders and additional codecs (x265, libaom, libsharpyuv). Upstream sources and licenses: https://bitbucket.org/multicoreware/x265_git/ , https://aomedia.googlesource.com/aom/ , https://chromium.googlesource.com/webm/libwebp/ .
 
-Cargo.lock files pin Rust dependency versions. This local development package is not a completed public distribution; redistribution must include the license texts and source/relinking materials required by the chosen builds.
+Cargo.lock files pin Rust dependency versions. The notices and source/relinking materials
+required for distribution are described in [DISTRIBUTION.md](DISTRIBUTION.md).
 
 - MCP protocol and Streamable HTTP: rmcp 3.6.0 https://github.com/modelcontextprotocol/rust-sdk/ (Apache-2.0).
 - Local HTTP routing: Axum https://github.com/tokio-rs/axum (MIT).
@@ -77,10 +84,10 @@ Upstream notices remain authoritative: [FFTW](https://www.fftw.org/),
 [Little CMS](https://www.littlecms.com/), [LLVM OpenMP](https://openmp.llvm.org/).
 GTK build dependencies support upstream common code; no RawTherapee GUI target is built.
 
-Public distribution is outside this local migration. Before distributing a linked
-application, provide the complete corresponding source for that application and
-covered libraries, the exact upstream revisions and local modifications, build
-and installation scripts, required license notices, and any applicable relinking
-materials under their respective terms. The bundled pin and patch alone are not
-complete corresponding source. Public signing/notarization and a complete
-redistribution inventory have not been completed.
+Before distributing the linked application, provide its complete corresponding source
+and the covered libraries' corresponding source, exact revisions, local modifications,
+build/install scripts, notices and applicable relinking materials. The bundled pin,
+patch and notice inventory alone are not complete corresponding source.
+Current unresolved notices, data-license review and source-archive requirements are
+recorded in [DISTRIBUTION.md](DISTRIBUTION.md). Release assets remain drafts until
+those requirements are satisfied. Public signing and notarization are also not complete.

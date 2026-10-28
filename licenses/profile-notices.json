@@ -1,0 +1,842 @@
+{
+  "source_commit": "1924179107995b01b73cdc7f4fe91e44fc8227a7",
+  "scope": "Verbatim embedded copyright fields; this is not a determination of redistribution rights. A null field means no copyright tag was found.",
+  "profiles": [
+    {
+      "file": "iccprofiles/input/Canon EOS 20D.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Canon EOS 40D.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Canon EOS 450D.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Canon EOS 550D.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Canon EOS 5D.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Canon EOS-1D Mark III.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Canon PowerShot G10.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Canon PowerShot G12.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Nikon D200.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Nikon D3000.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Nikon D3100.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Nikon D3S.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Nikon D700.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Nikon D7000.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Olympus E-P2.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Panasonic DMC-FZ150.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Panasonic DMC-FZ35.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Panasonic DMC-FZ38.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Panasonic DMC-G1.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Panasonic DMC-G3.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Panasonic DMC-GH1.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Panasonic DMC-GH2.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Pentax K200D.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Sony DSLR-A700.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Sony DSLR-A900.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/input/Sony SLT-A55V.icc",
+      "embedded_copyright": "(c) Nobody"
+    },
+    {
+      "file": "iccprofiles/output/DCI-P3 D65.icc",
+      "embedded_copyright": "No copyright. Created with DisplayCAL 3.3.2.0 and ArgyllCMS"
+    },
+    {
+      "file": "iccprofiles/output/DCI-P3 Theater.icc",
+      "embedded_copyright": "No copyright. Created with DisplayCAL 3.3.2.0 and ArgyllCMS"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_ACES-AP0.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_ACES-AP1.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_Best.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_Beta.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_Bruce.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_Large.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_Medium.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_Rec2020.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_Wide.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv2_sRGB.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_ACES-AP0.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_ACES-AP1.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_Best.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_Beta.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_Bruce.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_Large.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_Medium.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_Rec2020.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_Wide.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "iccprofiles/output/RTv4_sRGB.icc",
+      "embedded_copyright": "Copyright RawTherapee 2018, CC0"
+    },
+    {
+      "file": "dcpprofiles/CANON EOS 250D.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/CANON EOS 800D.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/CANON EOS M50.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/CANON POWERSHOT G5 X MARK II.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 100D.dcp",
+      "embedded_copyright": "RawTherapee"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 1300D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 20D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 400D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 40D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 450D.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 50D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 550D.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 5D Mark II.dcp",
+      "embedded_copyright": "RawTherapee CC0"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 5D Mark III.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 5D Mark IV.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 5D.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 600D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 60D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 650D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 6D Mark II.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 6D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 7D Mark II.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 7D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS 90D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS D60.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Canon EOS M6 Mark II.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS R.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS R5.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS R6.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS R8.dcp",
+      "embedded_copyright": "RawTherapee CC0"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS RP.dcp",
+      "embedded_copyright": "RawTherapee CC0"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS-1D Mark III.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Canon EOS-1D X Mark III.dcp",
+      "embedded_copyright": "RawTherapee CC0"
+    },
+    {
+      "file": "dcpprofiles/Canon EOS-1Ds Mark II.dcp",
+      "embedded_copyright": "RawTherapee CC0"
+    },
+    {
+      "file": "dcpprofiles/Canon PowerShot G1 X Mark II.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/Canon PowerShot G10.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Canon PowerShot G12.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Canon PowerShot G7 X.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon PowerShot S110.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Canon PowerShot S120.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM DBP for GX680.dcp",
+      "embedded_copyright": "RawTherapee CC0"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM FinePix F600EXR.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM GFX 50R.dcp",
+      "embedded_copyright": "Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-A5.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-A7.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-E3.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-H1.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-Pro2.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-Pro3.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-S1.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-S10.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-T1.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-T10.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-T2.dcp",
+      "embedded_copyright": "Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-T20.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-T3.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-T30.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X-T4.dcp",
+      "embedded_copyright": "RawTherapee CC0"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X100S.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/FUJIFILM X100T.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Fujifilm FinePix S9500.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Fujifilm X-E1.dcp",
+      "embedded_copyright": "Copyright, the creator of this profile (generated by DCamProf v0.10.4)"
+    },
+    {
+      "file": "dcpprofiles/Fujifilm X-E2.dcp",
+      "embedded_copyright": "Copyright, the creator of this profile (generated by DCamProf v0.10.4)"
+    },
+    {
+      "file": "dcpprofiles/LG Mobile LG-H815.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Leaf Aptus 75.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/MINOLTA DYNAX 7D.dcp",
+      "embedded_copyright": "Copyright Dr Slony"
+    },
+    {
+      "file": "dcpprofiles/NIKON COOLPIX P7800.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D300.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D3300.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON D50.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D500.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON D5000.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D5300.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON D5600.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D600.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D610.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON D700.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D70s.dcp",
+      "embedded_copyright": "Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D7100.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON D7200.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D750.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D7500.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON D80.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D800.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON D800E.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D810.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/NIKON D850.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON Z 5.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON Z 50.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON Z 6.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON Z 6_2.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON Z 7.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON Z 8.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON Z 9.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/NIKON Z F.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/Nikon D200.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Nikon D3000.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Nikon D3100.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Nikon D3S.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Nikon D5100.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Nikon D7000.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/OLYMPUS E-510.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/OLYMPUS E-M1.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/OLYMPUS E-M10.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/OLYMPUS E-M1MarkII.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/OLYMPUS E-M5MarkII.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/Olympus E-1.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Olympus E-520.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Olympus E-M5.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Olympus E-P2.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Olympus XZ-1.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/PANASONIC DC-S5M2.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/PANASONIC DMC-LX100.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/PENTAX K-5 II.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/PENTAX K-5.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/PENTAX K-50.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/PENTAX K10D.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Panasonic DC-G9.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Panasonic DC-GX9.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Panasonic DC-S1.dcp",
+      "embedded_copyright": "Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Panasonic DC-S5.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Panasonic DC-TZ91.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-FZ1000.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-FZ150.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-FZ35.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-FZ38.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-G1.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-G3.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-G5.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-GH1.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-GH2.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-GX7.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Panasonic DMC-GX85.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Pentax K-r.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Pentax K200D.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/RICOH GR III.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/RICOH PENTAX K-1.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/RICOH PENTAX K-3.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/SONY DSC-RX100M6.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/SONY DSLR-A580.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-6000.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-6300.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-6400.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-6500.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-6600.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-7.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-7C.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-7M2.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-7M3.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-7M4.dcp",
+      "embedded_copyright": "RawTherapee CC0"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-7RM3.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-7RM4.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-7SM3.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/SONY ILCE-9.dcp",
+      "embedded_copyright": "public domain"
+    },
+    {
+      "file": "dcpprofiles/SONY SLT-A99V.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/Sony DSLR-A700.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Sony DSLR-A900.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Sony NEX-5N.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/Sony SLT-A55V.dcp",
+      "embedded_copyright": null
+    },
+    {
+      "file": "dcpprofiles/YI TECHNOLOGY M1.dcp",
+      "embedded_copyright": "Copyright Maciej Dworak"
+    },
+    {
+      "file": "dcpprofiles/samsung SM-G930V.dcp",
+      "embedded_copyright": "RawTherapee CC0"
+    }
+  ]
+}
