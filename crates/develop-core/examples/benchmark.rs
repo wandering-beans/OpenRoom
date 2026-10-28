@@ -17,7 +17,7 @@ fn measure(mut operation: impl FnMut(), count: usize) -> (f64, f64) {
 fn main() -> anyhow::Result<()> {
     rayon::ThreadPoolBuilder::new().num_threads(4).build()?.install(|| -> anyhow::Result<()> {
         let image=image::Rgba32FImage::from_fn(1600,1067,|x,y| image::Rgba([x as f32/2000.,y as f32/1500.,0.2,1.]));
-        let base=WorkingImage{pixels:image,info:BaseInfo{camera_saturation:None,native_source:None,raster_wb_temperature:None,width:1600,height:1067,source_width:6000,source_height:4000,source_kind:"synthetic".into(),color_note:"linear sRGB".into(),raw:None}};
+        let base=WorkingImage{pixels:image,info:BaseInfo{auto_ca_supported:None,camera_saturation:None,native_source:None,raster_wb_temperature:None,width:1600,height:1067,source_width:6000,source_height:4000,source_kind:"synthetic".into(),color_note:"linear sRGB".into(),raw:None}};
         let typical=Settings{exposure:0.5,contrast:12.,highlights:-25.,shadows:20.,vibrance:15.,..Default::default()};
         let detail=Settings{sharpen:40.,texture:15.,clarity:10.,noise_luma:15.,..typical.clone()};
         let mut renders=Vec::new();

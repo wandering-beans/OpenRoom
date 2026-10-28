@@ -22,7 +22,11 @@ const groups: CopyGroup[] = [
     { label: 'シャープ', fields: ['sharpen', 'sharpen_radius', 'sharpen_detail', 'sharpen_masking'] },
     { label: '輝度ノイズ低減', fields: ['noise_luma'] }, { label: 'カラーノイズ低減', fields: ['noise_color'] },
   ] },
-  { label: 'レンズ補正', checked: true, options: [{ label: '手動の歪曲補正', fields: ['distortion'] }] },
+  { label: 'レンズ補正', checked: true, options: [
+    { label: '色収差補正', fields: ['ca_auto', 'ca_red', 'ca_blue'] },
+    { label: 'フリンジ除去', fields: ['defringe', 'defringe_radius', 'defringe_threshold'] },
+    { label: '手動の歪曲補正', fields: ['distortion'] },
+  ] },
   { label: '効果', checked: true, options: [
     { label: '周辺光量', fields: ['vignette', 'vignette_midpoint', 'vignette_feather'] },
     { label: '粒子', fields: ['grain', 'grain_size', 'grain_roughness'] },

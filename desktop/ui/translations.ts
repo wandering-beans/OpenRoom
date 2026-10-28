@@ -1,5 +1,18 @@
 // UI text only. User filenames, tags, notes, and custom names are never translated.
 export const english = {
+  "色収差を自動補正": "Automatically correct chromatic aberration",
+  "色収差補正": "Chromatic aberration correction",
+  "フリンジを除去": "Remove fringing",
+  "フリンジ除去": "Defringe",
+  "赤の色ずれ": "Red shift",
+  "青の色ずれ": "Blue shift",
+  "フリンジの半径": "Fringe radius",
+  "しきい値": "Threshold",
+  "効果は100%以上に拡大して確認してください。": "Inspect the effect at 100% zoom or higher.",
+  "写真の対応状況を確認中…": "Checking photo support\u2026",
+  "自動補正後に、赤・青の色ずれを微調整できます。": "Fine-tune the red and blue shifts after automatic correction.",
+  "この写真は赤・青の手動補正を使用してください。自動補正はBayer RAWに対応しています。": "Use manual red/blue correction for this photo. Automatic correction supports Bayer RAW.",
+
   "ブレンド": "Blending",
   "カラーグレーディングをリセット": "Reset color grading",
   "{0}のカラーグレーディングをリセット": "Reset {0} color grading",

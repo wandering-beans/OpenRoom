@@ -12,6 +12,7 @@ fn fixture() -> WorkingImage {
     WorkingImage {
         pixels,
         info: BaseInfo {
+            auto_ca_supported: None,
             camera_saturation: None,
             native_source: None,
             raw: None,
@@ -55,6 +56,32 @@ fn compact_catalog_recipes_restore_exact_settings_and_pixels() {
     );
     edited.exposure = f32::NAN;
     assert!(edited.catalog_recipe().is_err());
+}
+#[test]
+fn lens_recipes_keep_legacy_defaults_and_validate_ranges() {
+    let legacy: Settings = serde_json::from_str(r#"{"version":1,"exposure":1}"#).unwrap();
+    assert!(!legacy.ca_auto && !legacy.defringe);
+    assert_eq!((legacy.ca_red, legacy.ca_blue), (0., 0.));
+    let edited: Settings = serde_json::from_value(serde_json::json!({
+        "ca_auto":true,"ca_red":-40,"ca_blue":60,"defringe":true,"defringe_radius":3.2,"defringe_threshold":20
+    })).unwrap();
+    assert_eq!(
+        serde_json::from_str::<Settings>(&edited.catalog_recipe().unwrap()).unwrap(),
+        edited
+    );
+    for patch in [
+        serde_json::json!({"ca_red":101}),
+        serde_json::json!({"ca_blue":-101}),
+        serde_json::json!({"defringe_radius":0}),
+        serde_json::json!({"defringe_threshold":101}),
+    ] {
+        assert!(
+            serde_json::from_value::<Settings>(patch)
+                .unwrap()
+                .validate()
+                .is_err()
+        );
+    }
 }
 #[test]
 fn extended_saturation_survives_recipes_and_increases_color_strength() {
@@ -314,6 +341,73 @@ fn native_adjustments_have_an_effect_and_are_deterministic() {
     .save(&source)
     .unwrap();
     assert_adjustments(&engine::prepare(&source, 0).unwrap());
+}
+#[cfg(all(target_os = "macos", feature = "rtengine"))]
+#[test]
+fn lens_corrections_match_preview_and_export_without_changing_original() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("lens.png");
+    image::RgbaImage::from_fn(192, 128, |x, y| {
+        image::Rgba([
+            ((x * 17 + y * 11) % 230 + 10) as u8,
+            ((x * 13 + y * 7) % 230 + 10) as u8,
+            ((x * 19 + y * 3) % 230 + 10) as u8,
+            180,
+        ])
+    })
+    .save(&source)
+    .unwrap();
+    let original = std::fs::read(&source).unwrap();
+    let base = engine::prepare(&source, 0).unwrap();
+    let neutral = engine::render(&base, &Settings::default(), &|| false)
+        .unwrap()
+        .image;
+    for (name, settings) in [
+        (
+            "ca",
+            Settings {
+                ca_red: 80.,
+                ca_blue: -70.,
+                ..Default::default()
+            },
+        ),
+        (
+            "fringe",
+            Settings {
+                defringe: true,
+                ..Default::default()
+            },
+        ),
+        (
+            "both",
+            Settings {
+                ca_red: 80.,
+                defringe: true,
+                noise_luma: 10.,
+                sharpen: 30.,
+                ..Default::default()
+            },
+        ),
+    ] {
+        let preview = engine::render(&base, &settings, &|| false).unwrap().image;
+        assert_ne!(preview, neutral, "{name} must reach the rendering pipeline");
+        let output = directory.path().join(format!("{name}.png"));
+        engine::export_source_with_options(&source, &settings, &output, "png", &Default::default())
+            .unwrap();
+        assert_eq!(
+            image::open(output).unwrap().to_rgba8(),
+            preview,
+            "{name}: preview/export differ"
+        );
+        assert!(preview.pixels().all(|p| p[3] == 180));
+    }
+    assert_eq!(std::fs::read(source).unwrap(), original);
+    assert_eq!(
+        engine::render(&base, &Settings::default(), &|| false)
+            .unwrap()
+            .image,
+        neutral
+    );
 }
 fn assert_adjustments(base: &WorkingImage) {
     let normal = engine::render(base, &Settings::default(), &|| false).unwrap();
@@ -950,7 +1044,9 @@ fn export_borders_preserve_the_photo_and_center_it_in_white_or_black() {
             quarter_turns,
             ..Default::default()
         };
-        let reference = directory.path().join(format!("reference-{quarter_turns}.png"));
+        let reference = directory
+            .path()
+            .join(format!("reference-{quarter_turns}.png"));
         engine::export(&fixture(), &settings, &reference, "png").unwrap();
         let reference = image::open(reference).unwrap().to_rgba16();
         for ratio in [0., 1., 0.8, 16. / 9.] {

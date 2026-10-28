@@ -158,6 +158,7 @@ fn prepare_raw_adjusted(
     Ok((
         WorkingImage {
             info: BaseInfo {
+                auto_ca_supported: Some(rendered.auto_ca_supported),
                 camera_saturation: Some(camera_saturation),
                 native_source: Some(source),
                 raw: Some(raw),
@@ -228,7 +229,10 @@ pub(crate) fn required(working: &WorkingImage, settings: &Settings) -> bool {
         && (working.info.raw.is_some()
             || settings.sharpen > 0.
             || settings.noise_luma > 0.
-            || settings.noise_color > 0.)
+            || settings.noise_color > 0.
+            || settings.ca_red != 0.
+            || settings.ca_blue != 0.
+            || settings.defringe)
 }
 
 pub(crate) fn preview_adjustments(working: &WorkingImage, settings: &Settings) -> Adjustments {
@@ -258,6 +262,12 @@ fn adjustments(settings: &Settings, is_raw: bool, scale: f32) -> Adjustments {
         sharpen_masking: settings.sharpen_masking,
         noise_luma: settings.noise_luma,
         noise_color: settings.noise_color,
+        ca_auto: u32::from(settings.ca_auto),
+        ca_red: settings.ca_red,
+        ca_blue: settings.ca_blue,
+        defringe: u32::from(settings.defringe),
+        defringe_radius: settings.defringe_radius,
+        defringe_threshold: settings.defringe_threshold,
         scale,
     }
 }
@@ -277,6 +287,10 @@ pub fn remaining(settings: &Settings, is_raw: bool) -> Settings {
         sharpen: 0.,
         noise_luma: 0.,
         noise_color: 0.,
+        ca_auto: false,
+        ca_red: 0.,
+        ca_blue: 0.,
+        defringe: false,
         ..settings.clone()
     }
 }
@@ -293,6 +307,7 @@ mod tests {
             "raster_temperature":8000,"raster_reference_temperature":5200,"raster_tint":10,
             "sharpen":40,"sharpen_radius":2,"sharpen_detail":70,"sharpen_masking":30,
             "noise_luma":15,"noise_color":20,"texture":25,"clarity":10,"contrast":12,
+            "ca_auto":true,"ca_red":12,"ca_blue":-20,"defringe":true,"defringe_radius":3,
             "highlights":-60,"crop":[0.1,0.1,0.8,0.8],"quarter_turns":1,
             "masks":[{"name":"Local","enabled":true,"invert":false,"amount":1,
               "adjustments":{"exposure":0.5,"sharpen":25,"noise_luma":10},
@@ -310,10 +325,18 @@ mod tests {
             assert_eq!(native.sharpen, settings.sharpen);
             assert_eq!(native.noise_luma, settings.noise_luma);
             assert_eq!(native.noise_color, settings.noise_color);
+            assert_eq!(native.ca_auto, 1);
+            assert_eq!(native.ca_red, settings.ca_red);
+            assert_eq!(native.ca_blue, settings.ca_blue);
+            assert_eq!(native.defringe, 1);
             let mut expected = settings.clone();
             expected.sharpen = 0.;
             expected.noise_luma = 0.;
             expected.noise_color = 0.;
+            expected.ca_auto = false;
+            expected.ca_red = 0.;
+            expected.ca_blue = 0.;
+            expected.defringe = false;
             expected.raw_temperature = None;
             expected.raw_tint = 0.;
             if is_raw {

@@ -54,6 +54,12 @@ export interface Settings {
   sharpen_masking: number;
   noise_luma: number;
   noise_color: number;
+  ca_auto: boolean;
+  ca_red: number;
+  ca_blue: number;
+  defringe: boolean;
+  defringe_radius: number;
+  defringe_threshold: number;
   crop: Crop;
   quarter_turns: number;
   flip_h: boolean;
@@ -74,7 +80,7 @@ export type SettingsPatch = Partial<Settings>;
 export type SettingKey = keyof Settings;
 export type NumericSetting = { [K in SettingKey]: Settings[K] extends number | null ? K : never }[SettingKey];
 export interface RawInfo { camera: string; neutral: [number, number, number]; xyz_to_camera: number[][]; baseline_exposure: number; calibration: number[][][]; calibration_signature: string; analog_balance: [number, number, number]; as_shot: Point; profile_signature: string }
-export interface DevelopedPreview { path: string; inline_image?: string; image_bytes?: number; info: { width: number; height: number; histogram: number[][]; clipped_shadows: number; clipped_highlights: number; elapsed_ms: number }; base: { width: number; height: number; source_width: number; source_height: number; source_kind: string; color_note: string; raw?: RawInfo; raster_wb_temperature?: number } }
+export interface DevelopedPreview { path: string; inline_image?: string; image_bytes?: number; info: { width: number; height: number; histogram: number[][]; clipped_shadows: number; clipped_highlights: number; elapsed_ms: number }; base: { auto_ca_supported?: boolean; width: number; height: number; source_width: number; source_height: number; source_kind: string; color_note: string; raw?: RawInfo; raster_wb_temperature?: number } }
 export interface Recipe { settings: Settings; defaults: Settings; revision: number; undo: Settings[] }
 export interface HistoryRow { id: number; label: string; created: number }
 export interface SavedRecipe { id: number; name: string; recipe: string }

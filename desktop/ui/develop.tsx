@@ -28,9 +28,16 @@ const fields: Record<string, [NumericSetting, string, number, number, number?][]
     ['sharpen', t("シャープ量"), 0, 150], ['sharpen_radius', t("半径"), .5, 3, .1], ['sharpen_detail', t("ディテール"), 0, 100],
     ['sharpen_masking', t("エッジ保護"), 0, 100], ['noise_luma', t("輝度ノイズ低減"), 0, 100], ['noise_color', t("カラーノイズ低減"), 0, 100],
   ],
+  lens: [
+    ['ca_red', t('赤の色ずれ'), -100, 100], ['ca_blue', t('青の色ずれ'), -100, 100],
+    ['distortion', t('手動の歪曲補正'), -100, 100],
+  ],
+  fringe: [
+    ['defringe_radius', t('フリンジの半径'), .5, 5, .1], ['defringe_threshold', t('しきい値'), 0, 100],
+  ],
   geometry: [
     ['angle', t("角度"), -45, 45, .01], ['perspective_v', t("垂直方向"), -100, 100], ['perspective_h', t("水平方向"), -100, 100],
-    ['scale', t("拡大・縮小"), 50, 200], ['aspect',t("縦横比の変形"),-100,100], ['offset_x',t("水平移動"),-100,100], ['offset_y',t("垂直移動"),-100,100], ['distortion', t("手動の歪曲補正"), -100, 100],
+    ['scale', t("拡大・縮小"), 50, 200], ['aspect',t("縦横比の変形"),-100,100], ['offset_x',t("水平移動"),-100,100], ['offset_y',t("垂直移動"),-100,100],
   ],
   effects: [
     ['vignette', t("周辺光量"), -100, 100], ['vignette_midpoint', t("中心点"), 0, 100], ['vignette_feather', t("ぼかし"), 0, 100],
@@ -49,6 +56,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
   const controls: SliderHandle[] = [];
   const historyView = createView($('develop-history-list'));
   let rawInfo: RawInfo | null = null, rasterTemperature: number | null = null, whiteBalanceReady = false;
+  let autoCaSupported = false;
   const tools = createDevelopTools({ invoke, error, edit, refresh:schedule, save, status, saved, selectedIds,
     selectionChanged() { finishGesture(); sync(); },
     get:()=>({settings,defaults}),
@@ -167,6 +175,12 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     // MCP completion and native close guards must observe the committed controls.
     flushSync(() => { for (const control of controls) control.sync(); });
     $('develop-mono').checked = settings.monochrome;
+    $('develop-ca-auto').checked = settings.ca_auto;
+    $('develop-ca-auto').disabled = !autoCaSupported;
+    $('develop-ca-status').textContent = !whiteBalanceReady ? t('写真の対応状況を確認中…') : autoCaSupported
+      ? t('自動補正後に、赤・青の色ずれを微調整できます。')
+      : t('この写真は赤・青の手動補正を使用してください。自動補正はBayer RAWに対応しています。');
+    $('develop-defringe').checked = settings.defringe;
     $('develop-flip-h').checked = settings.flip_h;
     $('develop-flip-v').checked = settings.flip_v;
     rawReset.hidden = !whiteBalanceReady;
@@ -226,7 +240,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     }
     return <AdjustmentSlider key={key} ref={handle => { if (handle) controls.push(handle); }} id={local ? key : `develop-${key}`} label={label} title={title}
       min={min} max={max} step={step} kelvin={kelvin} local={local} angle={key === 'angle'}
-      state={() => ({ value: Number((get(path) * factor).toFixed(path[0].startsWith('raw_') ? 0 : 3)), disabled: local && !tools.selectedMask(), hidden: path[0].startsWith('raw_') && !whiteBalanceReady, track: track() })}
+      state={() => ({ value: Number((get(path) * factor).toFixed(path[0].startsWith('raw_') ? 0 : 3)), disabled: (local && !tools.selectedMask()) || (path[0].startsWith('defringe_') && !settings?.defringe), hidden: path[0].startsWith('raw_') && !whiteBalanceReady, track: track() })}
       prepare={prepareGesture} input={(value, input, numeric) => {
         if (!settings || leaving || exporting || (local && !tools.selectedMask())) return;
         beginGesture(input); put(path, value / factor);
@@ -307,6 +321,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
   }
   function histogram(result: DevelopedPreview) {
     rawInfo = result.base.raw ?? null;
+    autoCaSupported = result.base.auto_ca_supported === true;
     rasterTemperature = result.base.raster_wb_temperature ?? null;
     whiteBalanceReady = true;
     const colorNote = result.base.color_note.split(' / ').map(part => t(part)).join(' / ');
@@ -365,6 +380,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     invoke('cancel_develop_preview').catch(error);
     tools.select(next?.id, settings); compare(null);
     rawInfo = null;
+    autoCaSupported = false;
     rasterTemperature = null;
     whiteBalanceReady = false;
     $('full-image').hidden = true;
@@ -515,6 +531,8 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
   $('develop-copy').onclick = () => { if (item) void copySettings(item.id); };
   $('develop-paste').onclick = () => { if (item) void pasteSettings(item.id); };
   $('develop-before').onclick = () => { if (!settings) return; before = !before; buttons(); schedule(); };
+  $('develop-ca-auto').onchange = () => { if (autoCaSupported) edit(s => { s.ca_auto = $('develop-ca-auto').checked; }, t('色収差補正')); };
+  $('develop-defringe').onchange = () => edit(s => { s.defringe = $('develop-defringe').checked; }, t('フリンジ除去'));
   $('develop-mono').onchange = event => edit(value => { value.monochrome = (event.target as HTMLInputElement).checked; });
   for (const axis of ['h', 'v'] as const) $(`develop-flip-${axis}`).onchange = event => edit(value => { value[`flip_${axis}`] = (event.target as HTMLInputElement).checked; });
   $('develop-rotate').onclick = () => edit(value => { value.quarter_turns = (value.quarter_turns + 1) % 4; });

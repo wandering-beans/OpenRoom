@@ -66,7 +66,7 @@ async function run() {
         texture: 0, clarity: 0, dehaze: 0, vibrance: 0, saturation: 0, monochrome: false,
         point_curves:[[],[],[],[]], curves: Array.from({length:4}, () => [0,.25,.5,.75,1]), mixer: Array.from({length:8}, () => [0,0,0]),
         grading: Array.from({length:4}, () => [0,0,0]), grading_balance:0, grading_blending:50,
-        sharpen:0, sharpen_radius:1, sharpen_detail:25, sharpen_masking:0, noise_luma:0, noise_color:0,
+        sharpen:0, sharpen_radius:1, sharpen_detail:25, sharpen_masking:0, noise_luma:0, noise_color:0, ca_auto:false, ca_red:0, ca_blue:0, defringe:false, defringe_radius:2, defringe_threshold:13,
         crop:[0,0,1,1],quarter_turns:0,flip_h:false,flip_v:false,angle:0,perspective_h:0,perspective_v:0,scale:100,distortion:0,
         vignette:0,vignette_midpoint:50,vignette_feather:50,grain:0,grain_size:25,grain_roughness:50,
       };
@@ -336,7 +336,7 @@ async function run() {
               const path = `develop-${args.id}-${args.settings.exposure}-${args.bound}${held ? "-stale" : ""}`;
               const inline_image = [384, 1600].includes(args.bound) ? window.__TAURI__.core.convertFileSrc(path) : undefined;
               if (held) window.originalLoadFinished = true;
-              return { path: inline_image ? '' : path, inline_image, info: {...previewSize(1,args.bound === 384 ? 384 : 720),elapsed_ms:25,histogram:window.histogramFixture ?? Array.from({length:3},()=>Array(256).fill(100))}, base:{source_width:4000,source_height:6000,raster_wb_temperature:window.rasterTemperatureFixture ?? null,color_note:window.rawFixture ? 'Canon EOS 350D / Adobe Standard' : 'テスト用の線形sRGB',raw:window.rawFixture ? {as_shot:[4668.35,22.3]} : null} };
+              return { path: inline_image ? '' : path, inline_image, info: {...previewSize(1,args.bound === 384 ? 384 : 720),elapsed_ms:25,histogram:window.histogramFixture ?? Array.from({length:3},()=>Array(256).fill(100))}, base:{auto_ca_supported:window.autoCaFixture === true,source_width:4000,source_height:6000,raster_wb_temperature:window.rasterTemperatureFixture ?? null,color_note:window.rawFixture ? 'Canon EOS 350D / Adobe Standard' : 'テスト用の線形sRGB',raw:window.rawFixture ? {as_shot:[4668.35,22.3]} : null} };
             }
             if (command === 'export_develop') return '/exports/edited.jpg';
             if (command === 'invalidate_library_preview') { jpegPreviews.add(args.id); return; }
@@ -435,6 +435,7 @@ async function run() {
     await checkAdjustmentBadge('.film-tile[title="photo-0004.tif"]');
     if (process.env.AE_UI_SCREENSHOT) await page.screenshot({ path: process.env.AE_UI_SCREENSHOT });
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--lens')) { await require('./test-lens-correction.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--grading')) { await require('./test-color-grading.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--slider-benchmark')) { await require('./benchmark-slider-controls.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.env.AE_DEVELOP_ENDPOINT) {
@@ -1980,6 +1981,7 @@ async function run() {
       await page.screenshot({path:process.env.AE_UI_SCREENSHOT.replace('.png', '-photo-status.png'), clip:{x:strip.x,y:strip.y,width:249,height:83}});
     }
     await require('./test-color-grading.cjs')(page);
+    await require('./test-lens-correction.cjs')(page);
     await require('./test-catalog-removal.cjs')(page);
     assert.deepEqual(failures, []);
     console.log(JSON.stringify({ checks: ['MCP settings, modal and unsaved guards, off-page selection, attributes, development and expired requests', 'portrait and landscape thumbnails fit immediately with stable preview upgrades', 'new folder scans only its own root, clears filters and selects imported photos', 'LRC metadata columns, folder-scoped indexing and cancellation, rating comparisons and reject flag', 'movable smooth tone curve persisted', 'reference layout', 'loupe/grid keyboard navigation', 'virtual filmstrip and grid', 'nested folders and counts', 'file format filtering consolidated into metadata, reset and unsaved-edit protection', 'unsaved and failed-save protection', 'annotation persistence and search', 'ratings and filter', 'library uses stored 1600px previews; development requests originals', 'metadata/navigation races', 'filmstrip paging past 200 photos', 'failed thumbnail retry', '900px and 1320px layouts', 'development recipe sliders, stale renders, undo/redo, before comparison', 'development autosave failure blocks navigation and close', 'library/develop context-menu export, settings, cancellation, failures and modal guards', 'saved thumbnail race and targeted invalidation', 'crop reset bounds', 'debounced autosave and edits during an in-flight save', 'flush before photo selection, catalog snapshot and normal close', 'catalog file location and copy controls', 'persistent gesture history and nondestructive restore', 'catalog switch flush, cancellation, failure and restart isolation', 'direct crop and local mask gestures, persistent presets and snapshots, before comparison, multi-selection sync and batch export'], preview_fit_checks: previewFitChecks, cached_tiles_ms: Math.round(cacheMilliseconds), page_errors: failures }, null, 2));

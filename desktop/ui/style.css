@@ -249,6 +249,7 @@ footer { height: 17px; flex: none; padding: 0 20px; background: #080808; display
 .develop-slider input[type="number"]:focus { border-color: #666; background: #252525; }
 .develop-slider input[type="range"]:hover { accent-color: #ddd; }
 .develop-check { display: block; font-size: 11px; text-align: right; margin: 7px 12px 0; }
+#lens-correction-panel .develop-check { text-align: left; }
 .preset-picker { display: flex; justify-content: space-between; align-items: center; padding: 7px 12px 10px; font-size: 11px; white-space: nowrap; gap: 8px; }
 .preset-picker select { min-width: 0; flex: 1; }
 .tone-curve { display: block; margin: 10px auto 0; width: 180px; height: 160px; border: 1px solid #666; background: #252525; }

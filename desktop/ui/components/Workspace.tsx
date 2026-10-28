@@ -102,6 +102,14 @@ export function Workspace() {
           <details className="panel"><summary>カラーミキサー</summary><select id="develop-mixer-channel" aria-label="ミキサーの色"><option value="0">レッド</option><option value="1">オレンジ</option><option value="2">イエロー</option><option value="3">グリーン</option><option value="4">アクア</option><option value="5">ブルー</option><option value="6">パープル</option><option value="7">マゼンタ</option></select><div id="develop-mixer" className="develop-group"></div></details>
           <details id="color-grading-panel" className="panel"><summary>カラーグレーディング</summary><div id="develop-grading"></div></details>
           <details className="panel"><summary>ディテール</summary><div id="develop-detail" className="develop-group"></div><p className="panel-note">通常のエッジ・ノイズ補正。AIノイズ除去は後続実装です。</p></details>
+          <details id="lens-correction-panel" className="panel"><summary>レンズ補正</summary>
+            <label className="develop-check"><input id="develop-ca-auto" type="checkbox" />色収差を自動補正</label>
+            <p id="develop-ca-status" className="panel-note"></p>
+            <div id="develop-lens" className="develop-group"></div>
+            <label className="develop-check"><input id="develop-defringe" type="checkbox" />フリンジを除去</label>
+            <div id="develop-fringe" className="develop-group"></div>
+            <p className="panel-note">効果は100%以上に拡大して確認してください。</p>
+          </details>
           <details className="panel"><summary>変形</summary><div id="develop-geometry" className="develop-group"></div></details>
           <details className="panel"><summary>効果</summary><div id="develop-effects" className="develop-group"></div></details>
           <div className="develop-actions"><button id="develop-copy">設定をコピー</button><button id="develop-paste">貼り付け</button></div>

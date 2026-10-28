@@ -8,6 +8,7 @@ fn main() -> anyhow::Result<()> {
                 image::Rgba([x as f32 / 2000., y as f32 / 1500., 0.2, 1.])
             }),
             info: BaseInfo {
+            auto_ca_supported: None,
             camera_saturation: None,
             native_source: None,
             raw: None,

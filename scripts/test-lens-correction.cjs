@@ -1,0 +1,54 @@
+const assert = require('node:assert/strict');
+
+module.exports = async function testLensCorrection(page) {
+  await page.goto(new URL('/', page.url()).href);
+  await page.locator('.film-tile.active-photo').waitFor();
+  await page.evaluate(() => { window.rawFixture = true; window.autoCaFixture = true; });
+  await page.click('#module-develop');
+  await page.click('#lens-correction-panel > summary');
+  await page.locator('#develop-ca-auto:not([disabled])').waitFor();
+  const panel = page.locator('#lens-correction-panel');
+  await panel.scrollIntoViewIfNeeded();
+  assert.equal(await panel.locator('select').count(), 0, 'no lens profile selector');
+  assert.equal(await page.locator('#develop-defringe_radius').isDisabled(), true);
+  await page.check('#develop-ca-auto');
+  await page.fill('#develop-ca_red-value', '40');
+  await page.fill('#develop-ca_blue-value', '-25');
+  await page.check('#develop-defringe');
+  await page.fill('#develop-defringe_radius-value', '3.2');
+  await page.fill('#develop-defringe_threshold-value', '20');
+  await page.locator('#develop-defringe_threshold-value').blur();
+  await page.waitForFunction(() => calls.some(call => call.command === 'save_develop' && call.args.settings.defringe_threshold === 20));
+  await page.waitForFunction(() => calls.some(call => call.command === 'develop_preview' && call.args.settings.ca_auto && call.args.settings.ca_red === 40 && call.args.settings.ca_blue === -25 && call.args.settings.defringe && call.args.settings.defringe_radius === 3.2));
+  await page.click('#develop-undo');
+  assert.equal(await page.locator('#develop-defringe_threshold').inputValue(), '13');
+  await page.click('#develop-redo');
+  assert.equal(await page.locator('#develop-defringe_threshold').inputValue(), '20');
+  await page.click('#develop-copy');
+  assert.equal(await page.locator('[data-copy-field="ca_auto"]').isChecked(), true);
+  assert.equal(await page.locator('[data-copy-field="defringe"]').isChecked(), true);
+  await page.click('#copy-settings-confirm');
+  await page.evaluate(() => { window.autoCaFixture = false; });
+  await page.click('#film-next');
+  await page.waitForFunction(() => document.querySelector('#develop-ca_red').value === '0' && document.querySelector('#develop-ca-auto').disabled);
+  assert.equal(await page.locator('#develop-ca_red').isDisabled(), false, 'manual CA works without Bayer RAW');
+  assert.equal(await page.locator('#develop-defringe').isDisabled(), false);
+  await page.click('#develop-paste');
+  assert.equal(await page.locator('#develop-ca_red').inputValue(), '40');
+  assert.equal(await page.locator('#develop-defringe_radius').inputValue(), '3.2');
+  await page.evaluate(() => { window.autoCaFixture = true; });
+  await page.click('#film-previous');
+  await page.waitForFunction(() => !document.querySelector('#develop-ca-auto').disabled);
+  assert.equal(await page.locator('#develop-ca_red').inputValue(), '40');
+  assert.equal(await page.locator('#develop-defringe').isChecked(), true);
+  await page.uncheck('#develop-defringe');
+  assert.equal(await page.locator('#develop-defringe_radius').isDisabled(), true);
+  assert.equal(await page.locator('#develop-defringe_radius').inputValue(), '3.2', 'disabling keeps editable values');
+  for (const width of [900,1320]) {
+    await page.setViewportSize({width,height:900});
+    await panel.scrollIntoViewIfNeeded();
+    assert.equal(await panel.evaluate(element => element.scrollWidth <= element.clientWidth), true);
+  }
+  if (process.env.AE_UI_SCREENSHOT) await panel.screenshot({path:process.env.AE_UI_SCREENSHOT.replace('.png', '-lens.png')});
+  console.log('Lens correction: capability, manual CA, defringe, undo/redo, copy/paste, save/navigation and layout passed.');
+};

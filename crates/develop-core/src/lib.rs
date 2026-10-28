@@ -27,6 +27,8 @@ pub const RENDER_VERSION: &str = "develop-v9";
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BaseInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_ca_supported: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub camera_saturation: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub native_source: Option<std::path::PathBuf>,
@@ -208,6 +210,7 @@ pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
     let mut image = WorkingImage {
         pixels,
         info: BaseInfo {
+            auto_ca_supported: None,
             camera_saturation: None,
             native_source: if cfg!(all(target_os = "macos", feature = "rtengine")) {
                 Some(source.canonicalize()?)
@@ -242,7 +245,7 @@ pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
 
 pub fn raw_profile_is_current(info: &BaseInfo) -> bool {
     if info.source_kind == "raw-rtengine-linear" {
-        return true;
+        return info.auto_ca_supported.is_some();
     }
     info.raw
         .as_ref()
@@ -1095,6 +1098,7 @@ mod regressions {
                 Rgba([x as f32 / 40., y as f32 / 30., 0.3, (x % 4) as f32 / 3.])
             }),
             info: BaseInfo {
+                auto_ca_supported: None,
                 camera_saturation: None,
                 native_source: None,
                 raw: None,

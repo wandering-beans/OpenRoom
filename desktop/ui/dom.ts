@@ -1,5 +1,7 @@
 // Required controls fail at startup instead of failing later in an unrelated event handler.
 interface Controls {
+  'develop-ca-auto': HTMLInputElement;
+  'develop-defringe': HTMLInputElement;
   'add': HTMLButtonElement;
   'add-small': HTMLButtonElement;
   'ai-selection-clear': HTMLButtonElement;

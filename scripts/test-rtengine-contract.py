@@ -14,7 +14,9 @@ class Adjustments(c.Structure):
     _fields_ = [(name, c.c_float) for name in (
         'exposure', 'temperature', 'tint', 'raw_temperature', 'raw_tint',
         'sharpen', 'sharpen_radius', 'sharpen_detail', 'sharpen_masking',
-        'noise_luma', 'noise_color', 'scale')]
+        'noise_luma', 'noise_color', 'scale')] + [
+        ('ca_auto', c.c_uint32), ('defringe', c.c_uint32)] + [
+        (name, c.c_float) for name in ('ca_red', 'ca_blue', 'defringe_radius', 'defringe_threshold')]
 
 
 class Frame(c.Structure):
@@ -50,6 +52,7 @@ def measure(library, offset):
         'copy': ([c.c_void_p, c.POINTER(c.c_float), c.c_size_t], c.c_int),
         'close': ([c.c_void_p], None),
         'camera': ([c.c_void_p], c.c_char_p),
+        'auto_ca_supported': ([c.c_void_p], c.c_int),
         'error': ([], c.c_char_p),
     }
     for name, (args, result) in signatures.items():
@@ -67,7 +70,7 @@ def measure(library, offset):
         try:
             camera = engine.openroom_rt_camera(session).decode()
             profile(profiles / (camera + '.dcp'), offset)
-            settings = Adjustments(sharpen_radius=3, sharpen_detail=25, scale=1)
+            settings = Adjustments(sharpen_radius=3, sharpen_detail=25, scale=1, defringe_radius=2, defringe_threshold=13)
             def render():
                 frame = Frame()
                 assert engine.openroom_rt_render(session, c.byref(settings), c.byref(frame)) == 0, engine.openroom_rt_error()
@@ -76,6 +79,12 @@ def measure(library, offset):
                 return list(pixels)
             original = render()
             assert original == render(), 'Repeated rendering applied the profile twice'
+            assert engine.openroom_rt_auto_ca_supported(session) == 1
+            settings.ca_auto = 1
+            corrected = render()
+            assert corrected == render(), 'Automatic CA correction must not accumulate'
+            settings.ca_auto = 0
+            assert original == render(), 'Disabling automatic CA must restore the original RAW'
             settings.exposure = -1
             exposed = render()
             assert all(abs(exposed[i] * 2 - original[i]) < 1e-5 for i in range(len(original)) if i % 4 != 3)

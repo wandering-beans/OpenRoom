@@ -28,6 +28,12 @@ pub struct Adjustments {
     pub noise_luma: f32,
     pub noise_color: f32,
     pub scale: f32,
+    pub ca_auto: u32,
+    pub defringe: u32,
+    pub ca_red: f32,
+    pub ca_blue: f32,
+    pub defringe_radius: f32,
+    pub defringe_threshold: f32,
 }
 impl Default for Adjustments {
     fn default() -> Self {
@@ -44,6 +50,12 @@ impl Default for Adjustments {
             noise_luma: 0.,
             noise_color: 0.,
             scale: 1.,
+            ca_auto: 0,
+            defringe: 0,
+            ca_red: 0.,
+            ca_blue: 0.,
+            defringe_radius: 2.,
+            defringe_threshold: 13.,
         }
     }
 }
@@ -75,6 +87,7 @@ unsafe extern "C" {
     fn openroom_rt_close(session: *mut c_void);
     fn openroom_rt_camera(session: *mut c_void) -> *const c_char;
     fn openroom_rt_camera_matched(session: *mut c_void) -> i32;
+    fn openroom_rt_auto_ca_supported(session: *mut c_void) -> i32;
     fn openroom_rt_error() -> *const c_char;
     fn openroom_rt_raster_temperature(source: *const c_char) -> f64;
 }
@@ -153,6 +166,7 @@ pub struct Rendered {
     pub green: f32,
     pub camera: String,
     pub camera_matched: bool,
+    pub auto_ca_supported: bool,
 }
 impl Session {
     pub fn open(source: &Path, pixels: Option<&Rgba32FImage>, bound: u32) -> Result<Self> {
@@ -213,6 +227,15 @@ impl Session {
             "Invalid native exposure or scale"
         );
         let mut frame = Frame::default();
+        ensure!(
+            adjustments.ca_auto <= 1
+                && adjustments.defringe <= 1
+                && (-100. ..=100.).contains(&adjustments.ca_red)
+                && (-100. ..=100.).contains(&adjustments.ca_blue)
+                && (0.5..=5.).contains(&adjustments.defringe_radius)
+                && (0. ..=100.).contains(&adjustments.defringe_threshold),
+            "Invalid native lens corrections"
+        );
         // Frame data remain bridge-owned until the next render or session destruction.
         ensure!(
             unsafe { openroom_rt_render(self.handle.as_ptr(), adjustments, &mut frame) } == 0,
@@ -244,6 +267,7 @@ impl Session {
             .to_string_lossy()
             .into_owned();
         Ok(Rendered {
+            auto_ca_supported: unsafe { openroom_rt_auto_ca_supported(self.handle.as_ptr()) } != 0,
             pixels,
             source_width: frame.source_width,
             source_height: frame.source_height,
@@ -267,6 +291,79 @@ impl Drop for Session {
 mod tests {
     use super::*;
     #[test]
+    fn lens_corrections_reduce_channel_misalignment_and_fringe_chroma() {
+        fn chroma(pixels: &Rgba32FImage) -> f32 {
+            pixels
+                .enumerate_pixels()
+                .filter(|(x, y, _)| {
+                    *x > 8 && *y > 8 && *x + 9 < pixels.width() && *y + 9 < pixels.height()
+                })
+                .map(|(_, _, p)| (p[0] - p[1]).abs() + (p[2] - p[1]).abs())
+                .sum()
+        }
+        let pattern = |x: f32, y: f32| 0.5 + 0.4 * (x * 0.12).sin() * (y * 0.12).cos();
+        let shifted = Rgba32FImage::from_fn(512, 384, |x, y| {
+            let (x, y) = (x as f32 - 255.5, y as f32 - 191.5);
+            image::Rgba([
+                pattern(x / 1.004, y / 1.004),
+                pattern(x, y),
+                pattern(x / 0.996, y / 0.996),
+                1.,
+            ])
+        });
+        let mut session =
+            Session::open(Path::new("lens-shift-fixture"), Some(&shifted), 512).unwrap();
+        let original = session.render(&Adjustments::default()).unwrap();
+        assert!(!original.auto_ca_supported);
+        let corrected = session
+            .render(&Adjustments {
+                ca_red: 80.,
+                ca_blue: -80.,
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(chroma(&corrected.pixels) < chroma(&original.pixels) * 0.3);
+        assert_eq!(
+            session.render(&Adjustments::default()).unwrap().pixels,
+            original.pixels
+        );
+
+        let fringe = Rgba32FImage::from_fn(96, 64, |x, y| {
+            let grey = if x < 48 { 0.1 } else { 0.8 };
+            image::Rgba(if (46..=48).contains(&x) && (12..52).contains(&y) {
+                [0.7, 0.15, 0.7, 1.]
+            } else {
+                [grey, grey, grey, 1.]
+            })
+        });
+        let mut session =
+            Session::open(Path::new("lens-fringe-fixture"), Some(&fringe), 96).unwrap();
+        let original = session.render(&Adjustments::default()).unwrap();
+        let corrected = session
+            .render(&Adjustments {
+                defringe: 1,
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(chroma(&corrected.pixels) < chroma(&original.pixels) * 0.8);
+        assert_eq!(
+            session.render(&Adjustments::default()).unwrap().pixels,
+            original.pixels
+        );
+        for settings in [
+            Adjustments {
+                ca_red: 101.,
+                ..Default::default()
+            },
+            Adjustments {
+                defringe_radius: f32::NAN,
+                ..Default::default()
+            },
+        ] {
+            assert!(session.render(&settings).is_err());
+        }
+    }
+    #[test]
     fn cached_denoising_matches_fresh_sessions_after_detail_and_white_balance_changes() {
         let pixels = Rgba32FImage::from_fn(96, 64, |x, y| {
             let noise = ((x * 73 + y * 37) % 101) as f32 / 300.;
@@ -281,6 +378,22 @@ mod tests {
         };
         let mut cached = Session::open(source, Some(&pixels), 96).unwrap();
         for settings in [
+            base,
+            Adjustments {
+                ca_red: 80.,
+                ca_blue: -60.,
+                ..base
+            },
+            Adjustments {
+                defringe: 1,
+                ..base
+            },
+            Adjustments {
+                defringe: 1,
+                defringe_radius: 4.,
+                defringe_threshold: 30.,
+                ..base
+            },
             base,
             Adjustments {
                 sharpen: 70.,

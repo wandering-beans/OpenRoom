@@ -39,6 +39,7 @@ fn main() -> anyhow::Result<()> {
                     ])
                 }),
                 info: BaseInfo {
+                    auto_ca_supported: None,
                     camera_saturation: None,
                     native_source: None,
                     raw: None,

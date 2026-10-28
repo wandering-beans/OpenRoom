@@ -72,9 +72,9 @@ public:
     ImProcCoordinator* processor = nullptr;
     const Imagefloat* linear = nullptr;
     std::unique_ptr<Imagefloat> denoised;
-    std::array<float, 2> denoise_key{};
+    std::array<float, 7> denoise_key{};
     std::unique_ptr<Imagefloat> detailed;
-    std::array<float, 7> detail_key{};
+    std::array<float, 12> detail_key{};
     const Imagefloat* output = nullptr;
     float gain = 1.f;
     float profile_gain = 1.f;
@@ -85,6 +85,7 @@ public:
     bool completed = false;
     bool first = true;
     bool raw;
+    bool auto_ca_supported = false;
     int source_width = 0, source_height = 0;
     int detail_threads = 4;
     ColorTemp camera_wb;
@@ -96,6 +97,7 @@ public:
         int code = 0;
         initial = rgba ? static_cast<InitialImage*>(new LinearSource(rgba, width, height)) : InitialImage::load(path, true, &code);
         if (!initial || code) throw std::runtime_error("rtengine cannot decode the photo (" + std::to_string(code) + ")");
+        auto_ca_supported = raw && initial->getImageSource()->getSensorType() == ST_BAYER;
         initial->getImageSource()->getFullSize(source_width, source_height);
         if (source_width <= 0 || source_height <= 0 || uint64_t(source_width) * source_height > 64000000) {
             initial->decreaseRef();
@@ -135,6 +137,8 @@ public:
         omp_set_num_threads(std::min(detail_threads, omp_get_num_procs()));
 #endif
         ProcParams params;
+        params.raw.ca_autocorrect = auto_ca_supported && a.ca_auto;
+        params.raw.ca_avoidcolourshift = true;
         params.icm.workingProfile = "sRGB";
         params.icm.outputProfile = "No ICM: sRGB output";
         params.icm.inputProfile = raw ? "(cameraICC)" : "(none)";
@@ -198,7 +202,7 @@ public:
             }
             ProcParams* updated = processor->beginUpdateParams();
             *updated = params;
-            processor->endUpdateParams(ProcEvent(first ? EvPhotoLoaded : params.wb != previous.wb ? EvWBTemp : EvExpComp));
+            processor->endUpdateParams(ProcEvent(first ? EvPhotoLoaded : params.raw != previous.raw ? EvPreProcessAutoCA : params.wb != previous.wb ? EvWBTemp : EvExpComp));
             std::unique_lock<std::mutex> lock(mutex);
             if (!ready.wait_for(lock, std::chrono::seconds(90), [this] { return completed; })) throw std::runtime_error("rtengine preview timed out");
             if (!error.empty()) throw std::runtime_error(error);
@@ -210,14 +214,22 @@ public:
         if (!linear) throw std::runtime_error("rtengine returned no floating-point image");
         // RAW stages can be larger than the final preview because their skip is integral.
         const float detail_scale = raw ? float(std::max(linear->getWidth(), linear->getHeight())) / std::max(source_width, source_height) : a.scale;
-        const std::array<float, 7> key{{a.sharpen, a.sharpen_radius, a.sharpen_detail, a.sharpen_masking, a.noise_luma, a.noise_color, detail_scale}};
-        const bool needs_detail = a.sharpen > 0 || a.noise_luma > 0 || a.noise_color > 0;
+        const std::array<float, 12> key{{a.sharpen, a.sharpen_radius, a.sharpen_detail, a.sharpen_masking, a.noise_luma, a.noise_color, detail_scale,
+            a.ca_red, a.ca_blue, float(a.defringe), a.defringe_radius, a.defringe_threshold}};
+        const bool needs_detail = a.sharpen > 0 || a.noise_luma > 0 || a.noise_color > 0 || a.ca_red != 0 || a.ca_blue != 0 || a.defringe;
         if (needs_detail && (!detailed || key != detail_key)) {
             detailed.reset();
             output = nullptr;
             std::unique_ptr<Imagefloat> result(new Imagefloat(linear->getWidth(), linear->getHeight()));
             ProcParams detail_params;
             detail_params.icm.workingProfile = "sRGB";
+            detail_params.cacorrection.red = a.ca_red * 0.00005;
+            detail_params.cacorrection.blue = a.ca_blue * 0.00005;
+            detail_params.defringe.enabled = a.defringe;
+            detail_params.defringe.radius = std::max(0.5f, a.defringe_radius * detail_scale);
+            detail_params.defringe.threshold = std::round(a.defringe_threshold);
+            // Detect chromatic outliers of any hue, including purple and green fringes.
+            detail_params.defringe.huecurve.clear();
             detail_params.sharpening.enabled = a.sharpen > 0;
             detail_params.sharpening.radius = std::max(0.3f, a.sharpen_radius * detail_scale);
             detail_params.sharpening.amount = std::round(a.sharpen * (0.4f + a.sharpen_detail * 0.006f));
@@ -230,11 +242,25 @@ public:
             detail_params.dirpyrDenoise.autoGain = false;
             ImProcFunctions functions(&detail_params, true);
             functions.setScale(1.);
-            const std::array<float, 2> noise_key{{a.noise_luma, a.noise_color}};
+            const std::array<float, 7> noise_key{{a.noise_luma, a.noise_color, a.ca_red, a.ca_blue,
+                float(a.defringe), a.defringe_radius, a.defringe_threshold}};
             const bool needs_denoise = detail_params.dirpyrDenoise.enabled && result->getWidth() >= 32 && result->getHeight() >= 32;
             if (!needs_denoise || noise_key != denoise_key) denoised.reset();
             if (denoised) denoised->copyData(result.get());
-            else linear->copyData(result.get());
+            else {
+                if (a.ca_red != 0 || a.ca_blue != 0) {
+                    // Relative channel scaling works for Bayer, X-Trans and raster images alike.
+                    functions.transform(const_cast<Imagefloat*>(linear), result.get(), 0, 0, 0, 0,
+                        linear->getWidth(), linear->getHeight(), linear->getWidth(), linear->getHeight(),
+                        initial->getMetaData(), 0, true);
+                } else linear->copyData(result.get());
+                if (a.defringe) {
+                    LabImage lab(result->getWidth(), result->getHeight());
+                    functions.rgb2lab(*result, lab, "sRGB");
+                    functions.defringe(&lab);
+                    functions.lab2rgb(lab, *result, "sRGB");
+                }
+            }
             if (needs_denoise && !denoised) {
                 NoiseCurve luma, chroma;
                 // OpenRoom exposes manual strengths, so no curve-analysis image is needed.
@@ -354,6 +380,7 @@ extern "C" int openroom_rt_copy(void* session, float* pixels, size_t count) {
 extern "C" void openroom_rt_close(void* session) { delete static_cast<Session*>(session); }
 extern "C" const char* openroom_rt_camera(void* session) { return static_cast<Session*>(session)->camera.c_str(); }
 extern "C" int openroom_rt_camera_matched(void* session) { return bool(static_cast<Session*>(session)->camera_curve); }
+extern "C" int openroom_rt_auto_ca_supported(void* session) { return static_cast<Session*>(session)->auto_ca_supported; }
 extern "C" const char* openroom_rt_error() { return last_error.c_str(); }
 
 extern "C" double openroom_rt_raster_temperature(const char* source) {

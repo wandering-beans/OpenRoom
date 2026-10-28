@@ -48,6 +48,12 @@ pub struct Settings {
     pub sharpen_masking: f32,
     pub noise_luma: f32,
     pub noise_color: f32,
+    pub ca_auto: bool,
+    pub ca_red: f32,
+    pub ca_blue: f32,
+    pub defringe: bool,
+    pub defringe_radius: f32,
+    pub defringe_threshold: f32,
     /// Normalized x/y/width/height after rotation, flip and geometry correction.
     pub crop: [f32; 4],
     pub quarter_turns: u8,
@@ -105,6 +111,12 @@ impl Default for Settings {
             sharpen_masking: 0.,
             noise_luma: 0.,
             noise_color: 0.,
+            ca_auto: false,
+            ca_red: 0.,
+            ca_blue: 0.,
+            defringe: false,
+            defringe_radius: 2.,
+            defringe_threshold: 13.,
             crop: [0., 0., 1., 1.],
             quarter_turns: 0,
             flip_h: false,
@@ -178,6 +190,8 @@ impl Settings {
             self.distortion,
             self.vignette,
             self.grading_balance,
+            self.ca_red,
+            self.ca_blue,
         ] {
             ensure!(
                 range(value, -100., 100.),
@@ -199,12 +213,17 @@ impl Settings {
             self.grain_size,
             self.grain_roughness,
             self.grading_blending,
+            self.defringe_threshold,
         ] {
             ensure!(
                 range(value, 0., 100.),
                 "Adjustment must be finite and 0..100"
             );
         }
+        ensure!(
+            range(self.defringe_radius, 0.5, 5.),
+            "Defringe radius must be 0.5..5"
+        );
         ensure!(
             range(self.sharpen, 0., 150.) && range(self.sharpen_radius, 0.5, 3.),
             "Invalid sharpening settings"

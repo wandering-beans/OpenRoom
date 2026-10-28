@@ -297,6 +297,9 @@ fn read_cached_base(request: &Request) -> Option<WorkingImage> {
         return None;
     }
     let info = serde_json::from_slice::<BaseInfo>(&std::fs::read(&request.base_info).ok()?).ok()?;
+    if !engine::raw_profile_is_current(&info) {
+        return None;
+    }
     if info
         .native_source
         .as_ref()
