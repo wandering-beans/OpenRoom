@@ -76,9 +76,12 @@ const develop = createDevelop({
     if(result){image.width=result.info.width; image.height=result.info.height; image.src=result.inline_image ?? convertFileSrc(result.path); zoom=0;}
     applyZoom();
   },
-  show(result) {
+  show(result, interactive = false) {
+    // Changing preview resolution must not shrink a photo viewed at 100% while dragging.
+    const displayScale = interactive && currentPreview
+      ? Math.max(currentPreview.render_width, currentPreview.render_height) / Math.max(result.info.width, result.info.height) : 1;
     currentPreview = { path: result.path, inline_image: result.inline_image, width: result.info.width, height: result.info.height,
-      render_width: result.info.width, render_height: result.info.height, bound: 1600 };
+      render_width: Math.round(result.info.width * displayScale), render_height: Math.round(result.info.height * displayScale), bound: 1600 };
     const image = $('full-image');
     image.alt = items[selected]?.name || t("現像プレビュー");
     image.onload = () => { $('view-message').hidden = true; };

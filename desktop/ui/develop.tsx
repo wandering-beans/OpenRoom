@@ -44,7 +44,7 @@ const fields: Record<string, [NumericSetting, string, number, number, number?][]
     ['grain', t("粒子の適用量"), 0, 100], ['grain_size', t("粒子サイズ"), 0, 100], ['grain_roughness', t("粒子の粗さ"), 0, 100],
   ],
 };
-export function createDevelop({ invoke, show, compare, saved, error, selectedIds, photoInfo }: { invoke: Invoke; show(result: DevelopedPreview): void; compare(result: DevelopedPreview | null, mode?: string): void; saved(id: number, refreshPreview?: boolean): void; error: ErrorHandler; selectedIds(): number[]; photoInfo(item: Photo): Promise<PhotoMetadata> }) {
+export function createDevelop({ invoke, show, compare, saved, error, selectedIds, photoInfo }: { invoke: Invoke; show(result: DevelopedPreview, interactive?: boolean): void; compare(result: DevelopedPreview | null, mode?: string): void; saved(id: number, refreshPreview?: boolean): void; error: ErrorHandler; selectedIds(): number[]; photoInfo(item: Photo): Promise<PhotoMetadata> }) {
   let active = false, item: Photo | null = null, settings: Settings | null = null, defaults: Settings | null = null, baseline: Settings | null = null, revision = 0;
   let loading = false, saving = false, exporting = false, before = false, bound = 1600;
   let epoch = 0, renderToken = 0, running: false | { bound: number } = false, pending = false, timer: ReturnType<typeof setTimeout> | undefined;
@@ -79,7 +79,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     if (interacting) return;
     interacting = true;
     clearTimeout(saveTimer);
-    if (running && running.bound !== bound) {
+    if (running && running.bound !== 384) {
       ++renderToken;
       invoke('cancel_develop_preview').catch(error);
       running = false;
@@ -166,7 +166,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     gesture = null; gestureOwner = null;
     if (interacting) {
       interacting = false;
-      if (tools.comparison()) schedule();
+      schedule();
       if (dirty()) saveTimer = setTimeout(save, 600);
     }
   }
@@ -344,16 +344,16 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
   }
   async function render() {
     if (!active || !item || !settings || running || !pending) return;
-    const flight = {gestureRender: interacting, bound};
+    const previewBound = interacting ? 384 : bound, gestureRender = interacting;
+    const flight = {gestureRender, bound: previewBound};
     running = flight; pending = false;
     const token = renderToken, selection = epoch;
-    const previewBound = bound, gestureRender = interacting;
     if (!saveFailed) status(interacting ? t("編集中") : t("原本を読み込み・現像中…"));
     try {
       const result = await invoke('develop_preview', { id: item.id, settings: tools.previewSettings(before ? defaults! : settings), bound: previewBound });
       const ongoingGesture = interacting && gestureRender;
       if (running === flight && active && selection === epoch && (token === renderToken || ongoingGesture)) {
-        show(result); histogram(result); tools.update();
+        show(result, gestureRender); histogram(result); tools.update();
         const comparison=tools.comparison();
         if(comparison && !interacting){
           const other=await invoke('develop_preview',{id:item.id,settings:comparison.settings,bound});

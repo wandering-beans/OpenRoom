@@ -461,6 +461,7 @@ async function run() {
     assert.match(await page.locator('#progress-text').textContent(), /1\/2/, 'progress counts only pending photos');
     await page.evaluate(() => {document.getElementById('progress').hidden = true;});
     if (process.argv.includes('--startup-previews')) { assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--interactive-preview')) { await require('./test-interactive-preview.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--lens')) { await require('./test-lens-correction.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--grading')) { await require('./test-color-grading.cjs')(page); assert.deepEqual(failures, []); return; }
@@ -1586,7 +1587,7 @@ async function run() {
     const savesBeforeCurve = await page.evaluate(() => calls.filter(c => c.command === 'save_develop').length);
     await page.mouse.down();
     await page.mouse.move(curveBox.x+curveBox.width*.42,curveBox.y+curveBox.height*.3,{steps:12});
-    await page.waitForFunction(() => document.querySelector('#full-image').src.endsWith('-1600'));
+    await page.waitForFunction(() => document.querySelector('#full-image').src.endsWith('-384'));
     await page.waitForTimeout(700);
     assert.equal(await page.evaluate(() => calls.filter(c => c.command === 'save_develop').length), savesBeforeCurve, 'a held curve gesture must not autosave halfway');
     const draftDisplay = await page.locator('#full-image').boundingBox();
@@ -1599,7 +1600,7 @@ async function run() {
     const curveRecipe=await page.evaluate(async()=>(await __TAURI__.core.invoke('get_develop',{id:1})).settings);
     assert.equal(curveRecipe.point_curves[0].length,3);
     assert.ok(Math.abs(curveRecipe.point_curves[0][1][0]-.42)<.02);
-    // Finish a same-size render without restarting the RAW worker; discard its stale result.
+    // A new gesture supersedes a slow original-size render without displaying its stale result.
     await page.evaluate(() => { delete window.releaseOriginalLoad; window.originalLoadFinished = false; window.holdOriginalLoad = true; });
     await page.click('#high-quality');
     await page.waitForFunction(() => typeof window.releaseOriginalLoad === 'function');
@@ -1613,16 +1614,15 @@ async function run() {
       curveObserver.observe(document.querySelector('#full-image'), {attributes:true,attributeFilter:['src']});
       window.holdOriginalLoad = false; window.releaseOriginalLoad(); delete window.releaseOriginalLoad;
     });
-    assert.equal(await page.evaluate(()=>calls.filter(c=>c.command==='cancel_develop_preview').length),cancellationsBeforeCurve);
-    await page.waitForFunction(() => document.querySelector('#full-image').src.endsWith('-0'));
-    await page.waitForFunction(() => window.originalLoadFinished && document.querySelector('#full-image').src.endsWith('-0'));
+    assert.equal(await page.evaluate(()=>calls.filter(c=>c.command==='cancel_develop_preview').length),cancellationsBeforeCurve + 1);
+    await page.waitForFunction(() => window.originalLoadFinished && document.querySelector('#full-image').src.endsWith('-384'));
     assert.ok(await page.evaluate(() => curveSources.every(src => !src.includes('-stale'))), 'a cancelled render must not overwrite the newer original-size image');
     await page.evaluate(() => curveObserver.disconnect());
     await page.mouse.up();
     await page.waitForFunction(() => document.querySelector('#full-image').src.endsWith('-0'));
     await page.click('#develop-save');
     await page.waitForFunction(()=>document.querySelector('#develop-save').disabled);
-    // Sliders retain original-size rendering throughout the gesture.
+    // Sliders use a lightweight preview during the gesture and restore original size on release.
     await page.locator('#develop-exposure').scrollIntoViewIfNeeded();
     const sliderBox = await page.locator('#develop-exposure').boundingBox();
     const sliderDisplay = await page.locator('#full-image').boundingBox();
@@ -1635,7 +1635,7 @@ async function run() {
     await page.mouse.move(sliderBox.x + sliderBox.width * .5, sliderBox.y + sliderBox.height / 2);
     await page.mouse.down();
     await page.mouse.move(sliderBox.x + sliderBox.width * .7, sliderBox.y + sliderBox.height / 2, {steps:12});
-    await page.waitForFunction(() => document.querySelector('#full-image').src.endsWith('-0'));
+    await page.waitForFunction(() => document.querySelector('#full-image').src.endsWith('-384'));
     await page.waitForTimeout(700);
     assert.equal(await page.evaluate(() => calls.filter(c => c.command === 'save_develop').length), savesBeforeSlider, 'holding a slider must not save or rebuild library previews');
     assert.equal(await page.textContent('#develop-status'), '編集中');
@@ -1647,7 +1647,7 @@ async function run() {
     await page.click('#develop-undo');
     await page.waitForFunction(value => document.querySelector('#develop-exposure-value').value === value, exposureBeforeSlider);
     await page.waitForFunction(() => document.querySelector('#develop-save').disabled);
-    assert.ok(await page.evaluate(() => gestureSources.every(src => !src.includes('-384'))), 'no gesture may replace the display with a 384px draft');
+    assert.ok(await page.evaluate(() => gestureSources.some(src => src.endsWith('-384'))), 'gestures must render a lightweight preview');
     await page.evaluate(() => gestureObserver.disconnect());
     // Twelve gestures retain exactly ten undo operations, including after reopening the photo.
     const beforeUndoTest = await page.evaluate(()=>calls.length);

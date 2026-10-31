@@ -1,6 +1,7 @@
 // Real controls and decoded images; only catalog commands use the UI test's fixtures.
 const assert = require('node:assert/strict');
 const {writeFile} = require('node:fs/promises');
+const adaptive = process.env.AE_ADAPTIVE_PREVIEW !== '0';
 
 async function measure(page) {
   await page.click('#module-develop');
@@ -26,7 +27,7 @@ async function measure(page) {
       }, values);
       await page.waitForTimeout(600);
       await page.waitForFunction(() => window.realPreviewPending === 0 && document.querySelector('#full-image').complete, null, {timeout:120000});
-      const samples = await page.evaluate(async ({field,bound}) => {
+      const samples = await page.evaluate(async ({field,bound,adaptive}) => {
         const slider = document.getElementById(`develop-${field}`);
         const image = document.getElementById('full-image');
         const dimensions = [image.naturalWidth, image.naturalHeight];
@@ -38,7 +39,7 @@ async function measure(page) {
             const started = performance.now();
             image.addEventListener('load', () => {
               const loaded = performance.now() - started;
-              if (image.naturalWidth !== dimensions[0] || image.naturalHeight !== dimensions[1] || calls.filter(c => c.command === 'develop_preview').at(-1).args.bound !== bound) {
+              if ((!adaptive && (image.naturalWidth !== dimensions[0] || image.naturalHeight !== dimensions[1])) || calls.filter(c => c.command === 'develop_preview').at(-1).args.bound !== (adaptive ? 384 : bound)) {
                 clearTimeout(timeout); reject(Error('Preview quality changed during gesture')); return;
               }
               requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -55,7 +56,7 @@ async function measure(page) {
         }
         slider.dispatchEvent(new Event('change',{bubbles:true}));
         return samples;
-      }, {field,bound});
+      }, {field,bound,adaptive});
       assert.equal(samples.length,20);
       const stats = key => {
         const values=samples.map(sample=>sample[key]).sort((a,b)=>a-b);
@@ -67,7 +68,7 @@ async function measure(page) {
       await page.waitForFunction(() => window.realPreviewPending === 0, null, {timeout:120000});
     }
   }
-  assert.ok(await page.evaluate(() => calls.filter(c=>c.command==='develop_preview').every(c=>c.args.bound===1600 || c.args.bound===0)));
+  assert.ok(await page.evaluate(adaptive => calls.filter(c=>c.command==='develop_preview').every(c=>[1600,0,...(adaptive?[384]:[])].includes(c.args.bound)), adaptive));
   const report = {surface:'Chromium, real frontend controls and Rust preview boundary; two animation frames after image load',results};
   if (process.env.AE_LATENCY_REPORT) await writeFile(process.env.AE_LATENCY_REPORT, JSON.stringify(report,null,2));
 }
@@ -86,14 +87,18 @@ async function measureContinuous(page) {
       }, detail);
       await page.waitForTimeout(800);
       await page.waitForFunction(() => realPreviewPending===0 && document.getElementById('full-image').complete, null, {timeout:120000});
-        const result=await page.evaluate(async ({bound,field}) => {
+        const result=await page.evaluate(async ({bound,field,adaptive}) => {
           const image=document.getElementById('full-image');
           const dimensions=[image.naturalWidth,image.naturalHeight];
+          const display=image.getBoundingClientRect();
           const input=document.getElementById(`develop-${field}`);
           const frames=[], started=performance.now(), firstCall=calls.length;
           let qualityChanged=false;
           const loaded=()=>{
-            qualityChanged ||= image.naturalWidth!==dimensions[0]||image.naturalHeight!==dimensions[1];
+            const current=image.getBoundingClientRect();
+            qualityChanged ||= adaptive
+              ? Math.abs(current.width-display.width)>2 || Math.abs(current.height-display.height)>2
+              : image.naturalWidth!==dimensions[0]||image.naturalHeight!==dimensions[1];
             frames.push(performance.now()-started);
           };
           image.addEventListener('load',loaded);
@@ -116,7 +121,9 @@ async function measureContinuous(page) {
           image.removeEventListener('load',loaded);
           if (qualityChanged || !frames.length) throw Error('Preview quality or progress failed');
           const requests=calls.slice(firstCall).filter(c=>c.command==='develop_preview');
-          if(!requests.every(c=>c.args.bound===bound))throw Error('Preview bound changed');
+          if(!requests.every(c=>c.args.bound===bound || (adaptive && c.args.bound===384)))throw Error('Unexpected preview bound');
+          if(requests.at(-1)?.args.bound!==bound || image.naturalWidth!==dimensions[0] || image.naturalHeight!==dimensions[1])throw Error('Final quality was not restored');
+          if(adaptive && !requests.some(c=>c.args.bound===384))throw Error('No interactive preview rendered');
           if(requests.at(-1)?.args.settings[field]!==Number(input.value))throw Error('Final slider value was not rendered');
           const during=frames.filter(t=>t<released);
           const gaps=during.slice(1).map((t,i)=>t-during[i]).sort((a,b)=>a-b);
@@ -125,7 +132,7 @@ async function measureContinuous(page) {
             frame_interval_median_ms:gaps.length?gaps[Math.floor(gaps.length/2)]:null,
             frame_interval_p95_ms:gaps.length?gaps[Math.floor(gaps.length*.95)]:null,
             requests:requests.length,cancellations:calls.slice(firstCall).filter(c=>c.command==='cancel_develop_preview').length};
-        }, {bound,field});
+        }, {bound,field,adaptive});
         results.push({...result,detail,slider:field}); console.log(JSON.stringify(results.at(-1)));
     }
   }
