@@ -117,6 +117,15 @@ module.exports = async function testCropPanel(page, url) {
   await page.locator('#develop-angle-value').focus();
   await page.keyboard.press('Enter');
   assert.equal(await page.locator('#develop-overlay').isVisible(), true, 'Enter in a numeric input must keep editing the value');
+  const cropBox = await page.locator('#develop-overlay').boundingBox();
+  await page.mouse.move(cropBox.x + cropBox.width * .5, cropBox.y + cropBox.height * .5);
+  await page.mouse.down();
+  await page.mouse.move(cropBox.x + cropBox.width * .5, cropBox.y + cropBox.height * .53, {steps:3});
+  await page.mouse.up();
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'develop-overlay', 'selecting a crop must leave the previous numeric field');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#develop-overlay').isVisible(), false, 'Enter after a photo drag must confirm the crop');
+  await page.locator('.develop-toolstrip [data-tool="crop"]').click();
   await page.evaluate(() => {
     document.activeElement.blur();
     const dialog = document.createElement('dialog'); dialog.id = 'test-crop-dialog';

@@ -377,6 +377,7 @@ export function createDevelopTools({
   svg.onpointerdown = (event) => {
     if (!get()?.settings || !mode || busy()) return;
     event.preventDefault();
+    svg.focus({preventScroll:true});
     svg.setPointerCapture(event.pointerId);
     const start = point(event);
     drag = { start, end: start };

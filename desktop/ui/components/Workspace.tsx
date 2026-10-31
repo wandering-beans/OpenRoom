@@ -60,7 +60,7 @@ export function Workspace() {
         <div className="photo-stage">
           <section id="viewport" aria-label="写真一覧" tabIndex={0} hidden><div id="grid" role="group"></div></section>
           <section id="viewer" aria-label="ルーペ表示" tabIndex={0}>
-            <svg id="develop-overlay" aria-label="写真上の編集範囲"></svg><div id="image-area"><img id="compare-image" alt="比較基準" hidden /><img id="full-image" crossOrigin="anonymous" alt="" hidden /><p id="view-message" role="status" hidden></p></div>
+            <svg id="develop-overlay" tabIndex={-1} aria-label="写真上の編集範囲"></svg><div id="image-area"><img id="compare-image" alt="比較基準" hidden /><img id="full-image" crossOrigin="anonymous" alt="" hidden /><p id="view-message" role="status" hidden></p></div>
           </section>
           <section id="review-view" aria-label="写真の比較・選別" hidden>
             <div className="review-toolbar"><p id="review-message" role="status"></p><div id="compare-controls"><button id="compare-swap">入れ替え</button><button id="compare-promote">候補を基準に</button><label><input id="compare-linked" type="checkbox" defaultChecked />拡大・移動を連動</label></div></div>
