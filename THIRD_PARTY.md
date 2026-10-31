@@ -89,5 +89,6 @@ and the covered libraries' corresponding source, exact revisions, local modifica
 build/install scripts, notices and applicable relinking materials. The bundled pin,
 patch and notice inventory alone are not complete corresponding source.
 Current unresolved notices, data-license review and source-archive requirements are
-recorded in [DISTRIBUTION.md](DISTRIBUTION.md). Release assets remain drafts until
-those requirements are satisfied. Public signing and notarization are also not complete.
+recorded in [DISTRIBUTION.md](DISTRIBUTION.md). Private prereleases are available;
+public distribution remains on hold until those requirements are satisfied.
+Public signing and notarization are also not complete.

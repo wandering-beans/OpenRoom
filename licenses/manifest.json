@@ -5808,14 +5808,17 @@
       "source_pin": "sha256 \"85d99b79c981a404874c02e0342176cf75c7698e2b51fe41031cf6526d974f1a\"",
       "notices": [
         "native/gettext-1.0/COPYING",
-        "native/gettext-1.0/build-formula.rb"
+        "native/gettext-1.0/build-formula.rb",
+        "native/gettext-1.0/COPYING.LIB"
       ],
       "libraries": [
         {
           "name": "libintl.8.dylib",
           "uuid": "685F7630-FFC2-340B-B015-A7EE74C4D830"
         }
-      ]
+      ],
+      "bundled_library_license": "LGPL-2.1-or-later",
+      "notice_provenance": "COPYING.LIB extracted verbatim from the SHA-256 verified gettext-1.0 source, gettext-runtime/intl/COPYING.LIB; libintl is the bundled component."
     },
     {
       "ecosystem": "native",
@@ -5855,6 +5858,15 @@
         {
           "name": "libgobject-2.0.0.dylib",
           "uuid": "B086FDBA-868D-3C61-8749-8264F51490FD"
+        }
+      ],
+      "build_patches": [
+        {
+          "file": "native/glib-2.90.1/Patches/glib/hardcoded-paths.diff",
+          "sha256": "d846efd0bf62918350da94f850db33b0f8727fece9bfaf8164566e3094e80c97",
+          "source": "https://github.com/Homebrew/homebrew-core/blob/e9e970a6894f23a16eaea5b7132dfd0627c870c1/Patches/glib/hardcoded-paths.diff",
+          "verification": "Installed formula matches the pinned upstream formula after excluding only the bottle block. The patch last changed in commit 1cf441a09f572566b1b7c4695a4d169d1177248a (2025-10-15), before the installed GLib source timestamp (2026-10-06).",
+          "history_url": "https://github.com/Homebrew/homebrew-core/commit/1cf441a09f572566b1b7c4695a4d169d1177248a"
         }
       ]
     },
@@ -5987,13 +5999,19 @@
       "source_pin": "sha256 \"819ecf7351f1a66f76b2d701d8942faaf5faeb324cb90c9d5b090de142434bb2\"",
       "notices": [
         "native/libomp-23.1.4/LICENSE.TXT",
-        "native/libomp-23.1.4/build-formula.rb"
+        "native/libomp-23.1.4/build-formula.rb",
+        "native/libomp-23.1.4/openmp-LICENSE.TXT"
       ],
       "libraries": [
         {
           "name": "libomp.dylib",
           "uuid": "D4F53797-2C2F-3B52-A390-4F2CD7BAB9B6"
         }
+      ],
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "license_declaration_source": "The recorded build-formula.rb declares MIT; that verbatim formula field is retained for provenance, not used as the library license.",
+      "notice_sources": [
+        "https://github.com/llvm/llvm-project/blob/llvmorg-23.1.4/openmp/LICENSE.TXT"
       ]
     },
     {
@@ -6248,7 +6266,8 @@
         "native/RawTherapee-5.13/upstream/osx_libiomp5_LICENSE.txt",
         "native/RawTherapee-5.13/upstream/sleef_LICENSE.txt",
         "native/RawTherapee-5.13/upstream/tcmalloc_LICENSE",
-        "native/RawTherapee-5.13/AUTHORS.txt"
+        "native/RawTherapee-5.13/AUTHORS.txt",
+        "native/RawTherapee-5.13/profile-CC0-1.0.txt"
       ],
       "modifications": "native/rtengine/float-preview.patch",
       "libraries": [
@@ -6256,6 +6275,9 @@
           "name": "libopenroom_rtengine.dylib",
           "uuid": "AAE2C17C-EC91-33E7-ACD6-377C912B0449"
         }
+      ],
+      "notice_sources": [
+        "https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt"
       ]
     },
     {
@@ -6517,5 +6539,11 @@
       "revision": "1ea42bb68f560a2909c856b20aa3c62901f6305c"
     }
   ],
-  "unresolved": []
+  "unresolved": [],
+  "supporting_notices": [
+    "native/Homebrew-core/LICENSE.txt"
+  ],
+  "supporting_notice_sources": {
+    "native/Homebrew-core/LICENSE.txt": "https://github.com/Homebrew/homebrew-core/blob/e9e970a6894f23a16eaea5b7132dfd0627c870c1/LICENSE.txt"
+  }
 }
