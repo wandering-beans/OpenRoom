@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "scope": "Source-package inventory for macOS arm64 OpenRoom 0.7.9. Hashes confirm downloaded bytes; they do not certify license clearance or a successful offline rebuild. Source archives are retained locally until distribution conditions are resolved.",
+  "scope": "Source-package inventory for macOS arm64 OpenRoom 0.7.9. Hashes confirm downloaded bytes; they do not certify license clearance or a successful offline rebuild. Archives accompany the v0.7.9 development release.",
   "records": [
     {
       "ecosystem": "cargo",

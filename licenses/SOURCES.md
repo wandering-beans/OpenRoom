@@ -1,6 +1,6 @@
 # 配布アプリに対応するソース
 
-OpenRoom 0.7.9のmacOS arm64版に対応するソースを収集しました。[source-archives.json](source-archives.json)に取得元、固定版またはコミット、照合したハッシュ、アーカイブ名を記録しています。アーカイブ本体はローカルに保管しており、まだリリースへ添付していません。
+OpenRoom 0.7.9のmacOS arm64版に対応するソースを収集しました。[source-archives.json](source-archives.json)に取得元、固定版またはコミット、照合したハッシュ、アーカイブ名を記録しています。[v0.7.9のリリース](https://github.com/wandering-beans/OpenRoom/releases/tag/v0.7.9)の`OpenRoom-0.7.9-dependency-sources.tar`にアーカイブ本体と追加のライセンス資料を収録しています。対応するチェックサムは`DEPENDENCY-SHA256SUMS.txt`です。
 
 | 対象 | アーカイブ数 | 照合方法 |
 | --- | ---: | --- |
@@ -31,6 +31,6 @@ LGPLの動的ライブラリは`OpenRoom.app/Contents/Frameworks`にあります
 
 - [プロファイルとカメラデータ](PROFILE-LICENSES.md)の未確認条件を解消する。
 - 収集したソース、差分、ビルド定義からの再ビルド手順と、LGPLライブラリの差し替えを確認する。
-- 今回補ったライセンス本文を同梱したアプリを用意し、対応ソース一式を同じ受領者が取得できる場所へ配置する。
+- 今回補ったライセンス本文をアプリ内にも反映する。リリースの追加ソースアーカイブには補足した本文を収録していますが、既存の署名付きアプリは差し替えていません。
 
 ファイルの取得とハッシュ一致は確認済みですが、これだけで対応ソースの提供完了や公開条件の充足を宣言するものではありません。[GNUの説明](https://www.gnu.org/licenses/gpl-faq.en.html#UnchangedJustBinary)に沿って、バイナリに対応するソースと改変箇所を提供します。

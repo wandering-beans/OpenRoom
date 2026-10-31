@@ -1,0 +1,11 @@
+{
+  "version": "0.7.9",
+  "notes": "OpenRoom 0.7.9\n\n環境設定に現在のバージョン表示と更新確認を追加しました。\n公開リリースが利用可能な場合は、署名を検証して更新し、編集を保存して再起動できます。\nmacOS・Apple Silicon向けです。",
+  "minimum_macos": "27.0",
+  "platforms": {
+    "darwin-aarch64": {
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.9/OpenRoom-0.7.9-macos-arm64.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUcmhGN29rR3ZtdkdodDFmQ25jNFBsK2xWU3pkZjJkV0hCcXZGT0hYT2JEQXBZOCt1Vm9oTUhFYTJXZERLRjNEV1BIbU9ndnJaSEhtdU53bjJaaHlXWlYraUc5SzdrdGdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNDIwMDc5CWZpbGU6T3BlblJvb20tMC43LjktbWFjb3MtYXJtNjQuYXBwLnRhci5negl2ZXJzaW9uOjAuNy45CjBBT2E0Nit4QlZZMzN2anB2bjZMZE5tNEZoMzl6bmVOdjlsSndabENNVzJlNjR2OGhIM0c2T2tQNkF5ekErR0lQYVpkeHJKVFFVcStQTUl5QnlCakFBPT0K"
+    }
+  }
+}
