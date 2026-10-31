@@ -175,7 +175,7 @@ fn prepare(
     settings: &Settings,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<Entry> {
-    let (directory, frame) = state.library.with_work_space(state, 64_000_000, || {
+    let (directory, frame) = state.library.with_work_space(state, || {
         ensure!(!cancelled(), "Prefetch cancelled");
         let directory = tempfile::Builder::new()
             .prefix("develop-prefetch-")

@@ -15,8 +15,7 @@ use std::{
 
 const VERSION: &str = "library-avif-srgb-v1";
 const IMAGE_LIMIT: u64 = 7_500_000_000;
-pub(crate) const WORK_LIMIT: u64 = 1_000_000_000;
-const TOTAL_LIMIT: u64 = 9_500_000_000; // Leave 500 MB for database logs and atomic replacements.
+const TOTAL_LIMIT: u64 = 9_500_000_000; // Stored previews and database only; leave 500 MB for atomic replacements.
 pub(crate) const IMPORT_RESERVE: u64 = 64 * 1024 * 1024;
 
 #[derive(Debug)]
@@ -139,6 +138,7 @@ fn files(directory: &Path, output: &mut Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
 fn working_bytes(cache: &Path) -> Result<u64> {
     let mut paths = Vec::new();
     files(cache, &mut paths)?;
@@ -160,77 +160,71 @@ fn database_bytes(db: &Path) -> Result<u64> {
     Ok(total)
 }
 
-// Both callers hold the cache writer lock before reclaiming disposable files.
-fn reclaim_work_space(cache: &Path, reserve: u64) -> Result<u64> {
-    ensure!(
-        reserve <= WORK_LIMIT,
-        StorageFull("現像用の作業領域が不足しています。")
-    );
-    let mut bytes = working_bytes(cache)?;
-    if bytes + reserve <= WORK_LIMIT {
-        return Ok(bytes);
-    }
+// Direct children are shared render outputs. Subdirectories belong to live TempDir owners
+// (imports and prefetch entries), so runtime cleanup must never walk into them.
+fn working_files(cache: &Path) -> Result<Vec<PathBuf>> {
     let mut paths = Vec::new();
-    files(cache, &mut paths)?;
+    for entry in std::fs::read_dir(cache)? {
+        let entry = entry?;
+        let kind = entry.file_type()?;
+        ensure!(!kind.is_symlink(), "作業領域にシンボリックリンクは使えません。");
+        if kind.is_file() {
+            paths.push(entry.path());
+        }
+    }
+    Ok(paths)
+}
+
+// Call with the workspace lock held and no active shared-file writer.
+fn reclaim_work_space(cache: &Path) -> Result<()> {
+    let mut paths = working_files(cache)?;
     paths.sort_by_cached_key(|path| {
         std::fs::metadata(path)
             .and_then(|m| m.modified())
             .unwrap_or(SystemTime::UNIX_EPOCH)
     });
-    // Keep both ends of an image handoff; older render outputs are disposable even during a burst.
-    let displayed: Vec<_> = paths
-        .iter()
-        .rev()
-        .filter(|path| {
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with("develop-") && name.ends_with(".png"))
-        })
-        .take(2)
-        .cloned()
-        .collect();
-    for path in paths {
-        if bytes + reserve <= WORK_LIMIT {
-            break;
+    let mut retained = std::collections::HashSet::new();
+    // Preserve both ends of a display handoff and recently used decoded bases.
+    // Counts, rather than bytes, bound disposable history without rejecting large photos.
+    for extension in ["png", "tif"] {
+        for path in paths.iter().rev().filter(|path| {
+            path.extension().is_some_and(|value| value == extension)
+        }).take(2) {
+            retained.insert(path.clone());
+            retained.insert(path.with_extension("json"));
         }
-        if path
-            .file_name()
-            .is_some_and(|name| name.to_string_lossy().starts_with("renderer-"))
-        {
-            continue;
-        }
-        if displayed.contains(&path) {
-            continue;
-        }
-        // This lock serializes base writers; decoded TIFFs can be recreated even when recent.
-        let decoded_base = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .is_some_and(|name| name.contains(".develop-") && name.ends_with(".tif"));
-        let rendered_image = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .is_some_and(|name| name.starts_with("develop-") && name.ends_with(".png"));
-        if !decoded_base
-            && !rendered_image
-            && std::fs::metadata(&path)?
-                .modified()?
-                .elapsed()
-                .unwrap_or_default()
-                .as_secs()
-                < 60
-        {
-            continue;
-        }
-        let size = allocated(&path)?;
-        std::fs::remove_file(path)?;
-        bytes = bytes.saturating_sub(size);
     }
-    ensure!(
-        bytes + reserve <= WORK_LIMIT,
-        StorageFull("現像用の作業領域が不足しています。処理を終えてから再試行してください。")
-    );
-    Ok(bytes)
+    for path in paths {
+        if path.file_name().is_some_and(|name| name.to_string_lossy().starts_with("renderer-"))
+            || retained.contains(&path)
+        {
+            continue;
+        }
+        if path.extension().and_then(|value| value.to_str())
+            .is_some_and(|value| matches!(value, "png" | "tif" | "json" | "tmp"))
+        {
+            std::fs::remove_file(path)?;
+        }
+    }
+    Ok(())
+}
+
+// Startup has no jobs in this process. Also remove abandoned TempDirs after a crash.
+pub(crate) fn clear_work_space(cache: &Path) -> Result<()> {
+    let mut paths = Vec::new();
+    files(cache, &mut paths)?; // Validate the entire tree before deleting anything.
+    for entry in std::fs::read_dir(cache)? {
+        let entry = entry?;
+        if entry.file_name().to_string_lossy().starts_with("renderer-") {
+            continue;
+        }
+        if entry.file_type()?.is_dir() {
+            std::fs::remove_dir_all(entry.path())?;
+        } else {
+            std::fs::remove_file(entry.path())?;
+        }
+    }
+    Ok(())
 }
 
 impl Store {
@@ -417,7 +411,7 @@ impl Store {
     }
 
     fn reserve(&self, state: &AppState, usage: &mut Usage, bytes: u64, evict: bool) -> Result<()> {
-        let other = database_bytes(&state.db)? + working_bytes(&state.cache)?;
+        let other = database_bytes(&state.db)?;
         let limit = IMAGE_LIMIT.min(TOTAL_LIMIT.saturating_sub(other));
         if usage.bytes + bytes <= limit {
             return Ok(());
@@ -463,38 +457,28 @@ impl Store {
     pub fn with_work_space<T>(
         &self,
         state: &AppState,
-        reserve: u64,
         operation: impl FnOnce() -> Result<T>,
     ) -> Result<T> {
         let _workspace = self.workspace.write().unwrap();
-        let usage = self.usage.lock().unwrap();
-        let bytes = reclaim_work_space(&state.cache, reserve)?;
-        ensure!(
-            database_bytes(&state.db)? + usage.bytes + bytes + reserve <= TOTAL_LIMIT,
-            StorageFull("カタログ全体の保存容量が不足しています。")
-        );
-        let mut before_paths = Vec::new();
-        files(&state.cache, &mut before_paths)?;
-        let before = before_paths
+        reclaim_work_space(&state.cache)?;
+        let before = working_files(&state.cache)?
             .into_iter()
-            .map(|path| allocated(&path).map(|size| (path, size)))
+            .map(|path| {
+                let metadata = std::fs::metadata(&path)?;
+                Ok((path, (metadata.len(), metadata.modified()?)))
+            })
             .collect::<Result<HashMap<_, _>>>()?;
         let result = operation();
-        let after_bytes = working_bytes(&state.cache)?;
-        let oversized = after_bytes > WORK_LIMIT
-            || database_bytes(&state.db)? + usage.bytes + after_bytes > TOTAL_LIMIT;
-        if result.is_err() || oversized {
-            let mut after = Vec::new();
-            files(&state.cache, &mut after)?;
-            for path in after {
-                if before.get(&path).copied() != Some(allocated(&path)?) {
-                    let _ = std::fs::remove_file(path);
+        if result.is_err() {
+            // Never remove a prefetch entry or another TempDir owner's files on failure.
+            for path in working_files(&state.cache)? {
+                let metadata = std::fs::metadata(&path)?;
+                if before.get(&path) != Some(&(metadata.len(), metadata.modified()?)) {
+                    std::fs::remove_file(path)?;
                 }
             }
-            if result.is_ok() && oversized {
-                anyhow::bail!("現像結果が作業領域の上限を超えました。");
-            }
         }
+        reclaim_work_space(&state.cache)?;
         result
     }
 
@@ -753,14 +737,10 @@ impl Store {
         });
         ensure!(!cancelled(), "プレビュー生成を中止しました。");
         let required = usage.reserved + IMPORT_RESERVE;
-        // Active decoders own their temporary files until their job finishes.
+        // Concurrent import workers own their directories; only tidy shared render outputs
+        // before the first job starts. Working bytes never consume the stored-preview budget.
         if usage.reserved == 0 {
-            reclaim_work_space(&state.cache, required)?;
-        } else {
-            ensure!(
-                working_bytes(&state.cache)? + required <= WORK_LIMIT,
-                StorageFull("現像用の作業領域が不足しています。")
-            );
+            reclaim_work_space(&state.cache)?;
         }
         self.reserve(state, &mut usage, required, evict)?;
         usage.reserved += IMPORT_RESERVE;
@@ -1213,37 +1193,19 @@ mod tests {
     };
 
     #[test]
-    #[ignore = "release microbenchmark; creates 2000 disposable cache files"]
-    fn workspace_check_benchmark() {
-        let (_dir, state, _) = fixture();
-        for i in 0..2000 {
-            std::fs::write(state.cache.join(format!("develop-{i:04}.png")), [0u8; 1024]).unwrap();
-        }
-        let before = working_bytes(&state.cache).unwrap();
-        let mut times = Vec::new();
-        for _ in 0..31 {
-            let start = std::time::Instant::now();
-            state.library.with_work_space(&state, IMPORT_RESERVE, || Ok(())).unwrap();
-            times.push(start.elapsed().as_secs_f64() * 1000.);
-        }
-        assert_eq!(working_bytes(&state.cache).unwrap(), before);
-        times.sort_by(f64::total_cmp);
-        println!("workspace_check {}", serde_json::json!({"files":2000,"samples":31,"median_ms":times[15],"p95_ms":times[29]}));
-    }
-
-    #[test]
-    fn under_budget_reclamation_preserves_files_and_rejects_symlinks() {
+    fn cleanup_keeps_owned_directories_and_rejects_symlinks() {
         let dir = tempfile::tempdir().unwrap();
-        let output = dir.path().join("develop-old.png");
-        std::fs::write(&output, b"cached image").unwrap();
-        let expected = allocated(&output).unwrap();
-        assert_eq!(reclaim_work_space(dir.path(), IMPORT_RESERVE).unwrap(), expected);
-        assert_eq!(std::fs::read(&output).unwrap(), b"cached image");
+        let owned = tempfile::Builder::new().prefix("develop-prefetch-").tempdir_in(dir.path()).unwrap();
+        let base = owned.path().join("base.tif");
+        std::fs::write(&base, b"active prefetch").unwrap();
+        reclaim_work_space(dir.path()).unwrap();
+        assert_eq!(std::fs::read(&base).unwrap(), b"active prefetch");
         #[cfg(unix)]
         {
-            std::os::unix::fs::symlink(&output, dir.path().join("link.png")).unwrap();
-            assert!(reclaim_work_space(dir.path(), 0).is_err());
-            assert_eq!(std::fs::read(&output).unwrap(), b"cached image");
+            std::os::unix::fs::symlink(&base, dir.path().join("link.png")).unwrap();
+            assert!(reclaim_work_space(dir.path()).is_err());
+            assert!(clear_work_space(dir.path()).is_err());
+            assert_eq!(std::fs::read(&base).unwrap(), b"active prefetch");
         }
     }
 
@@ -1739,117 +1701,107 @@ mod tests {
     }
 
     #[test]
-    fn rapid_development_reclaims_old_outputs_and_protects_the_two_latest_images() {
+    fn rapid_development_keeps_only_two_outputs_and_their_metadata() {
         let (_dir, state, _) = fixture();
         for index in 0..80 {
-            state
-                .library
-                .with_work_space(&state, 20_000_000, || {
-                    let path = state.cache.join(format!("develop-{index:03}.png"));
-                    std::fs::File::create(path)?.set_len(20_000_000)?;
-                    Ok(())
-                })
-                .unwrap();
-            assert!(working_bytes(&state.cache).unwrap() <= WORK_LIMIT);
+            state.library.with_work_space(&state, || {
+                let path = state.cache.join(format!("develop-{index:03}.png"));
+                let file = std::fs::File::create(&path)?;
+                file.set_len(20_000_000)?;
+                file.set_modified(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(index))?;
+                std::fs::write(path.with_extension("json"), b"metadata")?;
+                Ok(())
+            }).unwrap();
+            let outputs = working_files(&state.cache).unwrap().into_iter()
+                .filter(|path| path.extension().is_some_and(|ext| ext == "png")).count();
+            assert_eq!(outputs, (index + 1).min(2) as usize);
             assert!(state.cache.join(format!("develop-{index:03}.png")).exists());
             if index > 0 {
-                assert!(
-                    state
-                        .cache
-                        .join(format!("develop-{:03}.png", index - 1))
-                        .exists()
-                );
+                assert!(state.cache.join(format!("develop-{:03}.png", index - 1)).exists());
             }
         }
         assert!(!state.cache.join("develop-000.png").exists());
-        assert!(!state.cache.join("develop-001.png").exists());
+        assert!(!state.cache.join("develop-000.json").exists());
+        assert!(state.cache.join("develop-079.json").exists());
     }
 
     #[test]
-    fn oversized_replacements_and_cancelled_outputs_are_removed() {
+    fn large_development_outputs_ignore_stored_preview_budget() {
+        let (_dir, state, _) = fixture();
+        // A full stored-preview budget must not prevent editing an already imported photo.
+        state.library.usage.lock().unwrap().bytes = IMAGE_LIMIT;
+        let base = state.cache.join("photo.develop-v6-0.tif");
+        let output = state.cache.join("develop-new.png");
+        state.library.with_work_space(&state, || {
+            std::fs::File::create(&base)?.set_len(1_100_000_000)?;
+            std::fs::File::create(&output)?.set_len(200_000_000)?;
+            Ok(())
+        }).unwrap();
+        assert!(working_bytes(&state.cache).unwrap() > 1_000_000_000);
+        assert!(base.exists() && output.exists());
+        let mut usage = state.library.usage.lock().unwrap();
+        assert!(state.library.reserve(&state, &mut usage, IMPORT_RESERVE, false).is_err(),
+            "stored previews must still respect their own budget");
+    }
+
+    #[test]
+    fn failed_work_removes_partial_outputs_but_preserves_owned_prefetch_files() {
         let (_dir, state, _) = fixture();
         let existing = state.cache.join("damaged.develop-v6-0.tif");
-        std::fs::write(&existing, b"damaged cache").unwrap();
+        std::fs::write(&existing, b"old").unwrap();
+        std::fs::File::open(&existing).unwrap().set_modified(SystemTime::UNIX_EPOCH).unwrap();
+        let owned = tempfile::Builder::new().prefix("develop-prefetch-").tempdir_in(&state.cache).unwrap();
+        let prefetched = owned.path().join("base.tif");
+        std::fs::write(&prefetched, b"prefetch").unwrap();
         let created = state.cache.join("develop-new.png");
-        let result = state.library.with_work_space(&state, 1, || {
-            std::fs::File::create(&existing)?.set_len(900_000_000)?;
-            std::fs::File::create(&created)?.set_len(200_000_000)?;
-            Ok(())
+        let result = state.library.with_work_space::<()>(&state, || {
+            std::fs::write(&existing, b"bad")?; // Same length still counts as a changed file.
+            std::fs::write(&created, b"cancelled")?;
+            anyhow::bail!("cancelled")
         });
         assert!(result.is_err());
-        assert!(!existing.exists());
-        assert!(!created.exists());
-        assert!(
-            state
-                .library
-                .with_work_space::<()>(&state, 1, || {
-                    std::fs::write(&created, b"cancelled")?;
-                    anyhow::bail!("cancelled")
-                })
-                .is_err()
-        );
-        assert!(!created.exists());
-        assert!(
-            state
-                .library
-                .with_work_space(&state, u64::MAX, || Ok(()))
-                .is_err()
-        );
+        assert!(!existing.exists() && !created.exists());
+        assert_eq!(std::fs::read(prefetched).unwrap(), b"prefetch");
     }
 
     #[test]
-    fn development_reclaims_recent_decoded_bases_but_keeps_displayed_images() {
+    fn cleanup_keeps_two_recent_decoded_bases_and_removes_orphan_metadata() {
         let (_dir, state, _) = fixture();
-        for version in ["develop-v5", advanced_explorer_develop::RENDER_VERSION] {
-            let base = state.cache.join(format!("old-photo.{version}-0.tif"));
-            std::fs::File::create(&base)
-                .unwrap()
-                .set_len(800_000_000)
-                .unwrap();
-            let displayed = state.cache.join("develop-current.png");
-            std::fs::write(&displayed, b"current image").unwrap();
-            let protected = state.cache.join("renderer-test");
-            std::fs::write(&protected, b"renderer").unwrap();
-            state
-                .library
-                .with_work_space(&state, 400_000_000, || {
-                    assert!(!base.exists());
-                    assert_eq!(std::fs::read(&displayed)?, b"current image");
-                    assert_eq!(std::fs::read(&protected)?, b"renderer");
-                    Ok(())
-                })
-                .unwrap();
+        for index in 0..4 {
+            let base = state.cache.join(format!("photo-{index}.develop-v6-0.tif"));
+            let file = std::fs::File::create(&base).unwrap();
+            file.set_len(800_000_000).unwrap();
+            file.set_modified(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(index)).unwrap();
+            std::fs::write(base.with_extension("json"), b"base metadata").unwrap();
         }
+        let displayed = state.cache.join("develop-current.png");
+        std::fs::write(&displayed, b"current image").unwrap();
+        let protected = state.cache.join("renderer-test");
+        std::fs::write(&protected, b"renderer").unwrap();
+        state.library.with_work_space(&state, || Ok(())).unwrap();
+        assert!(!state.cache.join("photo-0.develop-v6-0.tif").exists());
+        assert!(!state.cache.join("photo-0.develop-v6-0.json").exists());
+        assert!(state.cache.join("photo-3.develop-v6-0.tif").exists());
+        assert!(state.cache.join("photo-2.develop-v6-0.tif").exists());
+        assert_eq!(std::fs::read(displayed).unwrap(), b"current image");
+        assert_eq!(std::fs::read(protected).unwrap(), b"renderer");
     }
 
     #[test]
-    fn library_generation_reclaims_development_cache_before_reserving_space() {
+    fn library_generation_with_another_reservation_ignores_working_bytes() {
         let (_dir, state, _) = fixture();
         let catalog = Catalog::open(&state.db).unwrap();
         let id = catalog.preview_items(None, 0).unwrap()[0];
         let source = catalog.source_path(id).unwrap();
         let original = std::fs::read(&source).unwrap();
-        let base = state.cache.join(format!(
-            "old-photo.{}-0.tif",
-            advanced_explorer_develop::RENDER_VERSION
-        ));
-        std::fs::File::create(&base)
-            .unwrap()
-            .set_len(964_000_000)
-            .unwrap();
-        let displayed = state.cache.join("develop-current.png");
-        std::fs::write(&displayed, b"displayed image").unwrap();
-
-        assert!(
-            state
-                .library
-                .generate(&state, id, &|| false, false)
-                .unwrap()
-        );
-
-        assert!(!base.exists());
-        assert_eq!(std::fs::read(displayed).unwrap(), b"displayed image");
-        assert!(working_bytes(&state.cache).unwrap() + IMPORT_RESERVE <= WORK_LIMIT);
+        let owned = tempfile::Builder::new().prefix("import-").tempdir_in(&state.cache).unwrap();
+        let active = owned.path().join("source.tif");
+        // Include enough working bytes to exceed even TOTAL_LIMIT, without filling the disk.
+        std::fs::File::create(&active).unwrap().set_len(TOTAL_LIMIT + 1).unwrap();
+        state.library.usage.lock().unwrap().reserved = IMPORT_RESERVE;
+        assert!(state.library.generate(&state, id, &|| false, false).unwrap());
+        assert_eq!(state.library.usage.lock().unwrap().reserved, IMPORT_RESERVE);
+        assert!(active.exists(), "another decoder's inputs must remain untouched");
         assert!(state.library.lookup(&catalog, id, 1600).unwrap().is_some());
         assert!(state.library.lookup(&catalog, id, 384).unwrap().is_some());
         assert_eq!(std::fs::read(source).unwrap(), original);

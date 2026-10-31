@@ -293,37 +293,8 @@ fn source(catalog: &Catalog, id: i64) -> anyhow::Result<PathBuf> {
     })
 }
 fn prune(cache: &Path) {
-    let Ok(entries) = std::fs::read_dir(cache) else {
-        return;
-    };
-    let mut files: Vec<_> = entries
-        .flatten()
-        .filter_map(|e| {
-            let p = e.path();
-            if !matches!(
-                p.extension().and_then(|s| s.to_str()),
-                Some("png" | "json" | "tif" | "tmp")
-            ) {
-                return None;
-            }
-            let m = e.metadata().ok()?;
-            Some((m.modified().ok()?, m.len(), p))
-        })
-        .collect();
-    let mut total: u64 = files.iter().map(|f| f.1).sum();
-    let limit = library_previews::WORK_LIMIT - library_previews::IMPORT_RESERVE;
-    if total <= limit {
-        return;
-    }
-    files.sort_by_key(|f| f.0);
-    // Startup has no active render in this process; reserve enough room for library preparation.
-    for (_, size, path) in files {
-        if total <= limit {
-            break;
-        }
-        if std::fs::remove_file(path).is_ok() {
-            total -= size;
-        }
+    if let Err(error) = library_previews::clear_work_space(cache) {
+        eprintln!("Could not clear abandoned development files: {error:#}");
     }
 }
 struct RenderRequest {
@@ -772,7 +743,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn startup_reclaims_recent_working_files_and_leaves_import_reserve() {
+    fn startup_removes_abandoned_work_files_and_directories() {
         let dir = tempfile::tempdir().unwrap();
         for index in 0..4 {
             std::fs::File::create(dir.path().join(format!("develop-{index}.png")))
@@ -782,12 +753,12 @@ mod tests {
         }
         let renderer = dir.path().join("renderer-bundled");
         std::fs::write(&renderer, b"renderer").unwrap();
+        let abandoned = dir.path().join("develop-prefetch-abandoned");
+        std::fs::create_dir(&abandoned).unwrap();
+        std::fs::write(abandoned.join("base.tif"), b"abandoned decode").unwrap();
         prune(dir.path());
-        let size = std::fs::read_dir(dir.path())
-            .unwrap()
-            .map(|entry| entry.unwrap().metadata().unwrap().len())
-            .sum::<u64>();
-        assert!(size + library_previews::IMPORT_RESERVE <= library_previews::WORK_LIMIT);
+        assert!(!abandoned.exists());
+        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
         assert_eq!(std::fs::read(renderer).unwrap(), b"renderer");
     }
     #[test]

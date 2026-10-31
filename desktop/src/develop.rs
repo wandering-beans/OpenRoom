@@ -516,29 +516,6 @@ async fn preview_inner(
         let cancelled = || generation.load(Ordering::SeqCst) != version;
         let reusable =
             pool.install(|| cached_base(&request, bound, &resident, true, &cancelled))?;
-        let reserve = match &reusable {
-            // RGBA8 output plus PNG and metadata overhead; the decoded base is already accounted for.
-            Some(base) => u64::from(base.info.width) * u64::from(base.info.height) * 5 + 1_000_000,
-            None => match bound {
-                0 => resident
-                    .lock()
-                    .unwrap()
-                    .as_ref()
-                    .filter(|base| base.source_key == request.source_key)
-                    .map(|base| {
-                        // The fit preview already knows the original dimensions: RGBA32F base + PNG.
-                        let pixels = u64::from(base.image.info.source_width)
-                            * u64::from(base.image.info.source_height);
-                        pixels
-                            .saturating_mul(21)
-                            .saturating_add(1_000_000)
-                            .min(900_000_000)
-                    })
-                    .unwrap_or(900_000_000),
-                4096 => 320_000_000,
-                _ => 64_000_000,
-            },
-        };
         let operation = || {
             pool.install(|| {
                 ensure!(!cancelled(), "現像対象が変更されました。");
@@ -575,7 +552,7 @@ async fn preview_inner(
                 result
             })
         };
-        copied.library.with_work_space(&copied, reserve, operation)
+        copied.library.with_work_space(&copied, operation)
     })
     .await
 }
@@ -872,7 +849,7 @@ mod tests {
         // Saving must finish even while preview generation owns its workspace lock.
         let saved = state
             .library
-            .with_work_space(&state, 0, || {
+            .with_work_space(&state, || {
                 let (send, receive) = std::sync::mpsc::channel();
                 let state = state.clone();
                 let settings = settings.clone();
@@ -1141,7 +1118,7 @@ mod tests {
         let (width, height, renders, reserved_bytes) = if full {
             (1536, 1024, 320, 0)
         } else {
-            (512, 256, 200, 985_000_000)
+            (512, 256, 200, 1_100_000_000)
         };
         image::RgbaImage::from_fn(width, height, |x, y| {
             let value =
@@ -1227,7 +1204,12 @@ mod tests {
                 .map(|entry| entry.unwrap().metadata().unwrap().len())
                 .sum::<u64>();
             peak = peak.max(bytes);
-            assert!(bytes <= 1_000_000_000, "working cache grew to {bytes}");
+            let outputs = std::fs::read_dir(&state.cache).unwrap()
+                .filter_map(Result::ok)
+                .filter(|entry| entry.file_name().to_string_lossy().starts_with("develop-")
+                    && entry.path().extension().is_some_and(|ext| ext == "png"))
+                .count();
+            assert!(outputs <= 2, "unused render outputs grew to {outputs}");
             index += 1;
             if index % 100 == 0 {
                 println!(
@@ -1370,7 +1352,7 @@ mod tests {
     }
 
     #[test]
-    fn full_size_edits_reuse_a_recent_base_without_reserving_another_decode() {
+    fn full_size_edits_reuse_a_recent_base_above_the_old_workspace_limit() {
         let (_directory, state, id) = fixture();
         let source = Catalog::open(&state.db).unwrap().source_path(id).unwrap();
         let original = std::fs::read(&source).unwrap();
@@ -1418,20 +1400,12 @@ mod tests {
             .unwrap()
             .set_len(999_500_000)
             .unwrap();
-        let error = tauri::async_runtime::block_on(preview_inner(
-            &state,
-            &develop,
-            id,
-            Settings {
-                exposure: 2.,
-                ..Default::default()
-            },
-            0,
-        ))
-        .err()
-        .expect("the working storage limit must still be enforced");
-        assert!(error.contains("作業領域"), "{error}");
-        assert!(occupied.exists());
+        let result = tauri::async_runtime::block_on(preview_inner(
+            &state, &develop, id,
+            Settings { exposure: 2., ..Default::default() }, 0,
+        )).expect("working files over 1 GB must not block development");
+        assert_eq!(image::image_dimensions(&result.path).unwrap(), (67, 37));
+        assert!(request.base.exists());
         assert_eq!(original, std::fs::read(&source).unwrap());
         assert_eq!(
             Catalog::open(&state.db)
@@ -1511,7 +1485,7 @@ mod tests {
         let copy = state.clone();
         let writer = std::thread::spawn(move || {
             copy.library
-                .with_work_space(&copy, 0, || {
+                .with_work_space(&copy, || {
                     locked_send.send(()).unwrap();
                     release_receive
                         .recv_timeout(std::time::Duration::from_secs(10))
