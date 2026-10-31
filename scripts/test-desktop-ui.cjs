@@ -260,6 +260,11 @@ async function run() {
             ].filter(folder => !window.removedRootIds?.includes(folder.root_id)).map(folder => ({...folder, count:items.filter(item => item.root_id === folder.root_id && (!folder.path || item.path.startsWith(folder.path + '/'))).length})).filter(folder => !folder.path || folder.count);
             if (command === 'count') return filter(args.query).length;
             if (command === 'search') {
+              if (args.cursor && window.invalidateSearchPages > 0) {
+                window.invalidateSearchPages--;
+                window.catalogGeneration++;
+              }
+              if (window.failSearchPage && args.cursor) throw Error('search unavailable');
               if (args.cursor && args.cursor.generation !== window.catalogGeneration) {
                 throw Error('stale or incompatible cursor; restart pagination');
               }
@@ -464,6 +469,7 @@ async function run() {
     if (process.argv.includes('--export-defaults')) { await require('./test-export-defaults.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--crop-pan')) { await require('./test-crop-pan.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--crop-panel')) { await require('./test-crop-panel.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--pagination')) { await require('./test-pagination.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--slider-scroll')) { await require('./test-slider-scroll.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--interactive-preview')) { await require('./test-interactive-preview.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
@@ -2027,6 +2033,7 @@ async function run() {
     await require('./test-catalog-removal.cjs')(page);
     await require('./test-export-defaults.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     await require('./test-slider-scroll.cjs')(page, `http://127.0.0.1:${server.address().port}`);
+    await require('./test-pagination.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     assert.deepEqual(failures, []);
     console.log(JSON.stringify({ checks: ['MCP settings, modal and unsaved guards, off-page selection, attributes, development and expired requests', 'portrait and landscape thumbnails fit immediately with stable preview upgrades', 'new folder scans only its own root, clears filters and selects imported photos', 'LRC metadata columns, folder-scoped indexing and cancellation, rating comparisons and reject flag', 'movable smooth tone curve persisted', 'reference layout', 'loupe/grid keyboard navigation', 'virtual filmstrip and grid', 'nested folders and counts', 'file format filtering consolidated into metadata, reset and unsaved-edit protection', 'unsaved and failed-save protection', 'annotation persistence and search', 'ratings and filter', 'library uses stored 1600px previews; development requests originals', 'metadata/navigation races', 'filmstrip paging past 200 photos', 'failed thumbnail retry', '900px and 1320px layouts', 'development recipe sliders, stale renders, undo/redo, before comparison', 'development autosave failure blocks navigation and close', 'library/develop context-menu export, settings, cancellation, failures and modal guards', 'saved thumbnail race and targeted invalidation', 'crop reset bounds', 'debounced autosave and edits during an in-flight save', 'flush before photo selection, catalog snapshot and normal close', 'catalog file location and copy controls', 'persistent gesture history and nondestructive restore', 'catalog switch flush, cancellation, failure and restart isolation', 'direct crop and local mask gestures, persistent presets and snapshots, before comparison, multi-selection sync and batch export'], preview_fit_checks: previewFitChecks, cached_tiles_ms: Math.round(cacheMilliseconds), page_errors: failures }, null, 2));
   } finally {

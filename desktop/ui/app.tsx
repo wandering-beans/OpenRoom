@@ -418,12 +418,17 @@ async function refresh(keepId: number | null = null, throwErrors = false) {
     $('result-count').textContent = t("{0}枚の写真", count.toLocaleString());
   }).catch(error => { if (token === epoch) showError(error); });
 }
+function staleCursor(error: unknown) {
+  return String(error).includes('stale or incompatible cursor; restart pagination');
+}
 async function more(token = epoch, throwErrors = false) {
   if (loading || !hasMore) return;
   loading = true;
   try {
-    const result = await invoke('search', { query: query(), cursor }).catch(async error => {
-      if (!cursor || !String(error).includes('stale or incompatible cursor; restart pagination')) throw error;
+    const requestedCursor = cursor;
+    const result = await invoke('search', { query: query(), cursor: requestedCursor }).catch(async error => {
+      if (token !== epoch) return null;
+      if (!requestedCursor || !staleCursor(error)) throw error;
       await restartPages(token);
       return null;
     });
@@ -446,14 +451,29 @@ async function restartPages(token: number) {
   const scope = query(), loadedCount = items.length;
   const replacement: Photo[] = [], adjusted = new Set<number>();
   let next: Cursor | null = null;
+  let retries = 0;
   // Rebuild offscreen; never mix catalog generations or discard an unsaved edit.
-  do {
-    const page: Commands['search']['result'] = await invoke('search', {query: scope, cursor: next});
+  while (token === epoch) {
+    let page: Commands['search']['result'];
+    try {
+      page = await invoke('search', {query: scope, cursor: next});
+    } catch (error) {
+      if (token !== epoch) return;
+      if (!next || !staleCursor(error)) throw error;
+      replacement.length = 0;
+      adjusted.clear();
+      next = null;
+      // Import/source updates can invalidate even a restarted page; avoid a tight retry loop.
+      await new Promise(resolve => setTimeout(resolve, Math.min(++retries * 250, 1000)));
+      continue;
+    }
     if (token !== epoch) return;
     replacement.push(...page.items);
     for (const id of page.adjusted_ids) adjusted.add(id);
     next = page.next;
-  } while (next && replacement.length <= loadedCount);
+    if (!next || replacement.length > loadedCount) break;
+  }
+  if (token !== epoch) return;
   const activeId = items[selected]?.id;
   const kept = replacement.findIndex(item => item.id === activeId);
   if (activeId != null && kept < 0 && !await allowChange()) { hasMore = false; return; }
