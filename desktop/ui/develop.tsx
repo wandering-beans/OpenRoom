@@ -528,6 +528,26 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
       return false;
     } finally { exporting = false; buttons(); }
   }
+  let sliderPointer: number | null = null;
+  const preventSliderScroll = (event: WheelEvent) => event.preventDefault();
+  function releaseSliderScroll() {
+    sliderPointer = null;
+    document.removeEventListener('wheel', preventSliderScroll, true);
+  }
+  $('develop-panel').addEventListener('pointerdown', event => {
+    const input = event.target;
+    if (event.button !== 0 || !(input instanceof HTMLInputElement) || input.type !== 'range' || input.disabled) return;
+    // Keep a partially visible slider in place without cancelling its native drag behavior.
+    input.focus({preventScroll: true});
+    sliderPointer = event.pointerId;
+    document.addEventListener('wheel', preventSliderScroll, {capture: true, passive: false});
+  }, true);
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
+    window.addEventListener(event, event => {
+      if (event.pointerId === sliderPointer) releaseSliderScroll();
+    }, true);
+  }
+  window.addEventListener('blur', releaseSliderScroll);
   $('develop-copy').onclick = () => { if (item) void copySettings(item.id); };
   $('develop-paste').onclick = () => { if (item) void pasteSettings(item.id); };
   $('develop-before').onclick = () => { if (!settings) return; before = !before; buttons(); schedule(); };

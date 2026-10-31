@@ -215,6 +215,7 @@ footer { height: 17px; flex: none; padding: 0 20px; background: #080808; display
 
 .develop-panel { position: relative; width: clamp(290px, 15.5vw, 318px); flex: none; display: flex; flex-direction: column; min-height: 0; background: #303030; border-left: 3px solid #141414; }
 .develop-scroll { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.develop-panel input[type="range"] { touch-action: none; }
 .develop-panel details.panel { background: #424242; }
 .develop-panel fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
 .develop-panel fieldset:disabled { opacity: .5; }
