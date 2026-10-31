@@ -4,10 +4,10 @@ import { element as $ } from './dom';
 import { t } from './i18n';
 import { createPreferences } from './components/Preferences';
 // MCP requests are acknowledged only after the desktop has applied the operation.
-export async function startMcp({ invoke, listen, ready, state, prepare, select, view, refresh, busy, error, changeLanguage }: { invoke: Invoke; listen: typeof listenEvent; ready: boolean; state(): UiState; prepare(): Promise<void>; select(ids: number[]): Promise<void>; view(mode: ViewMode | 'develop'): Promise<void>; refresh(ids: number[]): Promise<void>; busy(): boolean; error: ErrorHandler; changeLanguage(value: Language): Promise<void> }) {
+export async function startMcp({ invoke, listen, ready, state, prepare, select, view, refresh, busy, error, changeLanguage, prepareUpdate }: { invoke: Invoke; listen: typeof listenEvent; ready: boolean; state(): UiState; prepare(): Promise<void>; select(ids: number[]): Promise<void>; view(mode: ViewMode | 'develop'): Promise<void>; refresh(ids: number[]): Promise<void>; busy(): boolean; error: ErrorHandler; changeLanguage(value: Language): Promise<void>; prepareUpdate(): Promise<void> }) {
 
   let queue = Promise.resolve(), active = false, refreshPending = false;
-  const preferences = createPreferences({ changeLanguage, error });
+  const preferences = createPreferences({ changeLanguage, prepareUpdate, error });
   async function handle(event: BackendEvent<{id: string}>) {
     const id = event.payload.id;
     let result: McpResult | null = null, failure: string | null = null, locked = false, priorInert = false;

@@ -1,5 +1,6 @@
 import type { Photo, Root, Folder, Query, Page, Cursor, Detail, Preview, PhotoMetadata, Settings, SettingsPatch, Recipe, DevelopedPreview, HistoryRow, ImportReport, PreviewProgress, IndexProgress, Facet, WorkflowRequest, WorkflowResult, SavedRecipe, McpRequest, McpResult } from './models';
 export type Language = 'ja' | 'en';
+export interface AvailableUpdate { version: string; notes: string }
 export type ExportFormat = 'jpeg' | 'png' | 'tiff';
 export type CatalogRemoval = { kind: 'photos'; ids: number[] } | { kind: 'folder'; root_id: number; path: string };
 
@@ -33,6 +34,9 @@ export interface McpStatus {
 }
 
 export interface Commands {
+  app_version: { args: undefined; result: string };
+  check_app_update: { args: undefined; result: AvailableUpdate | null };
+  install_app_update: { args: undefined; result: void };
   roots: { args: undefined; result: Root[] };
   folders: { args: undefined; result: Folder[] };
   remove_from_catalog: { args: { selection: CatalogRemoval }; result: number };

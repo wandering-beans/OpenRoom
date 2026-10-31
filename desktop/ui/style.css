@@ -402,7 +402,9 @@ body:not(.develop-mode) .develop-left { display: none; }
 #preferences-dialog input:not([type="checkbox"]) { width: 100%; box-sizing: border-box; padding: 8px; background: #202020; color: #eee; border: 1px solid #777; }
 #preferences-dialog .mcp-actions { display: flex; gap: 8px; }
 #preferences-dialog button { padding: 6px 12px; }
-#mcp-status { overflow-wrap: anywhere; }
+#mcp-status, #update-status, #update-notes { overflow-wrap: anywhere; }
+#update-notes p { white-space: pre-wrap; }
+#preferences-dialog fieldset { min-width: 0; }
 #ai-selection { padding: 6px 12px; background: #353f3c; color: #eee; }
 #ai-selection[hidden] { display: none; }
 

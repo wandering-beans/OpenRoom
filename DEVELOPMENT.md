@@ -62,3 +62,24 @@ RAW検証用の写真はリポジトリに同梱せず、`reports/raw-heif-sampl
 共有前に`python3 scripts/test-privacy-check.py`と`python3 scripts/privacy-check.py --tracked`を実行してください。配布アプリは`python3 scripts/privacy-check.py dist/OpenRoom.app`でも確認できます。この検査はローカルパスや既知の秘密情報の形式を検出しますが、画像内の個人情報などを自動判定するものではありません。新しい画像やアーカイブを追加する場合は内容とメタデータも確認してください。
 
 開発フォルダ全体をZIPにすると、Gitの除外設定に関係なくローカルデータが入ります。ソースの配布には監査済みコミットの`git archive`、アプリの配布には`dist/OpenRoom.app`だけを使用してください。アプリを起動すると作成される利用者のカタログとキャッシュは、配布ファイルとは別に保存されます。
+
+
+## 署名付きアプリ更新
+
+更新処理はRustの`desktop/src/updates.rs`で行い、画面は`UpdateSettings.tsx`で管理します。配布先はOpenRoomの固定GitHub URLに限定し、TLS、更新用署名、署名に含まれる版番号を検証します。更新ファイルはカタログや写真を含みません。取得・署名検証が失敗した場合はインストールせず、取得したデータは破棄します。
+
+公開用の確認が完了するまでは、リポジトリを非公開に保ちます。非公開の間は認証なしの更新確認が失敗するため、配布準備中のアプリで「最新」とは表示しません。GitHubのトークンをアプリへ埋め込まないでください。
+
+更新を配布するときは、[配布条件](DISTRIBUTION.md)の確認を済ませ、次の順で準備します。
+
+1. `desktop/Cargo.toml`、`desktop/tauri.conf.json`、`desktop/package.json`と各lockファイルのバージョンをそろえ、`bundle.macOS.bundleVersion`を前回より増やす。依存・版の変更後はライセンス目録も更新する。
+2. `sh scripts/build-desktop.sh dist/update-preview/OpenRoom.app`で配布アプリを別の場所にビルドする。引数なしの場合は従来どおり`dist/OpenRoom.app`へ配置する。
+3. `TAURI_SIGNING_PRIVATE_KEY_PATH`に秘密鍵ファイルの場所、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`に鍵のパスワードを設定する。秘密鍵と同じ場所の`.pub`ファイルをアプリ設定内の公開鍵と照合する。秘密鍵はGit・ソースZIP・アプリに含めず、紛失に備えて別の安全な場所へバックアップする。
+4. `python3 scripts/package-update.py dist/update-preview/OpenRoom.app --notes release-notes.txt --output dist/releases/vVERSION-update`を実行する。`VERSION`は設定した版番号に置き換える。出力済みのフォルダは上書きしない。
+5. GitHubの同じ版のリリースへ`.app.tar.gz`、`.sig`、チェックサムと対応するソースを添付する。配布条件とダウンロードを確認してから、生成された`latest.json`を`updates/latest.json`へコピーしてコミットする。更新情報をアプリより先に公開しない。
+
+Tauriの更新用署名と、macOSのDeveloper ID署名・公証は別です。現在のアプリはアドホック署名で、Developer ID署名・公証は行っていません。最初のインストール時のmacOSの確認は、更新用署名では省略されません。
+
+更新機能に限定したテストは、フロントのビルド後に`node scripts/test-desktop-ui.cjs --updates`、Rustは`cargo test --manifest-path desktop/Cargo.toml updates::tests --locked`で実行できます。後者は一時的なローカルサーバーと使い捨ての署名鍵で、改ざん拒否・版番号の照合・一時アプリの置き換えを確認します。
+
+配布ファイル自体を検証する場合は、`OPENROOM_UPDATE_PACKAGE`にパッケージ作成先を指定し、`cargo test --manifest-path desktop/Cargo.toml updates::tests::packaged_release --locked -- --ignored`を実行します。本番公開鍵で署名を確認して一時フォルダへインストールし、アプリのmacOS署名・バージョン・カタログ保持を確認します。

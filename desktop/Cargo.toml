@@ -1,6 +1,6 @@
 [package]
 name = "advanced-explorer-desktop"
-version = "0.7.8"
+version = "0.7.9"
 edition = "2024"
 license = "GPL-3.0-or-later"
 build = "build.rs"
@@ -19,6 +19,7 @@ serde_json = "1"
 tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
+tauri-plugin-updater = "2"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
 advanced-explorer-media = { path = "../crates/media-core" }
 tokio = { version = "1", features = ["sync", "net", "time", "macros"] }
@@ -39,6 +40,7 @@ keyring = { version = "3.6.3", features = ["windows-native"] }
 keyring = { version = "3.6.3", features = ["sync-secret-service", "crypto-rust", "vendored"] }
 
 [dev-dependencies]
+tauri = { version = "2", features = ["test"] }
 reqwest = { version = "0.13", default-features = false, features = ["json"] }
 
 [build-dependencies]

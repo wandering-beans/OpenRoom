@@ -3,9 +3,11 @@ import { createRoot } from 'react-dom/client';
 import { createPortal, flushSync } from 'react-dom';
 import { command, listen, type Language, type McpStatus, type Unlisten } from '../backend';
 import { errorText, language, t } from '../i18n';
+import { UpdateSettings } from './UpdateSettings';
 
 interface PreferencesActions {
   changeLanguage(value: Language): Promise<void>;
+  prepareUpdate(): Promise<void>;
   error(failure: unknown): void;
 }
 interface PreferencesHandle {
@@ -13,7 +15,7 @@ interface PreferencesHandle {
   showJobStatus(message: string): void;
 }
 
-function Preferences({ changeLanguage, error, ref }: PreferencesActions & { ref: Ref<PreferencesHandle> }) {
+function Preferences({ changeLanguage, prepareUpdate, error, ref }: PreferencesActions & { ref: Ref<PreferencesHandle> }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [enabled, setEnabled] = useState(false);
   const [port, setPort] = useState('39127');
@@ -26,6 +28,7 @@ function Preferences({ changeLanguage, error, ref }: PreferencesActions & { ref:
   const [languagePending, setLanguagePending] = useState(false);
   const [languageStatus, setLanguageStatus] = useState('');
   const [jobStatus, setJobStatus] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   function showStatus(value: McpStatus) {
     setEnabled(value.enabled);
@@ -95,15 +98,18 @@ function Preferences({ changeLanguage, error, ref }: PreferencesActions & { ref:
     finally { setSelectedLanguage(language); setLanguagePending(false); }
   }
 
-  return <dialog id="preferences-dialog" ref={dialog} aria-labelledby="preferences-title" onClose={clearToken}>
+  return <dialog id="preferences-dialog" ref={dialog} aria-labelledby="preferences-title" onClose={clearToken}
+    onCancel={event => { if (updating) event.preventDefault(); }}>
     <h2 id="preferences-title">{t('環境設定')}</h2>
+    <fieldset disabled={updating}>
+    <UpdateSettings prepareUpdate={prepareUpdate} setUpdating={setUpdating} />
     <label className="language-setting" htmlFor="ui-language">{t('言語 / Language')}<select id="ui-language" value={selectedLanguage}
       disabled={languagePending} onChange={event => { void selectLanguage(event.target.value as Language); }}>
       <option value="ja">日本語</option><option value="en">English</option>
     </select></label>
     <p className="panel-note">{t('言語を変更すると、編集を保存して画面を再読み込みします。')}</p>
     <p id="language-status" role="status">{languageStatus}</p>
-    <h3>{t('AI連携')}</h3>
+    <h3 id="mcp-title">{t('AI連携')}</h3>
     <p>{t('同じPCのAIエージェントから、開いているカタログを操作できます。')}</p>
     <p id="mcp-status" role="status">{status}</p>
     <fieldset id="mcp-settings" disabled={pending}>
@@ -118,6 +124,7 @@ function Preferences({ changeLanguage, error, ref }: PreferencesActions & { ref:
     </fieldset>
     <p id="mcp-job-status" role="status">{jobStatus}</p>
     <button id="mcp-close" onClick={() => dialog.current?.close()}>{t('閉じる')}</button>
+    </fieldset>
   </dialog>;
 }
 

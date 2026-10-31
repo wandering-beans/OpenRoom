@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OpenRoom",
-  "version": "0.7.8",
+  "version": "0.7.9",
   "identifier": "local.advanced-explorer.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -44,7 +44,17 @@
       "infoPlist": "Info.plist",
       "files": {
         "Resources/Assets.car": "icons/Assets.car"
-      }
+      },
+      "bundleVersion": "19"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJDRTY2QjkwRTg1RTg0RUIKUldUcmhGN29rR3ZtdlBNTHM1N3FEQlc4Q0lrcElFcnJhSHZ3U3VrdFo5TzEybHoyUyswdTNMUjgK",
+      "requireSignedVersion": true,
+      "endpoints": [
+        "https://raw.githubusercontent.com/wandering-beans/OpenRoom/main/updates/latest.json"
+      ]
     }
   }
 }

@@ -3,11 +3,11 @@
   "scope": "macOS arm64 desktop Cargo resolution, including build/dev dependencies; production npm packages; exact packaged native libraries. This is a notice inventory, not a complete corresponding-source archive or legal compatibility certification.",
   "inputs": {
     "Cargo.lock": "9f9a120ff83833f1cd5604669f7e81a4ac001cc903ce336cbb3d6b8bd8d14deb",
-    "desktop/Cargo.lock": "e6f297a95d4dd708ced87bd9a84d3d643d4c7c5d17a6b24a30753b633f669e89",
+    "desktop/Cargo.lock": "6b90144539b92f1aefc01631d25a7597f12ac1e268dffc7dbe801162a50b18d8",
     "crates/develop-core/Cargo.lock": "f4df429cef1951a28151e081a02a792a0fc0b528c8e66baa186f3acccff10e70",
     "crates/media-core/Cargo.lock": "536ea4946bec1b50d1c18028ac52cd7fe077b82035bbef480e2f6c15fca33f96",
     "crates/rtengine/Cargo.lock": "12c10b2e60cb4987383831e8978d9849ed22ca6531e59a9f08eab7b3d79786d0",
-    "desktop/package-lock.json": "7c96a54dd9d5031f38eaad6a6cf680f24083b5db8a2c4f6ca9b7fcc13303f53e",
+    "desktop/package-lock.json": "f958c785fe4ed30b93d355526f0b9601084fe909792c558aecf9ffe601142a30",
     "native/rtengine/source.json": "8af41792cbf40a3099af47cfc625413dcac609320332b063f497ee350b1e0c07"
   },
   "packages": [
@@ -4398,9 +4398,14 @@
       "version": "0.1.0",
       "license": "MIT",
       "repository": "https://github.com/lu-zero/simd_helpers",
-      "notices": [],
+      "notices": [
+        "rust/simd_helpers-0.1.0/LICENSE"
+      ],
       "revision": "ca1a2f84aa386d758e98f8a609d990263932fb85",
-      "notice_status": "missing"
+      "notice_sources": [
+        "https://raw.githubusercontent.com/lu-zero/simd_helpers/82040194cd05affb060bf94d6f19f82a771d07fb/LICENSE"
+      ],
+      "notice_provenance": "Upstream added only LICENSE directly after the published package revision; source code is unchanged."
     },
     {
       "ecosystem": "cargo",
@@ -6252,12 +6257,265 @@
           "uuid": "AAE2C17C-EC91-33E7-ACD6-377C912B0449"
         }
       ]
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "core-foundation",
+      "version": "0.9.4",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/servo/core-foundation-rs",
+      "notices": [
+        "rust/core-foundation-0.9.4/LICENSE-APACHE",
+        "rust/core-foundation-0.9.4/LICENSE-MIT"
+      ],
+      "revision": "795398aa3775bbdaf03419fcd2cc0dad7ebbc4dc"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "filetime",
+      "version": "0.2.29",
+      "license": "MIT/Apache-2.0",
+      "repository": "https://github.com/alexcrichton/filetime",
+      "notices": [
+        "rust/filetime-0.2.29/LICENSE-APACHE",
+        "rust/filetime-0.2.29/LICENSE-MIT"
+      ],
+      "revision": "ab5ee65b5e4fe2de19dbe7d4fe08bc31e945949c"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "getrandom",
+      "version": "0.2.17",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rust-random/getrandom",
+      "notices": [
+        "rust/getrandom-0.2.17/LICENSE-APACHE",
+        "rust/getrandom-0.2.17/LICENSE-MIT"
+      ],
+      "revision": "b625985d852600a3eeb68556811e59e7c9a6a098"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "hyper-rustls",
+      "version": "0.27.10",
+      "license": "Apache-2.0 OR ISC OR MIT",
+      "repository": "https://github.com/rustls/hyper-rustls",
+      "notices": [
+        "rust/hyper-rustls-0.27.10/LICENSE-APACHE",
+        "rust/hyper-rustls-0.27.10/LICENSE-ISC",
+        "rust/hyper-rustls-0.27.10/LICENSE-MIT"
+      ],
+      "revision": "ce45b6b0dfdf238f9058b89feb1e3b8eaebbc5b0"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "minisign-verify",
+      "version": "0.2.5",
+      "license": "MIT",
+      "repository": "https://github.com/jedisct1/rust-minisign-verify",
+      "notices": [
+        "rust/minisign-verify-0.2.5/LICENSE"
+      ],
+      "revision": "3a91d03f86a8462a1af953c2854687d3f953d541"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "objc2-osa-kit",
+      "version": "0.3.2",
+      "license": "Zlib OR Apache-2.0 OR MIT",
+      "repository": "https://github.com/madsmtm/objc2",
+      "notices": [
+        "rust/objc2-osa-kit-0.3.2/LICENSE.md"
+      ],
+      "revision": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "notice_sources": [
+        "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+      ]
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "osakit",
+      "version": "0.3.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/mdevils/rust-osakit",
+      "notices": [
+        "rust/osakit-0.3.1/LICENSE-APACHE",
+        "rust/osakit-0.3.1/LICENSE-MIT"
+      ],
+      "revision": "9f1dcf7d2a29524410da519adbb97513b713ab74"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "ring",
+      "version": "0.17.14",
+      "license": "Apache-2.0 AND ISC",
+      "repository": "https://github.com/briansmith/ring",
+      "notices": [
+        "rust/ring-0.17.14/LICENSE",
+        "rust/ring-0.17.14/LICENSE-BoringSSL",
+        "rust/ring-0.17.14/LICENSE-other-bits",
+        "rust/ring-0.17.14/src/polyfill/once_cell/LICENSE-APACHE",
+        "rust/ring-0.17.14/src/polyfill/once_cell/LICENSE-MIT",
+        "rust/ring-0.17.14/third_party/fiat/LICENSE"
+      ],
+      "revision": "2723abbca9e83347d82b056d5b239c6604f786df"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rustls",
+      "version": "0.23.46",
+      "license": "Apache-2.0 OR ISC OR MIT",
+      "repository": "https://github.com/rustls/rustls",
+      "notices": [
+        "rust/rustls-0.23.46/LICENSE-APACHE",
+        "rust/rustls-0.23.46/LICENSE-ISC",
+        "rust/rustls-0.23.46/LICENSE-MIT"
+      ],
+      "revision": "f04804fa13341a9b1dc02b5d1dd8a746f2c4b7fb"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rustls-pki-types",
+      "version": "1.15.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rustls/pki-types",
+      "notices": [
+        "rust/rustls-pki-types-1.15.1/LICENSE-APACHE",
+        "rust/rustls-pki-types-1.15.1/LICENSE-MIT"
+      ],
+      "revision": "e29ad15465126acc089b39611bcec85e27ce0817"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rustls-platform-verifier",
+      "version": "0.7.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rustls/rustls-platform-verifier",
+      "notices": [
+        "rust/rustls-platform-verifier-0.7.1/LICENSE-APACHE",
+        "rust/rustls-platform-verifier-0.7.1/LICENSE-MIT"
+      ],
+      "revision": "252e25161a91af476cbea620e29d277592d27ec7"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "rustls-webpki",
+      "version": "0.103.16",
+      "license": "ISC",
+      "repository": "https://github.com/rustls/webpki",
+      "notices": [
+        "rust/rustls-webpki-0.103.16/LICENSE"
+      ],
+      "revision": "8ecdcc76f56b68fda67a6adf7976f5eed5006a4c"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "system-configuration",
+      "version": "0.7.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/mullvad/system-configuration-rs",
+      "notices": [
+        "rust/system-configuration-0.7.0/LICENSE-APACHE",
+        "rust/system-configuration-0.7.0/LICENSE-MIT"
+      ],
+      "revision": "bc5958ccec74c724fc60bbd64ebeae44511cae2c"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "system-configuration-sys",
+      "version": "0.6.0",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/mullvad/system-configuration-rs",
+      "notices": [
+        "rust/system-configuration-sys-0.6.0/LICENSE-APACHE",
+        "rust/system-configuration-sys-0.6.0/LICENSE-MIT"
+      ],
+      "revision": "fd43df6f57de954878d824c14c08b57045e46e76"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tar",
+      "version": "0.4.46",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/composefs/tar-rs",
+      "notices": [
+        "rust/tar-0.4.46/LICENSE-APACHE",
+        "rust/tar-0.4.46/LICENSE-MIT"
+      ],
+      "revision": "fc459c149f83bf4daceaa52e17d351989002e1a9"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tauri-plugin-updater",
+      "version": "2.13.1",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/tauri-apps/plugins-workspace",
+      "notices": [
+        "rust/tauri-plugin-updater-2.13.1/LICENSE.spdx",
+        "rust/tauri-plugin-updater-2.13.1/LICENSE_APACHE-2.0",
+        "rust/tauri-plugin-updater-2.13.1/LICENSE_MIT"
+      ],
+      "revision": "e51128438011755f9e7277bad29b8c0978cf281c"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tokio-rustls",
+      "version": "0.26.6",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rustls/tokio-rustls",
+      "notices": [
+        "rust/tokio-rustls-0.26.6/LICENSE-APACHE",
+        "rust/tokio-rustls-0.26.6/LICENSE-MIT"
+      ],
+      "revision": "8aebb7c9556ea8024c1b974b84a4a6f2e306889a"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "untrusted",
+      "version": "0.9.0",
+      "license": "ISC",
+      "repository": "https://github.com/briansmith/untrusted",
+      "notices": [
+        "rust/untrusted-0.9.0/LICENSE.txt"
+      ],
+      "revision": "89c8b8415f692d3803d183fc5fbf9ec08a6adcf4"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "xattr",
+      "version": "1.6.1",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/Stebalien/xattr",
+      "notices": [
+        "rust/xattr-1.6.1/LICENSE-APACHE",
+        "rust/xattr-1.6.1/LICENSE-MIT"
+      ],
+      "revision": "3e1914f5dac41437db1fed74f6284fd84cb26b26"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "zeroize",
+      "version": "1.9.1",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/RustCrypto/utils",
+      "notices": [
+        "rust/zeroize-1.9.1/LICENSE-APACHE",
+        "rust/zeroize-1.9.1/LICENSE-MIT"
+      ],
+      "revision": "34a6ebcb9b920ec7ae5809e470fce94fe7c0cb55"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "zeroize_derive",
+      "version": "1.5.0",
+      "license": "Apache-2.0 OR MIT",
+      "repository": "https://github.com/RustCrypto/utils",
+      "notices": [
+        "rust/zeroize_derive-1.5.0/LICENSE-APACHE",
+        "rust/zeroize_derive-1.5.0/LICENSE-MIT"
+      ],
+      "revision": "1ea42bb68f560a2909c856b20aa3c62901f6305c"
     }
   ],
-  "unresolved": [
-    {
-      "component": "simd_helpers 0.1.0",
-      "issue": "Published package and pinned upstream have no license text; metadata declares MIT. Retain source and confirm the notice before distribution."
-    }
-  ]
+  "unresolved": []
 }

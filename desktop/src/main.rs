@@ -9,6 +9,7 @@ mod preview_queue;
 mod mcp;
 mod media;
 mod preferences;
+mod updates;
 #[cfg(target_os = "macos")]
 mod rtengine_worker;
 mod workflow;
@@ -595,6 +596,8 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(updates::UpdateState::default())
         .manage(CloseGuard(AtomicBool::new(false)))
         .menu(|app| {
             let menu = tauri::menu::Menu::default(app)?;
@@ -708,6 +711,7 @@ fn main() {
             library::set_photo_attributes, library::metadata_facets, library::index_metadata_batch, library::cancel_metadata_index,
             library::remove_from_catalog,
             preferences::get_language, preferences::set_language,
+            updates::app_version, updates::check_app_update, updates::install_app_update,
             arm_close_guard,
             close_window,
             batch_export::export_develop_batch,

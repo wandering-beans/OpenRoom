@@ -75,6 +75,9 @@ pub struct McpState {
     jobs: Arc<Jobs>,
 }
 impl McpState {
+    pub(crate) fn has_running_jobs(&self) -> bool {
+        self.jobs.running()
+    }
     pub fn new(data: PathBuf) -> Self {
         let loaded = read_config(&data);
         let error = loaded

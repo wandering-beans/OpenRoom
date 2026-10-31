@@ -123,6 +123,16 @@ async function run() {
           invoke: async (command, args = {}) => {
             const call = { command, args, start: performance.now() };
             window.calls.push(call);
+            if (command === 'app_version') return '0.7.9';
+            if (command === 'check_app_update') {
+              if (window.failUpdateCheck) throw Error('Injected network failure');
+              return window.availableUpdate || null;
+            }
+            if (command === 'install_app_update') {
+              if (window.holdUpdate) await new Promise(resolve => { window.releaseUpdate = resolve; });
+              if (window.failUpdateInstall) throw Error('Injected signature failure');
+              return;
+            }
             if (saveBenchmark && ['save_develop','get_develop'].includes(command)) {
               const result = await fetch(developEndpoint + (command === 'save_develop' ? '/save' : '/get'),
                 {method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(args)}).then(response=>response.json());
@@ -215,7 +225,10 @@ async function run() {
               if (window.failCatalog) throw Error('Injected invalid catalog');
               return window.catalogChoice || null;
             }
-            if (command === 'restart_catalog') return;
+            if (command === 'restart_catalog') {
+              if (window.failRestart) throw Error('Injected restart failure');
+              return;
+            }
             if(command === 'develop_workflow') {
               const request=args.request;
               if(request.action==='list')return savedRecipes.filter(row=>row.item_id===request.item_id);
@@ -366,6 +379,10 @@ async function run() {
         event: { listen: async (name, callback) => { window.listeners[name] = callback; return () => {}; } },
       };
     }, {usePhoto:photoSize, developEndpoint:process.env.AE_DEVELOP_ENDPOINT, saveBenchmark: Boolean(process.env.AE_SAVE_BENCH)});
+    if (process.argv.includes('--updates')) {
+      await require('./test-updates-ui.cjs')(page, `http://127.0.0.1:${server.address().port}`);
+      assert.deepEqual(failures, []); return;
+    }
     if (process.env.AE_UI_LANGUAGE_ONLY || process.argv.includes('--language')) {
       await require('./test-language-ui.cjs')(page, `http://127.0.0.1:${server.address().port}`);
       assert.deepEqual(failures, []); return;
@@ -1860,7 +1877,7 @@ async function run() {
     await page.keyboard.press('Control+,');
     assert.equal(await page.locator('#preferences-dialog').isVisible(), true);
     assert.equal(await page.locator('#preferences-title').textContent(), '環境設定');
-    assert.equal(await page.locator('#preferences-dialog h3').textContent(), 'AI連携');
+    assert.equal(await page.locator('#mcp-title').textContent(), 'AI連携');
     await page.keyboard.press('d');
     assert.equal(await page.locator('#module-library').getAttribute('aria-current'), 'page', 'preferences blocks photo shortcuts');
     await page.click('#mcp-close');

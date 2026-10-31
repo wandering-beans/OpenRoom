@@ -1354,6 +1354,13 @@ try {
       await developSelectionTask;
     },
     refresh: refreshMcpPhotos, error: showError,
+    async prepareUpdate() {
+      if (scanning || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから更新してください。"));
+      await developSelectionTask;
+      if (metadataDirty) await saveAnnotation();
+      if (metadataDirty) throw Error(t("保存できませんでした。編集内容を保持しています。"));
+      if (!await develop.allowChange()) throw Error(t("現像設定を保存できません。画面の編集内容を保持しています。"));
+    },
     async changeLanguage(value) {
       if (scanning || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから言語を変更してください。"));
       await developSelectionTask;

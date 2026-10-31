@@ -16,6 +16,11 @@ pub struct ExportState {
     busy: Arc<AtomicBool>,
     cancel: Arc<AtomicBool>,
 }
+impl ExportState {
+    pub(crate) fn is_busy(&self) -> bool {
+        self.busy.load(Ordering::SeqCst)
+    }
+}
 impl Default for ExportState {
     fn default() -> Self {
         Self {
