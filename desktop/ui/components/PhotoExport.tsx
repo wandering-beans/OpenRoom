@@ -14,6 +14,7 @@ interface PhotoExportHandle {
   menu(selection: CatalogRemoval, x: number, y: number, tile: HTMLElement): void;
 }
 type Phase = 'idle' | 'choosing' | 'running';
+const exportFolderKey = 'openroom.export.folder';
 
 function PhotoExport({ prepare, error, remove, ref }: ExportActions & { ref: Ref<PhotoExportHandle> }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -30,7 +31,10 @@ function PhotoExport({ prepare, error, remove, ref }: ExportActions & { ref: Ref
   const [count, setCount] = useState(0);
   const [format, setFormat] = useState<ExportFormat>('jpeg');
   const [border, setBorder] = useState<'none' | 'white' | 'black'>('none');
-  const [folder, setFolder] = useState('');
+  const [folder, setFolder] = useState(() => {
+    try { return localStorage.getItem(exportFolderKey) || ''; }
+    catch { return ''; }
+  });
   const [result, setResult] = useState('');
   const [cancelling, setCancelling] = useState(false);
 
@@ -114,7 +118,11 @@ function PhotoExport({ prepare, error, remove, ref }: ExportActions & { ref: Ref
     flushSync(() => changePhase('choosing'));
     try {
       const chosen = await command('choose_export_folder');
-      if (chosen) setFolder(chosen);
+      if (chosen) {
+        setFolder(chosen);
+        try { localStorage.setItem(exportFolderKey, chosen); }
+        catch { /* Export still works when local preferences cannot be saved. */ }
+      }
     } catch (failure) { setResult(errorText(failure)); }
     finally { changePhase('idle'); }
   }
@@ -173,7 +181,7 @@ function PhotoExport({ prepare, error, remove, ref }: ExportActions & { ref: Ref
           <label>{t('ファイル形式')}<select id="export-format" value={format} onChange={event => setFormat(event.target.value as ExportFormat)}>
             <option value="jpeg">JPEG</option><option value="png">PNG 16bit</option><option value="tiff">TIFF 16bit</option>
           </select></label>
-          <label>{t('書き出し画質（JPEG、1〜100）')}<input id="export-quality" name="quality" type="number" min="1" max="100" defaultValue="92" required disabled={format !== 'jpeg'} /></label>
+          <label>{t('書き出し画質（JPEG、1〜100）')}<input id="export-quality" name="quality" type="number" min="1" max="100" defaultValue="100" required disabled={format !== 'jpeg'} /></label>
           <label>{t('容量上限（1枚あたりのKB、0＝制限なし）')}<input id="export-max-kb" name="max_kb" type="number" min="0" max="1048576" defaultValue="0" required /></label>
           <p className="panel-note">{t('1 KB＝1,024バイト。JPEGは指定画質を上限に、容量に合わせて画質を下げます。PNG・TIFFは画質を保持します。上限に収まらない写真は保存せず、結果に表示します。')}</p>
           <label>{t('長辺（px、0＝元の大きさ）')}<input id="export-long-edge" name="long_edge" type="number" min="0" max="65535" defaultValue="0" required /></label>

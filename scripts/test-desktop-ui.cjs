@@ -242,7 +242,7 @@ async function run() {
               if (!document.getElementById('export-browse').disabled) {
                 throw new Error('Commit UI changes before opening the native folder sheet');
               }
-              return window.cancelExportFolder ? null : '/exports';
+              return window.cancelExportFolder ? null : window.exportFolderFixture ?? '/exports';
             }
             if(command==='export_develop_batch') {
               const {ids, folder} = args.request;
@@ -461,6 +461,7 @@ async function run() {
     assert.match(await page.locator('#progress-text').textContent(), /1\/2/, 'progress counts only pending photos');
     await page.evaluate(() => {document.getElementById('progress').hidden = true;});
     if (process.argv.includes('--startup-previews')) { assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--export-defaults')) { await require('./test-export-defaults.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--crop-pan')) { await require('./test-crop-pan.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--crop-panel')) { await require('./test-crop-panel.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--interactive-preview')) { await require('./test-interactive-preview.cjs')(page); assert.deepEqual(failures, []); return; }
@@ -2023,6 +2024,7 @@ async function run() {
     await require('./test-color-grading.cjs')(page);
     await require('./test-lens-correction.cjs')(page);
     await require('./test-catalog-removal.cjs')(page);
+    await require('./test-export-defaults.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     assert.deepEqual(failures, []);
     console.log(JSON.stringify({ checks: ['MCP settings, modal and unsaved guards, off-page selection, attributes, development and expired requests', 'portrait and landscape thumbnails fit immediately with stable preview upgrades', 'new folder scans only its own root, clears filters and selects imported photos', 'LRC metadata columns, folder-scoped indexing and cancellation, rating comparisons and reject flag', 'movable smooth tone curve persisted', 'reference layout', 'loupe/grid keyboard navigation', 'virtual filmstrip and grid', 'nested folders and counts', 'file format filtering consolidated into metadata, reset and unsaved-edit protection', 'unsaved and failed-save protection', 'annotation persistence and search', 'ratings and filter', 'library uses stored 1600px previews; development requests originals', 'metadata/navigation races', 'filmstrip paging past 200 photos', 'failed thumbnail retry', '900px and 1320px layouts', 'development recipe sliders, stale renders, undo/redo, before comparison', 'development autosave failure blocks navigation and close', 'library/develop context-menu export, settings, cancellation, failures and modal guards', 'saved thumbnail race and targeted invalidation', 'crop reset bounds', 'debounced autosave and edits during an in-flight save', 'flush before photo selection, catalog snapshot and normal close', 'catalog file location and copy controls', 'persistent gesture history and nondestructive restore', 'catalog switch flush, cancellation, failure and restart isolation', 'direct crop and local mask gestures, persistent presets and snapshots, before comparison, multi-selection sync and batch export'], preview_fit_checks: previewFitChecks, cached_tiles_ms: Math.round(cacheMilliseconds), page_errors: failures }, null, 2));
   } finally {
