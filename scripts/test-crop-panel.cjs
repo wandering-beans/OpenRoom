@@ -98,8 +98,39 @@ module.exports = async function testCropPanel(page, url) {
     }
     if (process.env.AE_UI_SCREENSHOT) await page.screenshot({path:process.env.AE_UI_SCREENSHOT.replace('.png', `-crop-panel-${width}.png`)});
   }
+  await page.selectOption('#crop-ratio', '1');
+  await page.waitForFunction(() => document.querySelector('#develop-status').textContent.includes('保存済み'));
+  const crop = await page.evaluate(() => calls.filter(c => c.command === 'save_develop').at(-1).args.settings.crop);
+  assert.ok(crop[2] < 1 || crop[3] < 1, 'test must select a smaller crop');
+  // Enter on the focused crop toolbar button must finish, not reactivate, the tool.
+  await page.locator('.develop-toolstrip [data-tool="crop"]').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#develop-overlay').isVisible(), false, 'Enter must close the crop overlay');
+  await page.waitForFunction(crop => JSON.stringify(calls.filter(c => c.command === 'develop_preview').at(-1).args.settings.crop) === JSON.stringify(crop), crop);
+  await page.locator('.develop-toolstrip [data-tool="crop"]').click();
+  const reopened = await page.evaluate(async () => (await __TAURI__.core.invoke('get_develop', {id:1})).settings.crop);
+  assert.deepEqual(reopened, crop, 'reopening must preserve the selected crop');
+  await page.locator('#crop-lock').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.getAttribute('#crop-lock', 'aria-pressed'), 'false', 'focused buttons must keep their normal Enter action');
+  assert.equal(await page.locator('#develop-overlay').isVisible(), true);
+  await page.locator('#develop-angle-value').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#develop-overlay').isVisible(), true, 'Enter in a numeric input must keep editing the value');
+  await page.evaluate(() => {
+    document.activeElement.blur();
+    const dialog = document.createElement('dialog'); dialog.id = 'test-crop-dialog';
+    document.body.append(dialog); dialog.showModal();
+  });
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#develop-overlay').isVisible(), true, 'dialog Enter must not confirm a background crop');
+  await page.evaluate(() => document.getElementById('test-crop-dialog').remove());
+  await page.evaluate(() => document.activeElement.blur());
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#develop-overlay').isVisible(), false, 'Enter after photo selection must finish cropping');
+  await page.locator('.develop-toolstrip [data-tool="crop"]').click();
   await page.click('#tool-done');
   assert.equal(await page.locator('#develop-overlay').isVisible(), false);
   assert.equal(await page.locator('#rotation-options').isVisible(), false);
-  console.log('Unified crop panel: lock, guides, reset isolation, auto/manual angle, close, narrow/wide layouts passed.');
+  console.log('Unified crop panel: lock, guides, reset isolation, auto/manual angle, Enter confirmation, input/dialog guards, close, narrow/wide layouts passed.');
 };

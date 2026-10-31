@@ -547,7 +547,16 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
   };
   document.addEventListener('keydown', event => {
     if ($('app-shell').inert || $('workspace').inert || document.querySelector('dialog[open]') || !$('photo-menu').hidden || document.body.dataset.catalogBusy) return;
-    if (!active || !(event.metaKey || event.ctrlKey)) return;
+    if (!active || event.defaultPrevented || event.isComposing) return;
+    if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
+        && !loading && !exporting && !leaving
+        && !(event.target as Element).closest('input, textarea, select, button:not([data-tool="crop"]), summary, a[href], [contenteditable]:not([contenteditable="false"]), [role="textbox"]')
+        && tools.finishCrop()) {
+      // Prevent Enter from clicking the still-focused crop toolbar button and reopening it.
+      event.preventDefault();
+      return;
+    }
+    if (!(event.metaKey || event.ctrlKey)) return;
     const key = event.key.toLowerCase();
     if (key === 's') { event.preventDefault(); save(); }
     if (key === 'z' && !(event.target as Element).matches('input,textarea')) { event.preventDefault(); $(event.shiftKey ? 'develop-redo' : 'develop-undo').click(); }

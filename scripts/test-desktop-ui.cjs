@@ -461,6 +461,7 @@ async function run() {
     assert.match(await page.locator('#progress-text').textContent(), /1\/2/, 'progress counts only pending photos');
     await page.evaluate(() => {document.getElementById('progress').hidden = true;});
     if (process.argv.includes('--startup-previews')) { assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--crop-panel')) { await require('./test-crop-panel.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--interactive-preview')) { await require('./test-interactive-preview.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--lens')) { await require('./test-lens-correction.cjs')(page); assert.deepEqual(failures, []); return; }

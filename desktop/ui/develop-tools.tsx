@@ -913,6 +913,11 @@ export function createDevelopTools({
     refresh();
   };
   return {
+    finishCrop() {
+      if (!get().settings || drag || !['crop', 'straighten'].includes(mode)) return false;
+      setMode('');
+      return true;
+    },
     selectedMask() { return get()?.settings?.masks[maskIndex]; },
     sync,
     fields,
