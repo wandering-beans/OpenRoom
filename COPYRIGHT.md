@@ -14,4 +14,4 @@ You should have received a copy of the GNU General Public License along with thi
 
 利用者が読み込む写真、カタログ、編集設定、書き出した画像に、OpenRoomのライセンスを適用するものではありません。
 
-配布時に必要なソースや資料は[配布手順](DISTRIBUTION.md)にまとめています。アプリの配布先が非公開でも、受領者に認められたライセンス上の権利を独自に制限しません。
+第三者のライセンス本文と出典は[licenses/](licenses/README.md)に収録しています。アプリの配布先が非公開でも、受領者に認められたライセンス上の権利を独自に制限しません。

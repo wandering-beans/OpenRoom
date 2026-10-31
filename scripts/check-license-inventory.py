@@ -72,7 +72,7 @@ def main():
     print(f"Engine data inventory: {len(profiles['profiles'])} profiles and {len(profiles['data_files'])} data files")
     for issue in manifest['unresolved']:
         print(f"Unresolved license notice: {issue['component']}")
-    print('This checks inventory consistency, not distribution readiness; see DISTRIBUTION.md.')
+    print('This checks inventory consistency, not distribution readiness.')
 
 
 if __name__ == '__main__':

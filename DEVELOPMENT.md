@@ -70,7 +70,7 @@ RAW検証用の写真はリポジトリに同梱せず、`reports/raw-heif-sampl
 
 公開リポジトリの更新情報と添付ファイルを認証なしで取得します。更新情報を取得できない場合はエラーを表示し、「最新」とは表示しません。GitHubのトークンをアプリへ埋め込まないでください。
 
-更新を配布するときは、[配布条件](DISTRIBUTION.md)の確認を済ませ、次の順で準備します。
+更新を配布するときは、次の順で準備します。
 
 1. `desktop/Cargo.toml`、`desktop/tauri.conf.json`、`desktop/package.json`と各lockファイルのバージョンをそろえ、`bundle.macOS.bundleVersion`を前回より増やす。依存・版の変更後はライセンス目録も更新する。
 2. `sh scripts/build-desktop.sh dist/update-preview/OpenRoom.app`で配布アプリを別の場所にビルドする。引数なしの場合は従来どおり`dist/OpenRoom.app`へ配置する。

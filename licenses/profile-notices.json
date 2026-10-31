@@ -1,6 +1,6 @@
 {
   "source_commit": "1924179107995b01b73cdc7f4fe91e44fc8227a7",
-  "scope": "All bundled DCP, ICC and ICM files at the pinned source commit. Copyright fields are verbatim. Evidence categories describe notices, not a legal certification; see PROFILE-LICENSES.md.",
+  "scope": "All bundled DCP, ICC and ICM files at the pinned source commit. Copyright fields are verbatim. Evidence categories describe notices, not a legal certification.",
   "profiles": [
     {
       "file": "dcpprofiles/CANON EOS 250D.dcp",

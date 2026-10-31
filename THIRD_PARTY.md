@@ -17,8 +17,9 @@ not a claim that every listed dependency is shipped in executable form.
 
 macOS local packages copy libheif and its linked dependencies into Contents/Frameworks. The exact libraries depend on the installed libheif build. Homebrew's build can also link encoders and additional codecs (x265, libaom, libsharpyuv). Upstream sources and licenses: https://bitbucket.org/multicoreware/x265_git/ , https://aomedia.googlesource.com/aom/ , https://chromium.googlesource.com/webm/libwebp/ .
 
-Cargo.lock files pin Rust dependency versions. The notices and source/relinking materials
-required for distribution are described in [DISTRIBUTION.md](DISTRIBUTION.md).
+Cargo.lock files pin Rust dependency versions. Dependency notices are listed in
+[licenses/manifest.json](licenses/manifest.json), and source archives are listed in
+[licenses/source-archives.json](licenses/source-archives.json).
 
 - MCP protocol and Streamable HTTP: rmcp 3.6.0 https://github.com/modelcontextprotocol/rust-sdk/ (Apache-2.0).
 - Local HTTP routing: Axum https://github.com/tokio-rs/axum (MIT).
@@ -88,7 +89,3 @@ Before distributing the linked application, provide its complete corresponding s
 and the covered libraries' corresponding source, exact revisions, local modifications,
 build/install scripts, notices and applicable relinking materials. The bundled pin,
 patch and notice inventory alone are not complete corresponding source.
-Current unresolved notices, data-license review and source-archive requirements are
-recorded in [DISTRIBUTION.md](DISTRIBUTION.md). Development prereleases are available;
-repository visibility does not establish that these outstanding requirements are satisfied.
-Public signing and notarization are also not complete.
