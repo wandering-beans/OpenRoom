@@ -267,7 +267,7 @@ async fn prepare_library_previews(
     state.library.set_avif_supported(avif_supported);
     let copied = (*state).clone();
     let result = work(move || {
-        library_previews::prepare(&copied, None, |report| {
+        library_previews::prepare_pending(&copied, |report| {
             let _ = app.emit("preview-progress", report);
         })
     })

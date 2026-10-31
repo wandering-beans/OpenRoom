@@ -998,12 +998,25 @@ impl Store {
     }
 }
 
+#[cfg(test)]
 pub fn prepare(
     state: &AppState,
     root: Option<i64>,
     progress: impl Fn(&Progress),
 ) -> Result<Progress> {
-    prepare_batch(state, root, false, progress)
+    prepare_batch(state, root, false, None, progress)
+}
+
+pub fn prepare_pending(
+    state: &AppState,
+    progress: impl Fn(&Progress),
+) -> Result<Progress> {
+    let catalog = Catalog::open(&state.db)?;
+    let render_version = advanced_explorer_develop::RENDER_VERSION;
+    let ids = catalog.pending_library_preview_items(
+        None, VERSION, render_version, &format!("{render_version}-raw-library-v1"),
+    )?;
+    prepare_batch(state, None, false, Some(ids), progress)
 }
 
 pub fn prepare_import(
@@ -1011,20 +1024,25 @@ pub fn prepare_import(
     root: Option<i64>,
     progress: impl Fn(&Progress),
 ) -> Result<Progress> {
-    prepare_batch(state, root, true, progress)
+    prepare_batch(state, root, true, None, progress)
 }
 
 fn prepare_batch(
     state: &AppState,
     root: Option<i64>,
     skip_imported: bool,
+    pending_ids: Option<Vec<i64>>,
     progress: impl Fn(&Progress),
 ) -> Result<Progress> {
     let catalog = Catalog::open(&state.db)?;
-    let total = catalog.count(&crate::Query {
-        root_id: root,
-        ..Default::default()
-    })? as usize;
+    let total = match &pending_ids {
+        Some(ids) => ids.len(),
+        None => catalog.count(&crate::Query {
+            root_id: root,
+            ..Default::default()
+        })? as usize,
+    };
+    let mut pending_ids = pending_ids.map(Vec::into_iter);
     let mut report = Progress {
         total,
         ..Default::default()
@@ -1038,7 +1056,10 @@ fn prepare_batch(
     };
     let mut after = 0;
     while !report.cancelled && !report.paused {
-        let ids = catalog.preview_items(root, after)?;
+        let ids = match &mut pending_ids {
+            Some(ids) => ids.by_ref().take(200).collect(),
+            None => catalog.preview_items(root, after)?,
+        };
         if ids.is_empty() {
             break;
         }
@@ -1191,6 +1212,33 @@ mod tests {
         Arc,
         atomic::{AtomicBool, AtomicUsize},
     };
+
+    #[test]
+    fn startup_generates_only_missing_and_edited_photos_then_has_no_work() {
+        let (dir, state, root) = fixture();
+        let first = prepare_pending(&state, |_| {}).unwrap();
+        assert_eq!((first.total, first.generated, first.failed), (2, 2, 0));
+        let second = prepare_pending(&state, |_| {}).unwrap();
+        assert_eq!((second.total, second.ready, second.generated), (0, 0, 0));
+        let mut catalog = Catalog::open(&state.db).unwrap();
+        let id = catalog.preview_items(None, 0).unwrap()[0];
+        let settings = advanced_explorer_develop::Settings { exposure: 1., ..Default::default() };
+        catalog.save_develop_recipe(id, &settings.catalog_recipe().unwrap(), 0).unwrap();
+        catalog.release_preview_updates(0).unwrap();
+        let changed = prepare_pending(&state, |_| {}).unwrap();
+        assert_eq!((changed.total, changed.generated, changed.failed), (1, 1, 0));
+        assert_eq!(prepare_pending(&state, |_| {}).unwrap().total, 0);
+
+        // No per-photo filesystem validation: completed previews remain trusted at startup,
+        // even when originals are offline and an image will need repair when viewed.
+        let preview = state.library.lookup(&catalog, id, 1600).unwrap().unwrap();
+        std::fs::remove_file(&preview.path).unwrap();
+        std::fs::rename(&root, dir.path().join("offline")).unwrap();
+        assert_eq!(prepare_pending(&state, |_| {}).unwrap().total, 0);
+        std::fs::rename(dir.path().join("offline"), &root).unwrap();
+        assert!(state.library.generate_explicit(&state, id).unwrap());
+        assert!(Path::new(&preview.path).is_file(), "viewing repairs missing images on demand");
+    }
 
     #[test]
     fn cleanup_keeps_owned_directories_and_rejects_symlinks() {

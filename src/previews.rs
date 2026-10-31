@@ -113,12 +113,107 @@ impl Catalog {
             .query_map(params![after,root_id,root_id], |r| r.get(0))?
             .collect::<rusqlite::Result<_>>()?)
     }
+
+    /// Select startup work from catalog records only, without opening originals or preview files.
+    pub fn pending_library_preview_items(
+        &self,
+        root_id: Option<i64>,
+        version: &str,
+        render_version: &str,
+        raw_render_version: &str,
+    ) -> Result<Vec<i64>> {
+        let raw_extensions = serde_json::to_string(crate::RAW_EXTENSIONS)?;
+        Ok(self.conn.prepare(
+            "WITH recorded AS (
+                SELECT i.id,i.extension,i.path,i.size,i.modified,i.identity,r.path AS root_path,
+                    COALESCE(d.revision,0) AS revision,d.item_id AS edited,
+                    p.error,
+                    CASE WHEN json_valid(p.stamp) THEN p.stamp END AS stamp,
+                    CASE WHEN json_valid(p.data) THEN p.data END AS data
+                FROM items i JOIN roots r ON r.id=i.root_id
+                LEFT JOIN develop_edits d ON d.item_id=i.id
+                LEFT JOIN library_previews p ON p.item_id=i.id
+                WHERE i.missing=0 AND (?1 IS NULL OR i.root_id=?1)
+            )
+            SELECT id FROM recorded WHERE
+                error IS NOT NULL
+                OR json_extract(stamp,'$[0]') IS NOT root_path
+                OR json_extract(stamp,'$[1]') IS NOT path
+                OR json_extract(stamp,'$[2]') IS NOT size
+                OR json_extract(stamp,'$[3]') IS NOT modified
+                OR json_extract(stamp,'$[4]') IS NOT identity
+                OR json_extract(stamp,'$[5]') IS NOT revision
+                OR json_extract(data,'$.version') IS NOT ?2
+                OR COALESCE(json_extract(data,'$.extension'),'') NOT IN ('avif','jpg')
+                OR COALESCE(json_extract(data,'$.large_bytes'),0)<=0
+                OR COALESCE(json_extract(data,'$.thumbnail_bytes'),0)<=0
+                OR CASE WHEN extension IN (SELECT value FROM json_each(?5)) THEN
+                    json_extract(data,'$.render_version') IS NOT ?4
+                    OR (COALESCE(json_extract(data,'$.raw_developed'),0)=0
+                        AND COALESCE(json_extract(data,'$.camera_fallback'),0)=0)
+                   WHEN edited IS NOT NULL THEN
+                    json_extract(data,'$.render_version') IS NOT ?3
+                   ELSE 0 END
+            ORDER BY id"
+        )?.query_map(params![root_id,version,render_version,raw_render_version,raw_extensions], |row| row.get(0))?
+            .collect::<rusqlite::Result<_>>()?)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::sync::atomic::AtomicBool;
+
+    #[test]
+    fn startup_candidates_use_catalog_changes_without_opening_photos() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut catalog = Catalog::open(dir.path().join("catalog.db")).unwrap();
+        let root = catalog.add_root(dir.path()).unwrap();
+        for index in 1..=8 {
+            catalog.conn.execute("INSERT INTO items(id,root_id,path,name,name_norm,extension,size,modified,added,identity) VALUES(?,?,?,'photo','photo','jpg',1,1,1,'identity')",
+                params![index, root.id, format!("not-on-disk-{index}.jpg")]).unwrap();
+            let data = r#"{"version":"v1","extension":"jpg","large_bytes":20,"thumbnail_bytes":10,"render_version":"render1"}"#;
+            catalog.save_library_preview(index, &catalog.preview_stamp(index).unwrap(), Some(data), None).unwrap();
+        }
+        let pending = |catalog: &Catalog| catalog.pending_library_preview_items(None, "v1", "render1", "raw1").unwrap();
+        assert!(pending(&catalog).is_empty(), "valid records must not require originals or cache files");
+        catalog.conn.execute("DELETE FROM library_previews WHERE item_id=1", []).unwrap();
+        catalog.conn.execute("UPDATE library_previews SET error='interrupted' WHERE item_id=2", []).unwrap();
+        catalog.conn.execute("UPDATE items SET modified=2 WHERE id=3", []).unwrap();
+        catalog.save_develop_recipe(4, r#"{"version":1,"exposure":1}"#, 0).unwrap();
+        catalog.conn.execute("UPDATE library_previews SET data='broken JSON' WHERE item_id=5", []).unwrap();
+        catalog.conn.execute("UPDATE library_previews SET stamp='broken JSON' WHERE item_id=6", []).unwrap();
+        catalog.conn.execute("UPDATE library_previews SET data=json_set(data,'$.large_bytes',0) WHERE item_id=7", []).unwrap();
+        catalog.conn.execute("UPDATE items SET rating=5,flag=1 WHERE id=8", []).unwrap();
+        assert_eq!(pending(&catalog), vec![1,2,3,4,5,6,7]);
+        catalog.conn.execute("UPDATE items SET missing=1 WHERE id=1", []).unwrap();
+        assert_eq!(pending(&catalog), vec![2,3,4,5,6,7]);
+        assert!(catalog.pending_library_preview_items(Some(root.id + 1), "v1", "render1", "raw1").unwrap().is_empty());
+    }
+
+    #[test]
+    fn startup_candidates_include_changed_render_versions_and_raw_fallbacks() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut catalog = Catalog::open(dir.path().join("catalog.db")).unwrap();
+        let root = catalog.add_root(dir.path()).unwrap();
+        for (id, extension) in [(1, "nef"), (2, "jpg")] {
+            catalog.conn.execute("INSERT INTO items(id,root_id,path,name,name_norm,extension,size,modified,added,identity) VALUES(?,?,?,'photo','photo',?,1,1,1,'identity')",params![id,root.id,format!("photo-{id}"),extension]).unwrap();
+        }
+        catalog.save_develop_recipe(2, r#"{"version":1,"exposure":1}"#, 0).unwrap();
+        let pending = |catalog: &Catalog| catalog.pending_library_preview_items(None, "v1", "render1", "raw1").unwrap();
+        for (id, version) in [(1, "raw1"), (2, "render1")] {
+            let data = serde_json::json!({"version":"v1","extension":"jpg","large_bytes":20,"thumbnail_bytes":10,"render_version":version,"raw_developed":true});
+            catalog.save_library_preview(id, &catalog.preview_stamp(id).unwrap(), Some(&data.to_string()), None).unwrap();
+        }
+        assert!(pending(&catalog).is_empty());
+        catalog.conn.execute("UPDATE library_previews SET data=json_set(data,'$.render_version','old')", []).unwrap();
+        assert_eq!(pending(&catalog), vec![1,2]);
+        catalog.conn.execute("UPDATE library_previews SET data=json_set(data,'$.render_version','raw1','$.raw_developed',0,'$.camera_fallback',1) WHERE item_id=1", []).unwrap();
+        assert_eq!(pending(&catalog), vec![2], "supported camera fallbacks remain reusable");
+        catalog.conn.execute("UPDATE library_previews SET data=json_set(data,'$.camera_fallback',0) WHERE item_id=1", []).unwrap();
+        assert_eq!(pending(&catalog), vec![1,2]);
+    }
 
     #[test]
     fn preview_save_waits_for_writer_and_rechecks_revision() {

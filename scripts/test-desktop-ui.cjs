@@ -454,6 +454,13 @@ async function run() {
     }));
     await checkAdjustmentBadge('.film-tile[title="photo-0004.tif"]');
     if (process.env.AE_UI_SCREENSHOT) await page.screenshot({ path: process.env.AE_UI_SCREENSHOT });
+    await page.evaluate(() => window.listeners['preview-progress']({payload:{total:0,ready:0,failed:0}}));
+    assert.equal(await page.locator('#progress').isVisible(), false, 'no startup work must not show a progress banner');
+    await page.evaluate(() => window.listeners['preview-progress']({payload:{total:2,ready:1,failed:0}}));
+    assert.equal(await page.locator('#progress').isVisible(), true);
+    assert.match(await page.locator('#progress-text').textContent(), /1\/2/, 'progress counts only pending photos');
+    await page.evaluate(() => {document.getElementById('progress').hidden = true;});
+    if (process.argv.includes('--startup-previews')) { assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--lens')) { await require('./test-lens-correction.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--grading')) { await require('./test-color-grading.cjs')(page); assert.deepEqual(failures, []); return; }

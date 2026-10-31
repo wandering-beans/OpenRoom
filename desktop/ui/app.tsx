@@ -1245,6 +1245,7 @@ document.addEventListener('keydown', event => {
 });
 await listen<PreviewProgress>('preview-progress', event => {
   const report = event.payload;
+  if (report.total === 0) { $('progress').hidden = true; return; }
   $('progress').hidden = false;
   $('progress-text').textContent = t("プレビュー {0}/{1}枚を準備・{2}枚失敗", report.ready.toLocaleString(), report.total.toLocaleString(), report.failed.toLocaleString());
   if (scanViewPending && report.ready > 0) {
