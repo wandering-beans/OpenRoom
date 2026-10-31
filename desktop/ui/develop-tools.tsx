@@ -5,7 +5,7 @@ import { workflow as nativeWorkflow } from './backend';
 import type { Invoke } from './backend';
 import type { Settings, SettingsPatch, SettingKey, Mask, Shape, Point, Crop, Edit, ErrorHandler, SavedRecipe, WorkflowRequest } from './models';
 interface ToolOptions { invoke: Invoke; get(): { settings: Settings | null; defaults: Settings | null }; edit: Edit; interact(change: (settings: Settings) => void): void; finishGesture(): void; refresh(): void; error: ErrorHandler; selectedIds(): number[]; selectionChanged(): void; save(): Promise<boolean>; busy(value?: boolean): boolean; rendering(): boolean; status(text: string): void; saved(id: number): void }
-interface Drag { start: Point; end: Point; original?: Crop; crop?: Crop; anchor?: Point; direction?: Point; ratio?: number; handle?: string; shape?: Shape }
+interface Drag { start: Point; end: Point; original?: Crop; crop?: Crop; anchor?: Point; direction?: Point; ratio?: number; handle?: string; shape?: Shape; pan?: { bounds: DOMRect; offset: Point } }
 import { element as $, context2d } from './dom';
 import { t } from './i18n';
 import { estimateStraighteningAngle } from "./straighten";
@@ -38,6 +38,7 @@ export function createDevelopTools({
     reference: Settings | null = null;
   let ratioLocked = true;
   let angleAdjusting = false;
+  let photoOffset: Point = [0, 0];
   const maskImages = new Map<string, string>();
   let layerSignature = '';
   function maskImage(mask: Pick<Mask, 'shapes' | 'invert'>, width: number, height: number, overlay = false) {
@@ -185,9 +186,13 @@ export function createDevelopTools({
     $('straighten-help').hidden = mode !== 'straighten';
     const overlay: ReactNode[] = [];
     svg.style.display = state?.settings && mode ? "block" : "none";
+    const image = $("full-image");
+    if (!state?.settings || !cropping) photoOffset = [0, 0];
+    const size = image.getBoundingClientRect();
+    image.style.translate = photoOffset.some(value => value !== 0)
+      ? `${photoOffset[0] * size.width}px ${photoOffset[1] * size.height}px` : '';
     if (!state?.settings || !mode) { overlayView.render(null); return; }
-    const image = $("full-image"),
-      rect = image.getBoundingClientRect();
+    const rect = image.getBoundingClientRect();
     Object.assign(svg.style, {
       left: `${rect.left}px`,
       top: `${rect.top}px`,
@@ -312,12 +317,14 @@ export function createDevelopTools({
   $("image-area").addEventListener("scroll", draw);
   window.addEventListener("resize", draw);
   $("full-image").addEventListener("load", draw);
-  function point(event: MouseEvent): Point {
-    const r = svg.getBoundingClientRect();
+  function point(event: MouseEvent, r = svg.getBoundingClientRect()): Point {
     return [
       clamp((event.clientX - r.left) / r.width),
       clamp((event.clientY - r.top) / r.height),
     ];
+  }
+  function canPanPhoto(p: Point, [x, y, width, height]: Crop) {
+    return p[0] > x && p[0] < x + width && p[1] > y && p[1] < y + height && (width < 1 || height < 1);
   }
   function cropCornerAt(point: Point, crop: Crop) {
     const rect = svg.getBoundingClientRect();
@@ -394,13 +401,13 @@ export function createDevelopTools({
       drag.handle =
         corner
           ? "resize"
-          : start[0] > c[0] &&
-              start[0] < c[0] + c[2] &&
-              start[1] > c[1] &&
-              start[1] < c[1] + c[3] &&
-              (c[2] < 0.99 || c[3] < 0.99)
-            ? "move"
+          : canPanPhoto(start, c)
+            ? "pan"
             : "new";
+      if (drag.handle === 'pan') {
+        drag.pan = {bounds: svg.getBoundingClientRect(), offset: [...photoOffset]};
+        svg.style.cursor = 'grabbing';
+      }
     } else if (mode !== "straighten") {
       drag.shape = {
         kind: mode,
@@ -427,23 +434,27 @@ export function createDevelopTools({
     draw();
   };
   svg.onpointermove = (event) => {
-    const p = point(event);
+    // Measure against the image before the drag; its displayed position now follows the pointer.
+    const p = point(event, drag?.pan?.bounds);
     if (!drag) {
-      const corner = mode === 'crop' && get()?.settings && cropCornerAt(p, get().settings!.crop);
-      svg.style.cursor = corner ? `${corner.right === corner.bottom ? 'nwse' : 'nesw'}-resize` : 'crosshair';
+      const crop = mode === 'crop' && get()?.settings?.crop;
+      const corner = crop && cropCornerAt(p, crop);
+      svg.style.cursor = corner ? `${corner.right === corner.bottom ? 'nwse' : 'nesw'}-resize`
+        : crop && canPanPhoto(p, crop) ? 'grab' : 'crosshair';
       return;
     }
     drag.end = p;
     if (mode === "crop") {
       const [x, y, w, h] = drag.original!;
-      if (drag.handle === "move")
+      if (drag.pan) {
         drag.crop = [
-          Math.max(0, Math.min(1 - w, x + p[0] - drag.start[0])),
-          Math.max(0, Math.min(1 - h, y + p[1] - drag.start[1])),
+          Math.max(0, Math.min(1 - w, x - (p[0] - drag.start[0]))),
+          Math.max(0, Math.min(1 - h, y - (p[1] - drag.start[1]))),
           w,
           h,
         ];
-      else {
+        photoOffset = [drag.pan.offset[0] + x - drag.crop[0], drag.pan.offset[1] + y - drag.crop[1]];
+      } else {
         const anchor = drag.anchor || drag.start;
         const [directionX, directionY] = drag.direction || [p[0] < anchor[0] ? -1 : 1, p[1] < anchor[1] ? -1 : 1];
         const maxWidth = directionX > 0 ? 1 - anchor[0] : anchor[0];
@@ -484,6 +495,7 @@ export function createDevelopTools({
     if (!drag) return;
     const value = drag;
     drag = null;
+    if (value.pan) svg.style.cursor = 'grab';
     svg.releasePointerCapture(event.pointerId);
     if (mode === "crop") {
       if (value.crop![2] >= 0.01 && value.crop![3] >= 0.01)
@@ -518,6 +530,7 @@ export function createDevelopTools({
   svg.onpointerleave = () => svg.classList.remove('crop-hover');
   $('crop-overlay').onchange = draw;
   svg.onpointercancel = () => {
+    if (drag?.pan) photoOffset = drag.pan.offset;
     drag = null;
     draw();
   };
@@ -534,6 +547,7 @@ export function createDevelopTools({
     const settings = get().settings;
     const previousPreview = settings && previewSettings(settings);
     const hadComparison = Boolean($('compare-mode').value);
+    photoOffset = [0, 0];
     mode = value;
     angleAdjusting = false;
     sections[0].open = Boolean(value);
@@ -637,6 +651,7 @@ export function createDevelopTools({
   };
   $("crop-clear").onclick = () =>
     edit((s) => {
+      photoOffset = [0, 0];
       s.crop = [0, 0, 1, 1];
     }, t("切り抜き解除"));
   $("constrain-crop").onchange = (event) =>

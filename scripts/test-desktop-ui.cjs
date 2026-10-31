@@ -461,6 +461,7 @@ async function run() {
     assert.match(await page.locator('#progress-text').textContent(), /1\/2/, 'progress counts only pending photos');
     await page.evaluate(() => {document.getElementById('progress').hidden = true;});
     if (process.argv.includes('--startup-previews')) { assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--crop-pan')) { await require('./test-crop-pan.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--crop-panel')) { await require('./test-crop-panel.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--interactive-preview')) { await require('./test-interactive-preview.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
@@ -1937,6 +1938,7 @@ async function run() {
     assert.equal(await page.evaluate(() => calls.some(call => call.command === 'mcp_ready')), false, 'failed catalog must not start MCP');
     await require('./test-raw-wb-ui.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     await require('./test-crop-panel.cjs')(page, `http://127.0.0.1:${server.address().port}`);
+    await require('./test-crop-pan.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     await require('./test-masks.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     await require('./test-histogram.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     // Repeated numeric input must not cancel the slow frame or render twice on release.
