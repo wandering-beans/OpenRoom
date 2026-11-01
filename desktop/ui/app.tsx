@@ -27,7 +27,10 @@ const gridView = createView(grid), filmView = createView(filmTrack), foldersView
 const detailViews = new Map<HTMLElement, ReturnType<typeof createView>>();
 let items: Photo[] = [], roots: Root[] = [], folders: Folder[] = [];
 let cursor: Cursor | null = null, hasMore = false, loading = false, scanning = false;
+let pageTask: Promise<void> | null = null;
 let rootId: number | null = null, folderPath: string | null = null, selected = -1;
+let allFoldersSelected = false, selectionTarget: 'folders' | 'photos' = 'photos';
+let selectionIntent = 0, selectingAll = false;
 let aiIds: number[] = [], developSelectionTask = Promise.resolve();
 const selectedPhotos = new Set<number>();
 const adjustedPhotos = new Set<number>();
@@ -200,6 +203,7 @@ async function removeFromCatalog(selection: CatalogRemoval) {
     await invoke('set_develop_prefetch', { ids: [] });
     count = await invoke('remove_from_catalog', { selection });
     if (selection.kind === 'folder') {
+      allFoldersSelected = false;
       rootId = null; folderPath = null;
       $('title').textContent = t('すべての写真');
     }
@@ -348,13 +352,13 @@ function query(): Query {
   };
 }
 function filterState() {
-  return { library:libraryFilters.snapshot(), rootId, folderPath, aiIds: [...aiIds], text: $('search').value,
+  return { library:libraryFilters.snapshot(), rootId, folderPath, allFoldersSelected, aiIds: [...aiIds], text: $('search').value,
     rating: $('rating-filter').value, sort: $('sort').value,
     descending: $('descending').getAttribute('aria-pressed'), title: $('title').textContent };
 }
 function restoreFilters() {
   if (!appliedFilters) return;
-  ({ rootId, folderPath } = appliedFilters);
+  ({ rootId, folderPath, allFoldersSelected } = appliedFilters);
   aiIds = appliedFilters.aiIds || [];
   $('ai-selection').hidden = !aiIds.length;
   for (const [id, key] of [['search', 'text'], ['rating-filter', 'rating'], ['sort', 'sort']] as const) $(id).value = appliedFilters[key];
@@ -362,7 +366,7 @@ function restoreFilters() {
   $('descending').textContent = appliedFilters.descending === 'true' ? '↓' : '↑';
   $('title').textContent = appliedFilters.title;
   libraryFilters.restore(appliedFilters.library);
-  updateFolderSelection();
+  renderFolders();
 }
 function updateEmpty() {
   const empty = !items.length && !loading;
@@ -421,8 +425,13 @@ async function refresh(keepId: number | null = null, throwErrors = false) {
 function staleCursor(error: unknown) {
   return String(error).includes('stale or incompatible cursor; restart pagination');
 }
-async function more(token = epoch, throwErrors = false) {
-  if (loading || !hasMore) return;
+function more(token = epoch, throwErrors = false): Promise<void> {
+  if (token !== epoch || (!loading && !hasMore)) return Promise.resolve();
+  if (!loading) pageTask = loadPage(token);
+  const task = pageTask ?? Promise.resolve();
+  return throwErrors ? task : task.catch(() => {});
+}
+async function loadPage(token: number) {
   loading = true;
   try {
     const requestedCursor = cursor;
@@ -442,9 +451,9 @@ async function more(token = epoch, throwErrors = false) {
     $('status').textContent = t("{0}枚を読み込み済み", items.length.toLocaleString());
   } catch (error) {
     if (token === epoch) { hasMore = false; showError(error); }
-    if (throwErrors) throw error;
+    throw error;
   } finally {
-    if (token === epoch) { loading = false; updateEmpty(); draw(); }
+    if (token === epoch) { loading = false; pageTask = null; updateEmpty(); draw(); }
   }
 }
 async function restartPages(token: number) {
@@ -606,7 +615,7 @@ function renderFolders() {
       }
       node.count = folder.count;
     }
-    branches.push(<FolderBranch key={`${root.id}:${filter}`} root={root} node={tree} depth={0} filter={filter} rootId={rootId} folderPath={folderPath} choose={chooseFolder} menu={(root, node, event) => {
+    branches.push(<FolderBranch key={`${root.id}:${filter}`} root={root} node={tree} depth={0} filter={filter} rootId={rootId} folderPath={folderPath} allSelected={allFoldersSelected} choose={chooseFolder} menu={(root, node, event) => {
       event.preventDefault();
       if (document.body.dataset.catalogBusy || confirmingChange || photoExport.busy) return;
       const target = event.currentTarget as HTMLElement;
@@ -618,16 +627,47 @@ function renderFolders() {
   updateFolderSelection();
 }
 function chooseFolder(root: Root, node: FolderNode) {
+  selectionTarget = 'folders'; allFoldersSelected = false;
   aiIds = []; $('ai-selection').hidden = true;
   rootId = root.id; folderPath = node.path;
   $('title').textContent = t('フォルダー：{0}', node.name);
-  updateFolderSelection(); refresh();
+  renderFolders(); refresh();
 }
 function updateFolderSelection() {
   $('all').classList.toggle('active', rootId === null);
   for (const row of $('roots').querySelectorAll<HTMLElement>('[data-folder]')) {
-    row.classList.toggle('active', Number(row.dataset.root) === rootId && row.dataset.folder === folderPath);
+    const chosen = allFoldersSelected || (Number(row.dataset.root) === rootId && row.dataset.folder === folderPath);
+    row.classList.toggle('active', chosen);
+    row.querySelector('.folder-label')?.setAttribute('aria-pressed', String(chosen));
   }
+}
+async function selectAll() {
+  if (selectingAll) return;
+  selectingAll = true;
+  const intent = selectionIntent, token = epoch;
+  try {
+    if (selectionTarget === 'folders' && !develop.active && !$('sidebar').hidden) {
+      if (!roots.length || !await allowChange() || intent !== selectionIntent || token !== epoch) return;
+      allFoldersSelected = true;
+      aiIds = []; $('ai-selection').hidden = true;
+      rootId = null; folderPath = null;
+      $('title').textContent = t('すべてのフォルダー');
+      renderFolders();
+      await refresh(items[selected]?.id ?? null);
+      return;
+    }
+    if (!items.length) return;
+    // An explicit retry must not mistake a failed page for the end of the list.
+    if (cursor && !hasMore) hasMore = true;
+    $('error').hidden = true;
+    // Finish pagination before changing the selection; a failed fetch must not select only part of it.
+    while (token === epoch && intent === selectionIntent && (loading || hasMore)) await more(token, true);
+    if (token !== epoch || intent !== selectionIntent) return;
+    selectedPhotos.clear();
+    for (const item of items) selectedPhotos.add(item.id);
+    $('selection-count').textContent = t('/ {0}枚選択 /', selectedPhotos.size);
+    updateRatingStars(); updatePhotoAttributes(); syncReview(); draw();
+  } finally { selectingAll = false; }
 }
 async function addFolder() {
   if (scanning) return;
@@ -636,6 +676,7 @@ async function addFolder() {
     const roots = await invoke('choose_folder');
     const root = roots[0];
     if (!root) return;
+    allFoldersSelected = false;
     aiIds = []; $('ai-selection').hidden = true;
     rootId = roots.length === 1 ? root.id : null;
     folderPath = rootId === null ? null : '';
@@ -1133,7 +1174,7 @@ function updatePanelButton(id: string) {
   button.textContent = $(id).hidden ? (id === 'sidebar' ? '▸' : '◂') : (id === 'sidebar' ? '◂' : '▸');
 }
 $('ai-selection-clear').onclick = () => { aiIds = []; $('ai-selection').hidden = true; refresh(); };
-$('all').onclick = () => { aiIds = []; $('ai-selection').hidden = true; rootId = null; folderPath = null; $('title').textContent = t("すべての写真"); updateFolderSelection(); refresh(); };
+$('all').onclick = () => { allFoldersSelected = false; selectionTarget = 'photos'; aiIds = []; $('ai-selection').hidden = true; rootId = null; folderPath = null; $('title').textContent = t("すべての写真"); renderFolders(); refresh(); };
 for (const id of ['add', 'add-small', 'empty-add'] as const) $(id).onclick = addFolder;
 $('folder-search').oninput = renderFolders;
 $('scan').onclick = () => scan([rootId]);
@@ -1230,12 +1271,23 @@ async function pastePhotoSettings() {
   }
 }
 
+for (const type of ['pointerdown', 'focusin']) document.addEventListener(type, event => {
+  const target = event.target as Element;
+  if (target.closest('#roots .folder-row')) { selectionTarget = 'folders'; ++selectionIntent; }
+  else if (target.closest('#grid, #filmstrip, #viewer')) { selectionTarget = 'photos'; ++selectionIntent; }
+}, true);
 document.addEventListener('keydown', event => {
   if ($('app-shell').inert || document.querySelector('dialog[open]') || photoExport.busy || !$('photo-menu').hidden || document.body.dataset.catalogBusy) return;
   if ((event.metaKey || event.ctrlKey) && event.key === ',') {
     event.preventDefault(); document.dispatchEvent(new Event('open-preferences')); return;
   }
   if ((event.target as Element).closest('[role=separator]')) return;
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a' && !event.altKey && !event.shiftKey
+      && !(event.target as Element).closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) {
+    event.preventDefault();
+    if (!event.repeat && !event.isComposing && !$('workspace').inert) void selectAll().catch(showError);
+    return;
+  }
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
     event.preventDefault(); toggleFilters(true); libraryFilters.text(); $('search').focus(); return;
   }
@@ -1362,10 +1414,11 @@ try {
   if (!needsCatalog) await startMcp({ invoke, listen, ready: catalogReady, state: mcpUiState, prepare: prepareMcpChange,
     busy: () => photoExport.busy || metadataDirty || saving || confirmingChange || scanning || develop.busy || Boolean(document.body.dataset.catalogBusy),
     async select(ids) {
+      allFoldersSelected = false; selectionTarget = 'photos';
       aiIds = [...ids]; rootId = null; folderPath = null;
       libraryFilters.clear(); $('search').value = ''; $('rating-filter').value = '';
       $('ai-selection').hidden = false; $('title').textContent = t("AI選択：{0}枚", ids.length);
-      updateFolderSelection(); await refresh(ids[0], true);
+      renderFolders(); await refresh(ids[0], true);
       if (items[selected]?.id !== ids[0]) throw Error(t("指定した写真を選択できませんでした"));
       selectedPhotos.clear(); for (const id of ids) selectedPhotos.add(id);
       $('selection-count').textContent = t("/ {0}枚選択 /", ids.length); syncReview(); draw();

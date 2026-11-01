@@ -72,23 +72,24 @@ export function PhotoTile({ photo, index, film, selected, active, adjusted, styl
 }
 
 export interface FolderNode { path: string; name: string; count: number; children: Map<string, FolderNode> }
-interface FolderProps { root: Root; node: FolderNode; depth: number; filter: string; rootId: number | null; folderPath: string | null; choose(root: Root, node: FolderNode): void; menu(root: Root, node: FolderNode, event: MouseEvent | KeyboardEvent): void }
+interface FolderProps { root: Root; node: FolderNode; depth: number; filter: string; rootId: number | null; folderPath: string | null; allSelected: boolean; choose(root: Root, node: FolderNode): void; menu(root: Root, node: FolderNode, event: MouseEvent | KeyboardEvent): void }
 function matches(node: FolderNode, filter: string): boolean {
   return !filter || node.name.toLocaleLowerCase().includes(filter) || [...node.children.values()].some(child => matches(child, filter));
 }
-export function FolderBranch({ root, node, depth, filter, rootId, folderPath, choose, menu }: FolderProps) {
+export function FolderBranch({ root, node, depth, filter, rootId, folderPath, allSelected, choose, menu }: FolderProps) {
   const [expanded, setExpanded] = useState(depth === 0 || Boolean(filter) || (rootId === root.id && Boolean(folderPath?.startsWith(node.path))));
   if (!matches(node, filter)) return null;
   const childFilter = !filter || node.name.toLocaleLowerCase().includes(filter) ? '' : filter;
   const children = [...node.children.values()].filter(child => matches(child, childFilter));
+  const selected = allSelected || (rootId === root.id && folderPath === node.path);
   return <div className="folder-branch">
-    <div className={`folder-row${rootId === root.id && folderPath === node.path ? ' active' : ''}`} style={{ '--depth': depth } as CSSProperties} data-root={root.id} data-folder={node.path}
+    <div className={`folder-row${selected ? ' active' : ''}`} style={{ '--depth': depth } as CSSProperties} data-root={root.id} data-folder={node.path}
       onContextMenu={event => menu(root, node, event)} onKeyDown={event => { if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) { event.stopPropagation(); menu(root, node, event); } }}>
       <button className="folder-toggle" aria-label={t('{0}のサブフォルダーを切り替え', node.name)} disabled={!children.length} aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{children.length ? expanded ? '▾' : '▸' : '·'}</button>
-      <button className="folder-label" aria-haspopup="menu" title={node.path ? root.path + (root.path.includes('\\') ? '\\' : '/') + node.path : root.path} onClick={() => { choose(root, node); setExpanded(true); }}><span className="folder-icon" /><span>{node.name}</span></button>
+      <button className="folder-label" aria-pressed={selected} aria-haspopup="menu" title={node.path ? root.path + (root.path.includes('\\') ? '\\' : '/') + node.path : root.path} onClick={() => { choose(root, node); setExpanded(true); }}><span className="folder-icon" /><span>{node.name}</span></button>
       <span className="folder-count">{node.count.toLocaleString()}</span>
     </div>
-    <div hidden={!expanded}>{children.map(child => <FolderBranch key={child.path} root={root} node={child} depth={depth + 1} filter={childFilter} rootId={rootId} folderPath={folderPath} choose={choose} menu={menu} />)}</div>
+    <div hidden={!expanded}>{children.map(child => <FolderBranch key={child.path} root={root} node={child} depth={depth + 1} filter={childFilter} rootId={rootId} folderPath={folderPath} allSelected={allSelected} choose={choose} menu={menu} />)}</div>
   </div>;
 }
 export function Properties({ fields }: { fields: PhotoMetadata }) {

@@ -121,6 +121,7 @@ export const english = {
   "かすみの除去": "Dehaze",
   "この縦横比では、切り抜き範囲を写真内に収められません。": "The crop cannot fit inside the photo at this aspect ratio.",
   "すべての写真": "All Photos",
+  "すべてのフォルダー": "All Folders",
   "すべて（{0}項目）": "All ({0} values)",
   "で絞り込み": " filter",
   "なし": "None",
