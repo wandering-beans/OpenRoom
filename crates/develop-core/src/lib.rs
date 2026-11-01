@@ -1160,3 +1160,6 @@ mod regressions {
         }
     }
 }
+
+#[cfg(test)]
+mod slider_audit;

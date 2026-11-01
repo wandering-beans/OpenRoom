@@ -476,6 +476,7 @@ async function run() {
     if (process.argv.includes('--crop-panel')) { await require('./test-crop-panel.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--select-all')) { await require('./test-select-all.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--pagination')) { await require('./test-pagination.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--all-sliders')) { await require('./test-all-sliders.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--slider-scroll')) { await require('./test-slider-scroll.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--interactive-preview')) { await require('./test-interactive-preview.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
