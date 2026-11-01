@@ -30,6 +30,7 @@ dependencies = [
  "advanced-explorer-media",
  "advanced-explorer-rtengine",
  "anyhow",
+ "cc",
  "fast_image_resize",
  "image",
  "imageproc",

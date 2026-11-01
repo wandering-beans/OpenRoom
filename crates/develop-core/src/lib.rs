@@ -1,4 +1,4 @@
-//! Portable, non-destructive photo development. No UI or platform frameworks.
+//! Non-destructive photo development with optional native processing and Metal acceleration.
 mod camera_profile;
 #[cfg(any(test, all(target_os = "macos", feature = "rtengine")))]
 mod camera_saturation;
@@ -573,6 +573,7 @@ fn spatial<'a>(
 }
 
 fn process(
+    use_gpu: bool,
     mut working: Cow<'_, WorkingImage>,
     settings: &Settings,
     cancelled: &(dyn Fn() -> bool + Sync),
@@ -584,6 +585,7 @@ fn process(
         let base = rtengine::render(&working, settings)?;
         ensure!(!cancelled(), "現像対象が変更されました。");
         return process(
+            use_gpu,
             Cow::Owned(base),
             &rtengine::remaining(settings, working.info.raw.is_some()),
             cancelled,
@@ -674,23 +676,30 @@ fn process(
         color::ColorTransform::new(settings)
     }.with_camera_saturation(info.camera_saturation.unwrap_or(1.));
     let (width, height) = pixels.dimensions();
-    pixels
-        .as_mut()
-        .par_chunks_mut(width as usize * 4)
-        .enumerate()
-        .try_for_each(|(y, row)| -> Result<()> {
-            ensure!(!cancelled(), "現像対象が変更されました。");
-            for (x, pixel) in row.chunks_mut(4).enumerate() {
-                let rgb = transform.apply(
-                    [pixel[0], pixel[1], pixel[2]],
-                    settings,
-                    (x as f32 + 0.5) / width as f32,
-                    (y as f32 + 0.5) / height as f32,
-                );
-                pixel[..3].copy_from_slice(&rgb);
-            }
-            Ok(())
-        })?;
+    #[cfg(all(target_os = "macos", feature = "metal"))]
+    let gpu_applied = use_gpu && transform.apply_gpu(&mut pixels, settings);
+    #[cfg(not(all(target_os = "macos", feature = "metal")))]
+    let gpu_applied = { let _ = use_gpu; false };
+    if !gpu_applied {
+        pixels
+            .as_mut()
+            .par_chunks_mut(width as usize * 4)
+            .enumerate()
+            .try_for_each(|(y, row)| -> Result<()> {
+                ensure!(!cancelled(), "現像対象が変更されました。");
+                for (x, pixel) in row.chunks_mut(4).enumerate() {
+                    let rgb = transform.apply(
+                        [pixel[0], pixel[1], pixel[2]],
+                        settings,
+                        (x as f32 + 0.5) / width as f32,
+                        (y as f32 + 0.5) / height as f32,
+                    );
+                    pixel[..3].copy_from_slice(&rgb);
+                }
+                Ok(())
+            })?;
+    }
+    ensure!(!cancelled(), "現像対象が変更されました。");
     if settings.constrain_crop {
         // Fit the existing aspect ratio inside each opaque rectangle, including skewed borders.
         let (width, height) = pixels.dimensions();
@@ -749,7 +758,7 @@ pub fn render(
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<RenderedImage> {
     let start = Instant::now();
-    let processed = process(Cow::Borrowed(working), settings, cancelled)?;
+    let processed = process(true, Cow::Borrowed(working), settings, cancelled)?;
     let image = preview_pixels(&processed);
     let histogram = histogram(&image);
     let info = RenderInfo {
@@ -922,7 +931,7 @@ fn export_working(
         "Unsupported export format"
     );
     ensure!(!destination.exists(), "Destination already exists");
-    let pixels = process(working, settings, &|| false)?;
+    let pixels = process(false, working, settings, &|| false)?;
     let image = DynamicImage::ImageRgba32F(pixels);
     let image = if let Some(border) = &options.border {
         add_export_border(image, border, options.long_edge)?
@@ -1125,8 +1134,8 @@ mod regressions {
                 ..Default::default()
             },
         ] {
-            let borrowed = process(Cow::Borrowed(&working), &settings, &|| false).unwrap();
-            let owned = process(Cow::Owned(working.clone()), &settings, &|| false).unwrap();
+            let borrowed = process(false, Cow::Borrowed(&working), &settings, &|| false).unwrap();
+            let owned = process(false, Cow::Owned(working.clone()), &settings, &|| false).unwrap();
             assert_eq!(owned, borrowed);
             assert_eq!(working.pixels, original);
         }

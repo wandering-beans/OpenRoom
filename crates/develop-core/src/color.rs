@@ -1,4 +1,7 @@
 use crate::Settings;
+#[cfg(all(target_os = "macos", feature = "metal"))]
+#[path = "gpu.rs"]
+mod gpu;
 
 pub struct ColorTransform {
     camera_saturation: f32,

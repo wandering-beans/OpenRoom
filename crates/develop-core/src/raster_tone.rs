@@ -16,8 +16,8 @@ const DATA: &[u8; (WB_WORDS + EXPOSURE_WORDS + 9 * KNOTS) * 2] =
 pub struct RasterTone {
     to_wide: [[f32; 3]; 3],
     from_wide: [[f32; 3]; 3],
-    white_balance: Vec<[f32; 3]>,
-    tone: Vec<f32>,
+    pub(crate) white_balance: Vec<[f32; 3]>,
+    pub(crate) tone: Vec<f32>,
 }
 
 impl RasterTone {
