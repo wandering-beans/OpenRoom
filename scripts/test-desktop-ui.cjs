@@ -3,7 +3,7 @@ const { createServer } = require('node:http');
 const { readFile } = require('node:fs/promises');
 const path = require('node:path');
 const assert = require('node:assert/strict');
-const { chromium } = require(require.resolve('playwright', { paths: [path.resolve(__dirname, '../desktop')] }));
+const { chromium, webkit } = require(require.resolve('playwright', { paths: [path.resolve(__dirname, '../desktop')] }));
 
 async function run() {
   const root = path.resolve(process.env.AE_UI_ROOT || path.resolve(__dirname, '../desktop/ui-dist'));
@@ -26,7 +26,8 @@ async function run() {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   let browser;
   try {
-    browser = await chromium.launch({ headless: true, executablePath: process.env.AE_CHROMIUM_EXECUTABLE });
+    browser = await (process.env.AE_WEBKIT ? webkit : chromium).launch({ headless: true,
+      executablePath: process.env.AE_WEBKIT ? undefined : process.env.AE_CHROMIUM_EXECUTABLE });
     const page = await browser.newPage({ viewport: { width: 2048, height: 1012 } });
     let discardResponse;
     const decideDiscard = accept => {
@@ -482,6 +483,11 @@ async function run() {
     if (process.argv.includes('--grading')) { await require('./test-color-grading.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--slider-benchmark')) { await require('./benchmark-slider-controls.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.env.AE_DEVELOP_ENDPOINT) {
+      if (process.env.AE_RESPONSE_BENCH) {
+        await require('./benchmark-slider-response.cjs').measure(page);
+        assert.deepEqual(failures, []);
+        return;
+      }
       await require(process.env.AE_SAVE_BENCH ? './benchmark-autosave-ui.cjs' : './benchmark-develop-ui.cjs').measure(page);
       return;
     }

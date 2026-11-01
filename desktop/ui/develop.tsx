@@ -51,6 +51,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
   let gestureTimer: ReturnType<typeof setTimeout> | undefined, saveTimer: ReturnType<typeof setTimeout> | undefined, saveTask: Promise<boolean> | null = null, saveFailed = false, syncFailed = false, leaving = false;
   let undo: Settings[] = [], redo: Settings[] = [], clipboard: SettingsPatch | null = null, gesture: Settings | null = null, gestureOwner: HTMLElement | null = null;
   let interacting = false;
+  let warmupPending = false, interactivePrepared = false;
   let pendingStep: {label: string} | null = null, historyRows: HistoryRow[] = [], historyToken = 0;
   const chooseCopySettings = createCopySettings();
   const controls: SliderHandle[] = [];
@@ -343,16 +344,23 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     if (!timer && !running) timer = setTimeout(() => {timer=undefined;render();}, 0);
   }
   async function render() {
-    if (!active || !item || !settings || running || !pending) return;
-    const previewBound = interacting ? 384 : bound, gestureRender = interacting;
+    if (!active || !item || !settings || running || (!pending && !warmupPending)) return;
+    // Prepare the independent RAW drag worker while the displayed photo is idle.
+    const warming = !pending && warmupPending;
+    const previewBound = interacting || warming ? 384 : bound, gestureRender = interacting;
+    if (previewBound === 384) warmupPending = false;
     const flight = {gestureRender, bound: previewBound};
     running = flight; pending = false;
     const token = renderToken, selection = epoch;
-    if (!saveFailed) status(interacting ? t("編集中") : t("原本を読み込み・現像中…"));
+    if (!warming && !saveFailed) status(interacting ? t("編集中") : t("原本を読み込み・現像中…"));
     try {
       const result = await invoke('develop_preview', { id: item.id, settings: tools.previewSettings(before ? defaults! : settings), bound: previewBound });
+      if (selection === epoch && running === flight) {
+        if (previewBound === 384) interactivePrepared = true;
+        else if (!interactivePrepared) warmupPending = true;
+      }
       const ongoingGesture = interacting && gestureRender;
-      if (running === flight && active && selection === epoch && (token === renderToken || ongoingGesture)) {
+      if (!warming && running === flight && active && selection === epoch && (token === renderToken || ongoingGesture)) {
         show(result, gestureRender); histogram(result); tools.update();
         const comparison=tools.comparison();
         if(comparison && !interacting){
@@ -364,11 +372,11 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
         if (!saveFailed) status(before ? t("変更前を表示中") : interacting || dirty() ? t("編集中") : t("保存済み"));
       }
     } catch (failure) {
-      if (active && token === renderToken && selection === epoch) { if (!saveFailed) status(t("現像プレビューを生成できません")); error(failure); }
+      if (!warming && active && token === renderToken && selection === epoch) { if (!saveFailed) status(t("現像プレビューを生成できません")); error(failure); }
     } finally {
       if (running === flight) {
         running = false;
-        if (pending) timer = setTimeout(() => {timer=undefined;render();}, 0);
+        if (pending || warmupPending) timer = setTimeout(() => {timer=undefined;render();}, 0);
       }
     }
   }
@@ -376,7 +384,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     clearTimeout(gestureTimer);
     clearTimeout(saveTimer);
     const selection = ++epoch;
-    ++renderToken; pending = false;
+    ++renderToken; pending = false; warmupPending = false; interactivePrepared = false;
     invoke('cancel_develop_preview').catch(error);
     tools.select(next?.id, settings); compare(null);
     rawInfo = null;

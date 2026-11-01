@@ -10,6 +10,7 @@ interface Props {
 }
 export function AdjustmentSlider(props: Props) {
   const range = useRef<HTMLInputElement>(null), number = useRef<HTMLInputElement>(null);
+  const rangePointer = useRef<number | null>(null);
   const [state, setState] = useState(props.state);
   const [text, setText] = useState(String(state.value));
   useImperativeHandle(props.ref, () => ({ sync() {
@@ -18,12 +19,20 @@ export function AdjustmentSlider(props: Props) {
   } }), []);
   useEffect(() => {
     const inputs = [range.current!, number.current!];
-    const finish = (event: Event) => props.finish(event.currentTarget as HTMLInputElement);
+    const finishChange = (event: Event) => finish(event.currentTarget as HTMLInputElement);
+    const releasePointer = (event: PointerEvent) => {
+      if (event.pointerId === rangePointer.current) finish(range.current!);
+    };
+    const releaseWindow = () => { if (rangePointer.current !== null) finish(range.current!); };
     const release = () => props.levelGrid(false);
-    for (const input of inputs) input.addEventListener('change', finish);
+    for (const input of inputs) input.addEventListener('change', finishChange);
+    for (const event of ['pointerup', 'pointercancel'] as const) window.addEventListener(event, releasePointer);
+    window.addEventListener('blur', releaseWindow);
     if (props.angle) for (const event of ['pointerup', 'pointercancel', 'blur']) window.addEventListener(event, release);
     return () => {
-      for (const input of inputs) input.removeEventListener('change', finish);
+      for (const input of inputs) input.removeEventListener('change', finishChange);
+      for (const event of ['pointerup', 'pointercancel'] as const) window.removeEventListener(event, releasePointer);
+      window.removeEventListener('blur', releaseWindow);
       if (props.angle) for (const event of ['pointerup', 'pointercancel', 'blur']) window.removeEventListener(event, release);
     };
   }, []);
@@ -33,7 +42,10 @@ export function AdjustmentSlider(props: Props) {
     const value = !numeric && props.kelvin ? Math.round(props.min * (props.max / props.min) ** (Number(element.value) / 1000)) : Number(element.value);
     if (element.value !== '' && Number.isFinite(value) && value >= props.min && value <= props.max) props.input(value, element, numeric);
   }
-  function finish(element: HTMLInputElement) { props.finish(element); if (props.angle) props.levelGrid(false); }
+  function finish(element: HTMLInputElement) {
+    if (element === range.current) rangePointer.current = null;
+    props.finish(element); if (props.angle) props.levelGrid(false);
+  }
   function reset(event: React.MouseEvent<HTMLInputElement>) {
     event.preventDefault();
     props.reset();
@@ -45,10 +57,17 @@ export function AdjustmentSlider(props: Props) {
     <input ref={range} id={props.id} type="range" min={props.kelvin ? 0 : props.min} max={props.kelvin ? 1000 : props.max} step={props.kelvin ? 1 : props.step}
       value={Number.isFinite(rangeValue) ? rangeValue : 0} disabled={state.disabled} style={{ '--range-track': state.track } as CSSProperties}
       aria-label={(props.local ? t('マスクの') : '') + props.label} aria-valuetext={props.kelvin ? `${state.value} K` : undefined}
-      onFocus={event => props.prepare(event.currentTarget)} onPointerDown={event => { props.prepare(event.currentTarget); if (props.angle) props.levelGrid(true); }}
+      onFocus={event => props.prepare(event.currentTarget)} onPointerDown={event => {
+        if (event.button !== 0) return;
+        rangePointer.current = event.pointerId;
+        props.prepare(event.currentTarget); if (props.angle) props.levelGrid(true);
+      }}
       onInput={event => change(event.currentTarget, false)} onChange={() => {}}
       onPointerUp={event => finish(event.currentTarget)} onPointerCancel={event => finish(event.currentTarget)}
-      onBlur={event => { finish(event.currentTarget); props.sync(); }}
+      onBlur={event => {
+        // WebKit can blur a range immediately after mouse-down; the pointer still owns the drag.
+        if (rangePointer.current === null) { finish(event.currentTarget); props.sync(); }
+      }}
       onKeyDown={event => { if (props.angle && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) props.levelGrid(true); }}
       onKeyUp={event => finish(event.currentTarget)} onDoubleClick={reset} />
     <input ref={number} id={`${props.id}-value`} type="number" min={props.min} max={props.max} step={props.step} value={text} disabled={state.disabled}

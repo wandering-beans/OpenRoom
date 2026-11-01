@@ -3,25 +3,33 @@ const assert = require('node:assert/strict');
 module.exports = async function testInteractivePreview(page) {
   await page.click('#module-develop');
   await page.waitForFunction(() => document.getElementById('full-image').src.includes('develop-1-0-1600'));
+  await page.waitForFunction(() => calls.some(c => c.command === 'develop_preview' && c.args.bound === 384));
+  await page.waitForTimeout(100);
+  assert.ok((await page.locator('#full-image').getAttribute('src')).includes('develop-1-0-1600'),
+    'warming the drag worker must not replace the displayed high-quality preview');
   for (const bound of [1600, 0]) {
     if (bound === 0) await page.click('#zoom-in');
-    await page.waitForFunction(bound => calls.filter(c => c.command === 'develop_preview').at(-1)?.args.bound === bound, bound);
     await page.waitForFunction(bound => document.getElementById('full-image').src.endsWith(`-${bound}`) && document.getElementById('full-image').complete, bound);
     const before = await page.locator('#full-image').boundingBox();
     await page.evaluate(() => {
       const slider = document.getElementById('develop-exposure');
-      slider.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true}));
+      window.gestureCallStart = calls.length;
+      slider.focus();
+      slider.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true,pointerId:7}));
       slider.value = '0.5';
       slider.dispatchEvent(new Event('input', {bubbles:true}));
+      slider.blur(); // WebKit blurs ranges after mouse-down while the drag is still active.
     });
     await page.waitForFunction(() => document.getElementById('full-image').src.includes('develop-1-0.5-384'));
     const during = await page.locator('#full-image').boundingBox();
     assert.ok(Math.abs(before.width-during.width) < 1 && Math.abs(before.height-during.height) < 1,
       'interactive preview must preserve fitted size and 100% zoom');
+    assert.ok(await page.evaluate(() => calls.slice(gestureCallStart).filter(c=>c.command==='develop_preview').every(c=>c.args.bound===384)),
+      'element blur during a pointer drag must not start a high-quality render');
     await page.evaluate(() => {
       const slider = document.getElementById('develop-exposure');
       slider.value = '0.75'; slider.dispatchEvent(new Event('input', {bubbles:true}));
-      slider.dispatchEvent(new Event('change', {bubbles:true}));
+      window.dispatchEvent(new PointerEvent('pointerup', {pointerId:7}));
     });
     await page.waitForFunction(bound => document.getElementById('full-image').src.includes(`develop-1-0.75-${bound}`), bound);
     await page.waitForFunction(() => calls.some(c => c.command === 'save_develop' && c.args.settings.exposure === 0.75));
@@ -42,5 +50,19 @@ module.exports = async function testInteractivePreview(page) {
   await page.evaluate(() => {window.releaseDevelopPreview();});
   await page.evaluate(() => document.getElementById('develop-exposure').dispatchEvent(new Event('change', {bubbles:true})));
   await page.waitForFunction(() => document.getElementById('full-image').src.includes('develop-1-1-0'));
+  // A warmup finishing after leaving Develop must not change the library image or show an error.
+  await page.click('#module-library');
+  await page.evaluate(() => { window.holdDevelopPreview = true; window.releaseDevelopPreview = null; });
+  await page.click('#module-develop');
+  await page.waitForFunction(() => typeof window.releaseDevelopPreview === 'function');
+  await page.evaluate(() => { const release=window.releaseDevelopPreview; window.releaseDevelopPreview=null; release(); });
+  await page.waitForFunction(() => typeof window.releaseDevelopPreview === 'function' && calls.filter(c=>c.command==='develop_preview').at(-1).args.bound===384);
+  await page.click('#module-library');
+  await page.waitForFunction(() => document.getElementById('full-image').src.includes('#preview-'));
+  const libraryImage = await page.locator('#full-image').getAttribute('src');
+  await page.evaluate(() => { window.holdDevelopPreview=false; window.releaseDevelopPreview(); });
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator('#full-image').getAttribute('src'), libraryImage);
+  assert.equal(await page.locator('#error').isVisible(), false);
   console.log('Interactive preview: lightweight drag, final quality, stable zoom, and superseded render checks passed.');
 };
