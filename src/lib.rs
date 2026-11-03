@@ -1,6 +1,7 @@
 pub mod library;
 pub mod previews;
 pub mod removal;
+pub mod relink;
 mod workflow;
 use anyhow::{Context, Result, bail, ensure};
 use rusqlite::{

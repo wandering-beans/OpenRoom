@@ -39,6 +39,7 @@ export interface Commands {
   install_app_update: { args: undefined; result: void };
   roots: { args: undefined; result: Root[] };
   folders: { args: undefined; result: Folder[] };
+  relink_folder: { args: { rootId: number; folder: string }; result: { linked: number; not_found: number; conflicts: number; unreadable: number; first_id: number | null } | null };
   remove_from_catalog: { args: { selection: CatalogRemoval }; result: number };
   search: { args: { query: Query; cursor: Cursor | null }; result: Page };
   count: { args: { query: Query }; result: number };

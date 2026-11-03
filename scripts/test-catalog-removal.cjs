@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
 module.exports = async function testCatalogRemoval(page) {
-  await page.reload();
+  await page.goto(new URL(page.url()).origin);
   const first = page.locator('.film-tile[title="photo-0000.jpg"]');
   const second = page.locator('.film-tile[title="photo-0001.jpeg"]');
   await first.waitFor();
@@ -32,6 +32,29 @@ module.exports = async function testCatalogRemoval(page) {
   await page.keyboard.press('Shift+F10');
   await page.locator('#photo-menu').waitFor({state:'visible'});
   assert.equal(await page.locator('#photo-export').isVisible(), false);
+  await page.evaluate(() => {
+    const invoke = window.__TAURI__.core.invoke;
+    window.__TAURI__.core.invoke = (command, args) => {
+      if (command === 'cancel_scan' && window.cancelRelink) {
+        window.cancelRelink(null);
+        return Promise.resolve();
+      }
+      if (command !== 'relink_folder') return invoke(command, args);
+      if (!window.cancelRelink) return new Promise(resolve => { window.cancelRelink = resolve; });
+      window.relinkTarget = args;
+      return Promise.resolve({ linked: 1, not_found: 2, conflicts: 1, unreadable: 0, first_id: 4 });
+    };
+  });
+  await page.locator('#catalog-relink').click();
+  await page.locator('#relink-cancel').click();
+  await page.locator('#relink-dialog').waitFor({state:'hidden'});
+  assert.equal(await page.locator('#result-count').textContent(), '398枚の写真');
+  await nested.click({button:'right'});
+  await page.locator('#catalog-relink').click();
+  await page.waitForFunction(() => document.querySelector('#status').textContent === '再接続 1枚・見つからない原本 2枚・候補の競合 1枚');
+  assert.deepEqual(await page.evaluate(() => window.relinkTarget), {rootId:1, folder:'20261019撮影/選定'});
+  await nested.click({button:'right'});
+  await page.locator('#catalog-remove').focus();
   await page.keyboard.press('Enter');
   await page.locator('#discard-dialog[open]').waitFor();
   await page.click('#discard-dialog button[value="discard"]');

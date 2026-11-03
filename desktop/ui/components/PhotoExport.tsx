@@ -7,6 +7,7 @@ import { errorText, t } from '../i18n';
 interface ExportActions {
   prepare(): Promise<boolean>;
   error(failure: unknown): void;
+  relink(rootId: number, path: string): Promise<void>;
   remove(selection: CatalogRemoval): Promise<void>;
 }
 interface PhotoExportHandle {
@@ -16,7 +17,7 @@ interface PhotoExportHandle {
 type Phase = 'idle' | 'choosing' | 'running';
 const exportFolderKey = 'openroom.export.folder';
 
-function PhotoExport({ prepare, error, remove, ref }: ExportActions & { ref: Ref<PhotoExportHandle> }) {
+function PhotoExport({ prepare, error, remove, relink, ref }: ExportActions & { ref: Ref<PhotoExportHandle> }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const browse = useRef<HTMLButtonElement>(null);
@@ -170,6 +171,10 @@ function PhotoExport({ prepare, error, remove, ref }: ExportActions & { ref: Ref
         buttons[event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowUp' ? -1 : 1) + buttons.length) % buttons.length]?.focus();
       }}>
       <button id="photo-export" role="menuitem" hidden={selection.kind !== 'photos'} onClick={open}>{t('書き出し…')}</button>
+      {selection.kind === 'folder' && <button id="catalog-relink" role="menuitem" onClick={() => {
+        closeMenu();
+        void relink(selection.root_id, selection.path).catch(error).finally(focusPhoto);
+      }}>{t('見つからない原本を検索…')}</button>}
       <button id="catalog-remove" role="menuitem" onClick={() => { closeMenu(); void remove(selection).catch(error).finally(focusPhoto); }}>{t('カタログから削除…')}</button>
     </div>
     <dialog id="export-dialog" ref={dialog} aria-labelledby="export-title" onClose={focusPhoto}

@@ -6,6 +6,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use tauri::State;
+use tauri_plugin_dialog::DialogExt;
 
 #[derive(Serialize)]
 pub struct LibraryPage {
@@ -65,6 +66,35 @@ pub async fn remove_from_catalog(
     let copied = (*state).clone();
     work(move || copied.library.remove_catalog_items(&copied, &selection)).await
 }
+#[tauri::command]
+pub async fn relink_folder(
+    app: tauri::AppHandle,
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    root_id: i64,
+    folder: String,
+) -> Reply<Option<advanced_explorer::relink::RelinkReport>> {
+    if state.scanning.swap(true, Ordering::SeqCst) {
+        return Err("フォルダを読み込み中です。".into());
+    }
+    let _guard = IndexGuard(state.scanning.clone());
+    let cancel = state.cancel.clone();
+    cancel.store(false, Ordering::SeqCst);
+    let db = state.db.clone();
+    work(move || {
+        let Some(chosen) = app.dialog().file().set_parent(&window).blocking_pick_folder() else {
+            return Ok(None);
+        };
+        let directory = chosen.into_path().map_err(|error| anyhow::anyhow!(error.to_string()))?;
+        let mut catalog = Catalog::open(db)?;
+        let report = catalog.relink_folder(root_id, folder.as_ref(), &directory, || {
+            cancel.load(Ordering::Relaxed)
+        })?;
+        Ok(Some(report))
+    })
+    .await
+}
+
 #[derive(Serialize)]
 pub struct IndexProgress {
     processed: usize,

@@ -155,7 +155,7 @@ async function rotatePhoto(turns: number) {
     for (const button of $('photo-rotation').querySelectorAll('button')) button.disabled = false;
   }
 }
-const photoExport = createPhotoExport({ prepare: allowChange, error: showError, remove: removeFromCatalog });
+const photoExport = createPhotoExport({ prepare: allowChange, error: showError, remove: removeFromCatalog, relink: relinkFolder });
 const review = createReview({
   preview: largeJob, src: convertFileSrc, key: itemKey,
   activate: id => selectPhoto(items.findIndex(item => item.id === id), { reviewFocus: true }),
@@ -183,6 +183,34 @@ async function photoMenu(index: number, event: { preventDefault(): void; current
   if (!selectedPhotos.has(items[index].id) && !await selectPhoto(index)) return;
   const ids = selectedPhotos.size ? [...selectedPhotos] : [items[index].id];
   photoExport.menu({ kind: 'photos', ids }, (event.clientX ?? 0) || rect?.left || 0, (event.clientY ?? 0) || rect?.bottom || 0, tile ?? grid);
+}
+async function relinkFolder(sourceRoot: number, path: string) {
+  if (!await allowChange()) return;
+  const dialog = $('relink-dialog');
+  const cancel = () => invoke('cancel_scan').catch(showError);
+  $('relink-cancel').onclick = cancel;
+  dialog.oncancel = event => { event.preventDefault(); void cancel(); };
+  document.body.dataset.catalogBusy = 'true';
+  dialog.showModal();
+  let report: Commands['relink_folder']['result'];
+  try {
+    report = await invoke('relink_folder', { rootId: sourceRoot, folder: path });
+  } finally {
+    delete document.body.dataset.catalogBusy;
+    dialog.close();
+  }
+  if (!report) return;
+  if (report.linked > 0) {
+    readyThumbnails.clear(); thumbnailRequests.clear(); largePreviews.clear(); photoMetadata.clear();
+    if (rootId === sourceRoot) {
+      rootId = null; folderPath = null; allFoldersSelected = false;
+      $('title').textContent = t('すべての写真');
+    }
+    await loadFolders();
+    await refresh(report.first_id, true);
+  }
+  $('status').textContent = t('再接続 {0}枚・見つからない原本 {1}枚・候補の競合 {2}枚', report.linked, report.not_found, report.conflicts);
+  if (report.unreadable) $('status').textContent += t('・読み取り不可 {0}件', report.unreadable);
 }
 async function removeFromCatalog(selection: CatalogRemoval) {
   if (!await allowChange()) return;

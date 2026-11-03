@@ -13,6 +13,8 @@ interface Controls {
   'annotation-tags': HTMLInputElement;
   'auto-sync': HTMLInputElement;
   'cancel': HTMLButtonElement;
+  'relink-dialog': HTMLDialogElement;
+  'relink-cancel': HTMLButtonElement;
   'catalog-copy': HTMLButtonElement;
   'catalog-location': HTMLButtonElement;
   'catalog-manage': HTMLDetailsElement;

@@ -681,6 +681,7 @@ fn main() {
             mcp::mcp_claim, mcp::mcp_execute, mcp::mcp_complete,
             library::set_photo_attributes, library::metadata_facets, library::index_metadata_batch, library::cancel_metadata_index,
             library::remove_from_catalog,
+            library::relink_folder,
             preferences::get_language, preferences::set_language,
             updates::app_version, updates::check_app_update, updates::install_app_update,
             arm_close_guard,

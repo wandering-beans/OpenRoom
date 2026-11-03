@@ -262,12 +262,12 @@ footer { height: 17px; flex: none; padding: 0 20px; background: #080808; display
 .develop-mode #image-area { background: #949494; }
 @media (max-width: 1050px) { .develop-mode .sidebar { width: 190px; } .develop-panel { width: 282px; } .develop-slider { grid-template-columns: 80px minmax(30px, 1fr) 42px; } }
 
-#discard-dialog { width: min(380px, 90vw); padding: 22px; background: #363636; color: #ddd; border: 1px solid #777; border-radius: 4px; box-shadow: 0 12px 40px #0009; }
-#discard-dialog::backdrop { background: #0006; }
+#relink-dialog, #discard-dialog { width: min(380px, 90vw); padding: 22px; background: #363636; color: #ddd; border: 1px solid #777; border-radius: 4px; box-shadow: 0 12px 40px #0009; }
+#relink-dialog::backdrop, #discard-dialog::backdrop { background: #0006; }
 #discard-dialog h2 { margin: 0 0 14px; font-size: 15px; font-weight: 500; }
 #discard-dialog p { margin: 0 0 22px; font-size: 12px; line-height: 1.6; }
 #discard-dialog form > div { display: flex; justify-content: flex-end; gap: 10px; }
-#discard-dialog button { padding: 6px 11px; border: 1px solid #202020; background: linear-gradient(#666,#494949); }
+#relink-dialog button, #discard-dialog button { padding: 6px 11px; border: 1px solid #202020; background: linear-gradient(#666,#494949); }
 
 #develop-history-list { max-height: 280px; overflow: auto; }
 .history-row { display: block; width: 100%; text-align: left; padding: 6px 12px; border-radius: 0; }
