@@ -76,7 +76,51 @@ interface FolderProps { root: Root; node: FolderNode; depth: number; filter: str
 function matches(node: FolderNode, filter: string): boolean {
   return !filter || node.name.toLocaleLowerCase().includes(filter) || [...node.children.values()].some(child => matches(child, filter));
 }
-export function FolderBranch({ root, node, depth, filter, rootId, folderPath, allSelected, choose, menu }: FolderProps) {
+type RootTree = Pick<FolderProps, 'root' | 'node'>;
+type FolderControls = Omit<FolderProps, 'root' | 'node' | 'depth'>;
+
+function parentPath(path: string) {
+  const separator = path.startsWith('/') ? '/' : '\\';
+  return path.slice(0, Math.max(0, path.lastIndexOf(separator)));
+}
+
+export function FolderTree({ trees, ...controls }: FolderControls & { trees: RootTree[] }) {
+  // Use the full parent path so equally named folders on separate drives stay separate.
+  const siblings = new Map<string, RootTree[]>();
+  for (const tree of trees) {
+    const parent = parentPath(tree.root.path);
+    if (!siblings.has(parent)) siblings.set(parent, []);
+    siblings.get(parent)!.push(tree);
+  }
+  return trees.map(tree => {
+    const parent = parentPath(tree.root.path);
+    const group = siblings.get(parent)!;
+    if (!parent || group.length === 1) {
+      return <FolderBranch key={`root:${tree.root.id}:${controls.filter}`} {...tree} {...controls} depth={0} />;
+    }
+    if (group[0] !== tree) return null;
+    return <ParentFolder key={`parent:${parent}:${controls.filter}`} path={parent} trees={group} {...controls} />;
+  });
+}
+
+function ParentFolder({ path, trees, filter, ...controls }: FolderControls & { path: string; trees: RootTree[] }) {
+  const [expanded, setExpanded] = useState(true);
+  const separator = path.startsWith('/') ? '/' : '\\';
+  const name = path.slice(path.lastIndexOf(separator) + 1) || path;
+  const childFilter = name.toLocaleLowerCase().includes(filter) ? '' : filter;
+  if (!trees.some(tree => matches(tree.node, childFilter))) return null;
+  const total = trees.reduce((sum, tree) => sum + tree.node.count, 0);
+  return <div className="folder-branch">
+    <button type="button" className="folder-row folder-parent" title={path} aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
+      <span className="folder-toggle" aria-hidden="true">{expanded ? '▾' : '▸'}</span>
+      <span className="folder-label"><span className="folder-icon" /><span>{name}</span></span>
+      <span className="folder-count">{total.toLocaleString()}</span>
+    </button>
+    <div hidden={!expanded}>{trees.map(tree => <FolderBranch key={tree.root.id} {...tree} {...controls} depth={1} filter={childFilter} />)}</div>
+  </div>;
+}
+
+function FolderBranch({ root, node, depth, filter, rootId, folderPath, allSelected, choose, menu }: FolderProps) {
   const [expanded, setExpanded] = useState(depth === 0 || Boolean(filter) || (rootId === root.id && Boolean(folderPath?.startsWith(node.path))));
   if (!matches(node, filter)) return null;
   const childFilter = !filter || node.name.toLocaleLowerCase().includes(filter) ? '' : filter;

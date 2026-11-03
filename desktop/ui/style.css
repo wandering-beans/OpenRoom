@@ -98,7 +98,7 @@ input[type="range"]:disabled { cursor: default; opacity: .5; }
 .folder-search > .ui-icon { width: 14px; height: 14px; color: #999; }
 .folder-search input { border: 0; background: transparent; width: 100%; padding: 2px; font-size: 10px; outline-offset: 2px; }
 .folder-search input::placeholder { color: #858585; }
-.folder-branch .folder-row { padding-left: calc(4px + var(--depth) * 13px); gap: 3px; }
+.folder-branch .folder-row { padding-left: calc(4px + var(--depth, 0) * 13px); gap: 3px; }
 .folder-toggle { flex: none; width: 14px; padding: 0; color: #aaa; font-size: 11px; }
 .folder-label { flex: 1; min-width: 0; text-align: left; display: flex; align-items: center; gap: 5px; padding: 0; color: inherit; }
 .folder-label span:last-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

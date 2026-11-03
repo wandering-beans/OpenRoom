@@ -1,5 +1,5 @@
 import { createView } from './components/view';
-import { PhotoTile, FolderBranch, Properties, type FolderNode, type ThumbnailLoader } from './components/Library';
+import { PhotoTile, FolderTree, Properties, type FolderNode, type ThumbnailLoader } from './components/Library';
 import type { ReactNode, CSSProperties } from 'react';
 import type { CatalogRemoval, Commands } from './backend';
 import type { Detail, Photo, Root, Folder, Cursor, Preview, PhotoMetadata, ViewMode, Module, Focus, Query, UiState, PreviewProgress, ScanProgress, Recipe } from './models';
@@ -627,8 +627,7 @@ async function loadFolders() {
 }
 function renderFolders() {
   const filter = $('folder-search').value.toLocaleLowerCase();
-  const branches: ReactNode[] = [];
-  for (const root of roots) {
+  const trees = roots.map(root => {
     const separator = root.path.includes('\\') ? '\\' : '/';
     const rootName = root.path.split(/[\\/]/).filter(Boolean).pop() || root.path;
     const tree: FolderNode = { path: '', name: rootName, count: 0, children: new Map() };
@@ -643,15 +642,15 @@ function renderFolders() {
       }
       node.count = folder.count;
     }
-    branches.push(<FolderBranch key={`${root.id}:${filter}`} root={root} node={tree} depth={0} filter={filter} rootId={rootId} folderPath={folderPath} allSelected={allFoldersSelected} choose={chooseFolder} menu={(root, node, event) => {
+    return { root, node: tree };
+  });
+  foldersView.render(<FolderTree trees={trees} filter={filter} rootId={rootId} folderPath={folderPath} allSelected={allFoldersSelected} choose={chooseFolder} menu={(root, node, event) => {
       event.preventDefault();
       if (document.body.dataset.catalogBusy || confirmingChange || photoExport.busy) return;
       const target = event.currentTarget as HTMLElement;
       const rect = target.getBoundingClientRect();
       photoExport.menu({ kind: 'folder', root_id: root.id, path: node.path }, 'clientX' in event ? event.clientX : rect.left, 'clientY' in event ? event.clientY : rect.bottom, target.querySelector('button.folder-label') ?? target);
-    }} />);
-  }
-  foldersView.render(branches);
+  }} />);
   updateFolderSelection();
 }
 function chooseFolder(root: Root, node: FolderNode) {
