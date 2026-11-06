@@ -14,7 +14,7 @@ async function refreshDownloads() {
       const button = document.querySelector(`[data-platform="${platform}"]`);
       const meta = document.querySelector(`[data-meta="${platform}"]`);
       const notes = document.querySelector(`[data-notes="${platform}"]`);
-      form.setDestination(platform, download?.asset.browser_download_url || RELEASES_URL);
+      form.setDestination(platform, download?.asset.browser_download_url || RELEASES_URL, Boolean(download));
       button.textContent = download ? `${platform === 'windows' ? 'Windows' : 'Mac'}版をダウンロード ↓` : 'GitHubで公開版を確認 ↗';
       const size = download && Number.isFinite(download.asset.size) ? ` · ${(download.asset.size / 1048576).toFixed(1)} MB` : '';
       meta.textContent = download ? `${download.tag} · ${download.prerelease ? 'プレリリース' : '公開版'}${size}` : '対応する配布ファイルはGitHubでご確認ください。';

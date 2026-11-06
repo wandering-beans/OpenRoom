@@ -1,10 +1,14 @@
 # OpenRoom distribution website
 
-Static source for the existing public ChatGPT Site at https://deepdive.boats.
-No build step, API key, paid service, database, or scheduled automation is needed.
+Source for the existing public ChatGPT Site at https://deepdive.boats.
+A small Worker serves the existing pages and records download clicks in Sites D1.
+No external analytics service, API key, paid upgrade, or scheduled automation is needed.
 
-Run `node website/test-releases.mjs` and `node website/test-downloads.mjs` from
-the repository root. Serve `website/` over HTTP to preview the ES modules.
+Run `npm test` from `website/` with Node 24 to build and test the page, download
+consent, release selection, and counter against a temporary SQLite database.
+The Worker has no runtime dependencies. `npm ci` is needed only for the schema
+tools; after changing `db/schema.ts`, run `npm run db:generate` and commit the
+generated SQL and metadata in `drizzle/`. Never edit applied migrations.
 
 `releases.mjs` reads public GitHub releases on page load and when the page
 becomes visible again. It chooses Windows x64 installers and macOS Apple
@@ -21,12 +25,29 @@ Future assets must retain the names covered by the selector, such as
 is persisted, and a back-forward cache restore clears consent. This is a
 website interaction requirement, not access control over public GitHub assets.
 
-To publish, open the existing Site source with the Sites workflow helper.
-Copy the public files (`index.html`, `styles.css`, `script.js`, `releases.mjs`,
-`downloads.mjs`, and `assets/`) to its root and `dist/`. Preserve
-`.openai/hosting.json`, Site identity, and audience. Copy the page to
-`ja/index.html` and `dist/ja/index.html` to preserve the prior Japanese URL.
-Validate, package, save, and deploy with Sites. Do not copy local QA output.
+After consent and only for an available release asset, the form sends a
+same-origin `POST /api/download-click/windows` or `/api/download-click/macos`
+with `keepalive` before navigating. Release-list fallback links do not count.
+Tracking failure never blocks the download; requests are not retried to avoid
+double counting. Offline requests, blockers, or exhausted service limits can
+cause undercounting. Counts are clicks, not completed downloads or unique people.
+
+The `DB` binding stores only two platform totals in `download_counts`; no IP
+addresses, user agents, cookies, or per-visitor records are stored by this counter.
+An atomic UPSERT prevents lost increments. Cross-origin browser requests and
+unknown platforms are rejected. Like any public click endpoint, scripted clients
+can imitate a click; this is a lightweight usage counter, not fraud-proof analytics.
+Inspect counts through the authenticated Sites database viewer or Sites database
+tools. There is no public totals endpoint. Before the first click, a platform has
+no row and its count is zero. Sum `clicks` across the rows for the overall total.
+
+To publish, open the existing Site source with the Sites workflow helper. Copy
+the contents of `website/` to the checkout, excluding `node_modules`, `dist`, and
+local QA output. Preserve the Site identity and audience. The hosting manifest
+uses `d1: "DB"` and no `static` setting. Run `node build.mjs` and the tests, then
+package, save, and deploy with Sites. Sites applies the Drizzle migrations.
+The build embeds an explicit allowlist of assets in `dist/server/index.js` and
+keeps `/ja/` working. Database contents survive subsequent deployments.
 
 Screenshots show the installed Windows OpenRoom app with a dedicated demo
 catalog and public Unsplash samples. They are actual app captures, not mockups.

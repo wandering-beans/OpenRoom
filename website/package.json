@@ -1,0 +1,14 @@
+{
+  "name": "openroom-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "db:generate": "drizzle-kit generate",
+    "test": "node build.mjs && node test-releases.mjs && node test-downloads.mjs && node test-worker.mjs"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.10",
+    "drizzle-orm": "0.45.2"
+  }
+}

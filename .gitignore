@@ -6,6 +6,8 @@
 /desktop/target/
 /dist/
 /desktop/node_modules/
+/website/node_modules/
+/website/dist/
 /desktop/ui-dist/
 
 **/__pycache__/
