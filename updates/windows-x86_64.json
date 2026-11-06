@@ -1,10 +1,10 @@
 {
-  "version": "0.7.10",
-  "notes": "Windows 11 x64向けのOpenRoom 0.7.10です。\n\n環境設定から、署名を検証してWindows版を更新できるようになりました。\nWindows専用の公開鍵を採用しています。以前のWindows版をお使いの場合は、添付のインストーラーを一度手動で実行してください。以後は環境設定の「更新を確認」から、新しいバージョンへ更新できます。\n\nmacOS版の更新先と公開鍵は変更していません。このリリースにmacOS用インストーラーは含まれません。\n\n更新用の署名とWindowsの発行元署名（Authenticode）は別のものです。このインストーラーにはAuthenticode署名がないため、Windowsが発行元不明と表示する場合があります。\n\n対応するアプリのソース、依存ライブラリのソース、チェックサムを添付しています。\n\n依存ライブラリに変更はないため、依存ソースのZIPは0.7.9のWindows版と同じものを添付しています。今回のアプリのソースは`OpenRoom-0.7.10-source.zip`です。",
+  "version": "0.7.11",
+  "notes": "Windows 11 x64向けのOpenRoom 0.7.11です。\n\n環境設定に「起動時に更新を確認」を追加しました。初期設定はオンです。起動時に更新が見つかると、署名を検証して自動で更新し、アプリを再起動します。\n\n更新確認はバックグラウンドで行います。読み込み・書き出しや未保存の編集がある間は適用を待ちます。通信や署名検証に失敗した場合は更新せず、そのままアプリを利用できます。\n\n自動更新を止めるには、この設定をオフにしてください。設定は次回起動時も維持され、オフでも「更新を確認」から手動更新できます。\n\nWindows版0.7.10からは、環境設定の「更新を確認」でこのバージョンへ更新できます。以前の鍵を使用するWindows版は、添付のインストーラーを手動で実行してください。\n\nmacOS版の配信情報と公開鍵は変更していません。このリリースはWindows用です。\n\n更新用署名とWindowsの発行元署名（Authenticode）は別です。このインストーラーにはAuthenticode署名がないため、Windowsが発行元不明と表示する場合があります。\n\n対応するアプリのソースとチェックサムを添付しています。依存ライブラリに変更はないため、依存ソースのZIPは0.7.9のWindows版と同じものです。",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.10/OpenRoom-0.7.10-windows-x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbWtWRXpjRk1CVkYrWTlvcWFPYk1BMG9EbUY4NzFhRWc1UVhka2pJb05ROXVFbjh0TDd3TlJnRll2MllDdVIrRHdtY3dlZG1SbGtpWUVOMVVYTjFwMVFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzOTc1NjIyCWZpbGU6T3BlblJvb20tMC43LjEwLXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xMAovUWVjUXBmWmNEMG5JNVBrbG9UbXBPdmQrRmo2Tmx4TStkWjIwa3hMQWYzR3JoZW9qeTVYclFiaGFBMlJDa0V1S25uT3luNjNzRXJYQ2xKRG9GWEdBUT09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.11/OpenRoom-0.7.11-windows-x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbW5IOCs1citkcEdvTVhoQ0luYzVxRkNZWm9jTmFuYlFxQzRrbUVUTGl3aG03dUw0UGJhZGRNV3orZjBtOVNPNElYUlI1NkMzdVRTMnZRTHFYYUxjSEFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzOTc4NjcxCWZpbGU6T3BlblJvb20tMC43LjExLXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xMQpDSzNQY2I1cEtOdzFKN2xuMFcweStlbllTOTFSNGtDNFVKclV4ME5XQ2ZBQm9JWE90MWwvNVFGeHg1RkRyR1l4eU1lQlRuTmpBY0VGcTZvVFo1ZklBQT09Cg=="
     }
   }
 }
