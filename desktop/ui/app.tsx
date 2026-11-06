@@ -11,6 +11,7 @@ import { createLibraryFilters } from "./library-filters";
 import { createDevelop } from "./develop";
 import { createPhotoExport } from "./components/PhotoExport";
 import { startMcp } from "./mcp";
+import { createPreferences } from "./components/Preferences";
 import { initSidebar } from "./sidebar";
 import { createReview } from "./review";
 import { invoke as nativeInvoke, convertFileSrc, listen } from './backend';
@@ -1304,10 +1305,11 @@ for (const type of ['pointerdown', 'focusin']) document.addEventListener(type, e
   else if (target.closest('#grid, #filmstrip, #viewer')) { selectionTarget = 'photos'; ++selectionIntent; }
 }, true);
 document.addEventListener('keydown', event => {
-  if ($('app-shell').inert || document.querySelector('dialog[open]') || photoExport.busy || !$('photo-menu').hidden || document.body.dataset.catalogBusy) return;
+  if (document.querySelector('dialog[open]') || photoExport.busy || !$('photo-menu').hidden || document.body.dataset.catalogBusy) return;
   if ((event.metaKey || event.ctrlKey) && event.key === ',') {
     event.preventDefault(); document.dispatchEvent(new Event('open-preferences')); return;
   }
+  if ($('app-shell').inert) return;
   if ((event.target as Element).closest('[role=separator]')) return;
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a' && !event.altKey && !event.shiftKey
       && !(event.target as Element).closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')) {
@@ -1437,8 +1439,27 @@ async function refreshMcpPhotos(ids: number[]) {
   syncReview(); draw();
   await developSelectionTask;
 }
+const preferences = createPreferences({
+  error: showError,
+  async prepareUpdate() {
+    if (scanning || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから更新してください。"));
+    await developSelectionTask;
+    if (metadataDirty) await saveAnnotation();
+    if (metadataDirty) throw Error(t("保存できませんでした。編集内容を保持しています。"));
+    if (!await develop.allowChange()) throw Error(t("現像設定を保存できません。画面の編集内容を保持しています。"));
+  },
+  async changeLanguage(value) {
+    if (scanning || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから言語を変更してください。"));
+    await developSelectionTask;
+    if (metadataDirty) await saveAnnotation();
+    if (metadataDirty) throw Error(t("保存できませんでした。編集内容を保持しています。"));
+    if (!await develop.allowChange()) throw Error(t("現像設定を保存できません。画面の編集内容を保持しています。"));
+    await invoke('set_language', {language:value});
+    location.reload();
+  },
+});
 try {
-  if (!needsCatalog) await startMcp({ invoke, listen, ready: catalogReady, state: mcpUiState, prepare: prepareMcpChange,
+  if (!needsCatalog) await startMcp({ invoke, listen, preferences, ready: catalogReady, state: mcpUiState, prepare: prepareMcpChange,
     busy: () => photoExport.busy || metadataDirty || saving || confirmingChange || scanning || develop.busy || Boolean(document.body.dataset.catalogBusy),
     async select(ids) {
       allFoldersSelected = false; selectionTarget = 'photos';
@@ -1458,21 +1479,5 @@ try {
       await developSelectionTask;
     },
     refresh: refreshMcpPhotos, error: showError,
-    async prepareUpdate() {
-      if (scanning || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから更新してください。"));
-      await developSelectionTask;
-      if (metadataDirty) await saveAnnotation();
-      if (metadataDirty) throw Error(t("保存できませんでした。編集内容を保持しています。"));
-      if (!await develop.allowChange()) throw Error(t("現像設定を保存できません。画面の編集内容を保持しています。"));
-    },
-    async changeLanguage(value) {
-      if (scanning || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから言語を変更してください。"));
-      await developSelectionTask;
-      if (metadataDirty) await saveAnnotation();
-      if (metadataDirty) throw Error(t("保存できませんでした。編集内容を保持しています。"));
-      if (!await develop.allowChange()) throw Error(t("現像設定を保存できません。画面の編集内容を保持しています。"));
-      await invoke('set_language', {language:value});
-      location.reload();
-    },
   });
 } catch (failure) { showError(t("AI連携を初期化できません：{0}", failure)); }

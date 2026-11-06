@@ -10,7 +10,7 @@ interface PreferencesActions {
   prepareUpdate(): Promise<void>;
   error(failure: unknown): void;
 }
-interface PreferencesHandle {
+export interface PreferencesHandle {
   showStatus(status: McpStatus): void;
   showJobStatus(message: string): void;
 }
@@ -41,7 +41,9 @@ function Preferences({ changeLanguage, prepareUpdate, error, ref }: PreferencesA
 
   useEffect(() => {
     async function open() {
-      if (document.getElementById('app-shell')?.inert || document.querySelector('dialog[open]')) return;
+      const choosingFirstCatalog = document.getElementById('catalog-setup')?.hidden === false;
+      if ((document.getElementById('app-shell')?.inert && !choosingFirstCatalog)
+        || document.body.dataset.catalogBusy || document.querySelector('dialog[open]')) return;
       dialog.current?.showModal();
       clearToken();
       try { showStatus(await command('mcp_status')); }
