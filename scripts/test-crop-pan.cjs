@@ -23,7 +23,12 @@ module.exports = async function testCropPan(page, url) {
   async function pan(dx, dy) {
     const beforeCrop = await savedCrop();
     const beforePhoto = await photo.boundingBox(), beforeFrame = await frame.boundingBox();
-    const start = {x:beforeFrame.x + beforeFrame.width / 2, y:beforeFrame.y + beforeFrame.height / 2};
+    const area = await page.locator('#image-area').boundingBox();
+    const left = Math.max(beforeFrame.x, area.x), top = Math.max(beforeFrame.y, area.y);
+    const right = Math.min(beforeFrame.x + beforeFrame.width, area.x + area.width);
+    const bottom = Math.min(beforeFrame.y + beforeFrame.height, area.y + area.height);
+    assert.ok(right > left && bottom > top, 'the crop must have a visible drag target');
+    const start = {x:(left + right) / 2, y:(top + bottom) / 2};
     await page.mouse.move(start.x, start.y);
     assert.equal(await overlay.evaluate(node => node.style.cursor), 'grab');
     await page.mouse.down();
@@ -48,6 +53,7 @@ module.exports = async function testCropPan(page, url) {
   await page.mouse.down();
   await page.mouse.move(cropFrame.x+cropFrame.width/2-25, cropFrame.y+cropFrame.height/2-25);
   await overlay.dispatchEvent('pointercancel');
+  assert.equal(await overlay.evaluate(node => node.style.cursor), 'grab', 'cancel must release the dragging cursor');
   await page.mouse.up();
   const afterCancel = await photo.boundingBox();
   close(afterCancel.x, beforeCancel.x, 'cancel restores image position');

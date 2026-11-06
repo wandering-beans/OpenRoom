@@ -90,6 +90,7 @@ async function run() {
         window.listeners['mcp-request']({payload:request});
       });
       window.calls = [];
+      window.completedDevelopPreviews = [];
       window.catalogGeneration = 1;
       window.listeners = {};
       window.slow = false;
@@ -362,6 +363,7 @@ async function run() {
               const path = `develop-${args.id}-${args.settings.exposure}-${args.bound}${held ? "-stale" : ""}`;
               const inline_image = [384, 1600].includes(args.bound) ? window.__TAURI__.core.convertFileSrc(path) : undefined;
               if (held) window.originalLoadFinished = true;
+              window.completedDevelopPreviews.push({id:args.id, bound:args.bound});
               return { path: inline_image ? '' : path, inline_image, info: {...previewSize(1,args.bound === 384 ? 384 : 720),elapsed_ms:25,histogram:window.histogramFixture ?? Array.from({length:3},()=>Array(256).fill(100))}, base:{auto_ca_supported:window.autoCaFixture === true,source_width:4000,source_height:6000,raster_wb_temperature:window.rasterTemperatureFixture ?? null,color_note:window.rawFixture ? 'Canon EOS 350D / Adobe Standard' : 'テスト用の線形sRGB',raw:window.rawFixture ? {as_shot:[4668.35,22.3]} : null} };
             }
             if (command === 'export_develop') return '/exports/edited.jpg';
@@ -566,7 +568,11 @@ async function run() {
     await page.click('#filter-tabs [data-mode="metadata"]');
     const formatColumn = page.locator('.metadata-column').first();
     await formatColumn.locator('select').selectOption('extension');
-    for (const extension of ['jpg', 'jpeg', 'psd', 'psb', 'tif', 'tiff']) {
+    await page.waitForFunction(() => document.querySelector('.metadata-values .facet-row'));
+    assert.ok(await formatColumn.evaluate(column => column.getBoundingClientRect().bottom <=
+      document.querySelector('#metadata-filters').getBoundingClientRect().bottom + 1),
+      'metadata options must scroll inside their panel, not behind the photos');
+    for (const extension of ['jpg', 'jpeg', 'psd', 'psb', 'tif', 'tiff', 'raf', 'cr2']) {
       await formatColumn.locator('.facet-row').filter({hasText:new RegExp(`^${extension}\\d+$`)}).click();
       await page.waitForFunction(ext => document.querySelectorAll('.tile').length > 0 && [...document.querySelectorAll('.tile .badge')].every(badge => badge.textContent === ext.toUpperCase()), extension);
     }
@@ -1483,9 +1489,13 @@ async function run() {
     await page.locator('#mask-amount').scrollIntoViewIfNeeded();
     const maskAmount = await page.locator('#mask-amount').boundingBox();
     await page.mouse.move(maskAmount.x + maskAmount.width * .6, maskAmount.y + maskAmount.height / 2);
+    const maskPreviewStart = await page.evaluate(() => calls.length);
     await page.mouse.down();
-    await page.waitForFunction(() => calls.filter(c => c.command === 'develop_preview').at(-1)?.args.bound === 0);
+    await page.waitForFunction(start => calls.slice(start).some(c => c.command === 'develop_preview' &&
+      c.args.bound === 384 && c.args.settings.masks[0]?.amount > .5 && c.args.settings.masks[0]?.amount < .7), maskPreviewStart);
     await page.mouse.up();
+    await page.waitForFunction(start => calls.slice(start).some(c => c.command === 'develop_preview' &&
+      c.args.bound === 0 && c.args.settings.masks[0]?.amount > .5 && c.args.settings.masks[0]?.amount < .7), maskPreviewStart);
     await page.click('#mask-done');await page.click('#develop-save');
     await page.waitForFunction(()=>document.querySelector('#develop-save').disabled);
     const localRecipe=await page.evaluate(async()=> (await __TAURI__.core.invoke('get_develop',{id:1})).settings);
@@ -1600,6 +1610,7 @@ async function run() {
       return !image.hidden && image.complete && image.naturalWidth > 0 && image.src.endsWith('-1600');
     });
     await page.selectOption('#compare-mode', '');
+    await page.waitForFunction(() => document.querySelector('#compare-image').hidden && !document.querySelector('#image-area').dataset.compare);
     if(process.env.AE_UI_SCREENSHOT) await page.screenshot({path:process.env.AE_UI_SCREENSHOT.replace('.png','-workflow.png')});
     // Point curves preserve arbitrary coordinates and persist a single drag as an edit.
     await page.locator('.tone-curve').scrollIntoViewIfNeeded();
@@ -1965,7 +1976,8 @@ async function run() {
     // Repeated numeric input must not cancel the slow frame or render twice on release.
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.click('#module-develop');
-    await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-'));
+    await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-') &&
+      completedDevelopPreviews.some(p => p.id === 1 && p.bound === 384));
     const firstNumericCall = await page.evaluate(() => {
       window.holdDevelopPreview=true;
       window.previewDelay=0;
@@ -1983,7 +1995,7 @@ async function run() {
       window.releaseDevelopPreview();
     });
     // Hold the next frame so the intermediate result cannot disappear between assertions.
-    await page.waitForFunction(() => document.getElementById('full-image').src.includes('-0.2-1600'));
+    await page.waitForFunction(() => document.getElementById('full-image').src.includes('-0.2-384'));
     assert.equal(await page.locator('#develop-exposure-value').inputValue(),'0.8');
     await page.waitForFunction(() => typeof window.releaseDevelopPreview === 'function');
     await page.evaluate(() => {
@@ -1995,7 +2007,8 @@ async function run() {
     await page.waitForFunction(() => document.getElementById('full-image').src.includes('-0.8-1600'));
     const numericCalls = await page.evaluate(start => calls.slice(start),firstNumericCall);
     assert.equal(numericCalls.filter(c=>c.command==='cancel_develop_preview').length,0);
-    assert.equal(numericCalls.filter(c=>c.command==='develop_preview').length,2,'coalesce inputs without a duplicate release render');
+    assert.deepEqual(numericCalls.filter(c=>c.command==='develop_preview').map(c=>c.args.bound), [384,384,1600],
+      'coalesce numeric input into lightweight previews and one final-quality render');
     await page.click('#develop-reset');
     await page.click('#develop-save');
     await page.waitForFunction(() => document.querySelector('#develop-save').disabled && !document.querySelector('.film-tile.selected .adjustment-badge'));

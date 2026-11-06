@@ -36,7 +36,7 @@ module.exports = async function testSelectAll(page, url) {
   await page.locator('.film-tile.active-photo').click();
   await page.keyboard.press('Control+f');
   await page.fill('#search', 'photo-0001');
-  await page.keyboard.press('Meta+a');
+  await page.keyboard.press('ControlOrMeta+a');
   assert.deepEqual(await page.locator('#search').evaluate(node => [node.selectionStart, node.selectionEnd]), [0, 10], 'text inputs retain native select-all');
 
   // A failed page must not turn a full-selection request into a partial selection.

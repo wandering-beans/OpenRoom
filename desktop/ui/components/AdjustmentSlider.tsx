@@ -11,6 +11,8 @@ interface Props {
 export function AdjustmentSlider(props: Props) {
   const range = useRef<HTMLInputElement>(null), number = useRef<HTMLInputElement>(null);
   const rangePointer = useRef<number | null>(null);
+  const rangeKeys = useRef(new Set<string>());
+  const adjustmentKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'];
   const [state, setState] = useState(props.state);
   const [text, setText] = useState(String(state.value));
   useImperativeHandle(props.ref, () => ({ sync() {
@@ -19,11 +21,15 @@ export function AdjustmentSlider(props: Props) {
   } }), []);
   useEffect(() => {
     const inputs = [range.current!, number.current!];
-    const finishChange = (event: Event) => finish(event.currentTarget as HTMLInputElement);
+    const finishChange = (event: Event) => {
+      // Chromium fires change on each keyboard step, before the held key is released.
+      if (event.currentTarget === range.current && rangeKeys.current.size) return;
+      finish(event.currentTarget as HTMLInputElement);
+    };
     const releasePointer = (event: PointerEvent) => {
       if (event.pointerId === rangePointer.current) finish(range.current!);
     };
-    const releaseWindow = () => { if (rangePointer.current !== null) finish(range.current!); };
+    const releaseWindow = () => { if (rangePointer.current !== null || rangeKeys.current.size) finish(range.current!); };
     const release = () => props.levelGrid(false);
     for (const input of inputs) input.addEventListener('change', finishChange);
     for (const event of ['pointerup', 'pointercancel'] as const) window.addEventListener(event, releasePointer);
@@ -43,7 +49,7 @@ export function AdjustmentSlider(props: Props) {
     if (element.value !== '' && Number.isFinite(value) && value >= props.min && value <= props.max) props.input(value, element, numeric);
   }
   function finish(element: HTMLInputElement) {
-    if (element === range.current) rangePointer.current = null;
+    if (element === range.current) { rangePointer.current = null; rangeKeys.current.clear(); }
     props.finish(element); if (props.angle) props.levelGrid(false);
   }
   function reset(event: React.MouseEvent<HTMLInputElement>) {
@@ -68,8 +74,14 @@ export function AdjustmentSlider(props: Props) {
         // WebKit can blur a range immediately after mouse-down; the pointer still owns the drag.
         if (rangePointer.current === null) { finish(event.currentTarget); props.sync(); }
       }}
-      onKeyDown={event => { if (props.angle && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) props.levelGrid(true); }}
-      onKeyUp={event => finish(event.currentTarget)} onDoubleClick={reset} />
+      onKeyDown={event => {
+        if (!adjustmentKeys.includes(event.key)) return;
+        rangeKeys.current.add(event.key);
+        if (props.angle) props.levelGrid(true);
+      }}
+      onKeyUp={event => {
+        if (rangeKeys.current.delete(event.key) && !rangeKeys.current.size) finish(event.currentTarget);
+      }} onDoubleClick={reset} />
     <input ref={number} id={`${props.id}-value`} type="number" min={props.min} max={props.max} step={props.step} value={text} disabled={state.disabled}
       aria-label={(props.local ? t('マスクの') : '') + props.label + t('の数値')}
       onFocus={event => props.prepare(event.currentTarget)} onPointerDown={event => props.prepare(event.currentTarget)}

@@ -311,7 +311,7 @@ footer { height: 17px; flex: none; padding: 0 20px; background: #080808; display
 #flag-filters button[aria-pressed="true"] { color: #fff; background: #222; }
 #filter-stars button.rated { color: #eee; }
 #metadata-filters { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); background: #999; color: #292929; height: clamp(140px,16vh,184px); }
-.metadata-column { min-width: 0; border-right: 1px solid #666; display: flex; flex-direction: column; }
+.metadata-column { min-width: 0; min-height: 0; border-right: 1px solid #666; display: flex; flex-direction: column; }
 .metadata-column > select { flex: none; width: 100%; border-radius: 0; border: 0; border-bottom: 1px solid #777; color: #222; background: #aaa; font-size: 11px; }
 .metadata-values { overflow: auto; scrollbar-width: thin; }
 .facet-row { display: flex; justify-content: space-between; width: 100%; padding: 3px 7px; font-size: 11px; color: #333; border-radius: 0; text-align: left; }

@@ -33,7 +33,12 @@ module.exports = async function testCropPanel(page, url) {
   assert.equal(await page.locator('[data-level-grid]').count(), 0);
   assert.equal(await page.locator('[data-crop-grid]').first().isVisible(), false, 'restore the previous overlay preference');
   await angleBar.focus(); await page.keyboard.down('ArrowRight');
-  assert.equal(await page.locator('[data-level-grid]').count(), 2);
+  assert.equal(await page.locator('[data-level-grid]').count(), 2, 'native change must not end a held keyboard gesture');
+  const firstKeyAngle = Number(await angleBar.inputValue());
+  await page.keyboard.down('ArrowRight');
+  assert.ok(Number(await angleBar.inputValue()) > firstKeyAngle, 'held keys continue adjusting the angle');
+  await page.keyboard.down('Shift'); await page.keyboard.up('Shift');
+  assert.equal(await page.locator('[data-level-grid]').count(), 2, 'releasing a modifier must not end the angle gesture');
   await page.keyboard.up('ArrowRight');
   assert.equal(await page.locator('[data-level-grid]').count(), 0);
   await angleBar.dispatchEvent('pointerdown'); await angleBar.dispatchEvent('pointercancel');

@@ -95,3 +95,8 @@ jobs:
         run: |
           $env:AE_TEST_EXECUTABLE = (Resolve-Path target/debug/advanced-explorer-desktop.exe).Path
           cargo test --manifest-path desktop/Cargo.toml --locked resident_worker_recovers_after_exit_and_cancellation -- --ignored
+      - name: Install Windows UI test browser
+        working-directory: desktop
+        run: npx playwright install chromium
+      - name: Windows frontend regression tests
+        run: node scripts/test-desktop-ui.cjs

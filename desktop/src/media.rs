@@ -129,22 +129,51 @@ pub(super) fn run_worker<T: serde::de::DeserializeOwned>(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
-    let start = Instant::now();
-    loop {
-        if child.try_wait()?.is_some() {
-            break;
-        }
-        if cancelled() || start.elapsed() > Duration::from_secs(60) {
+    let output = std::thread::scope(|scope| -> anyhow::Result<std::process::Output> {
+        use std::io::Read;
+        // Drain both pipes while the child runs; Windows pipe buffers can fill before exit.
+        let mut stdout = child.stdout.take().expect("piped stdout");
+        let mut stderr = child.stderr.take().expect("piped stderr");
+        let stdout = scope.spawn(move || {
+            let mut bytes = Vec::new();
+            stdout.read_to_end(&mut bytes).map(|_| bytes)
+        });
+        let stderr = scope.spawn(move || {
+            let mut bytes = Vec::new();
+            stderr.read_to_end(&mut bytes).map(|_| bytes)
+        });
+        let start = Instant::now();
+        let status = (|| -> anyhow::Result<std::process::ExitStatus> {
+            loop {
+                if let Some(status) = child.try_wait()? {
+                    return Ok(status);
+                }
+                anyhow::ensure!(
+                    !cancelled() && start.elapsed() <= Duration::from_secs(60),
+                    "表示対象の変更またはタイムアウトにより処理を中止しました。"
+                );
+                std::thread::sleep(Duration::from_millis(5));
+            }
+        })();
+        if status.is_err() {
             let _ = child.kill();
             let _ = child.wait();
             if let Some(path) = destination {
                 let _ = std::fs::remove_file(path);
             }
-            anyhow::bail!("表示対象の変更またはタイムアウトにより処理を中止しました。");
         }
-        std::thread::sleep(Duration::from_millis(5));
-    }
-    let output = child.wait_with_output()?;
+        let stdout = stdout
+            .join()
+            .map_err(|_| anyhow::anyhow!("Worker stdout reader panicked"))??;
+        let stderr = stderr
+            .join()
+            .map_err(|_| anyhow::anyhow!("Worker stderr reader panicked"))??;
+        Ok(std::process::Output {
+            status: status?,
+            stdout,
+            stderr,
+        })
+    })?;
     anyhow::ensure!(
         output.status.success(),
         "{}",
@@ -174,6 +203,37 @@ pub fn read_metadata(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn worker_drains_large_pipes_and_cancels_on_windows() {
+        use std::time::{Duration, Instant};
+        let mut command = std::process::Command::new("powershell.exe");
+        command.args(["-NoProfile", "-NonInteractive", "-Command",
+            "[Console]::Error.Write(('e' * 262144)); [Console]::Out.Write(('\"' + ('x' * 262144) + '\"'))"]);
+        let start = Instant::now();
+        let response: String =
+            run_worker(command, None, &|| start.elapsed() > Duration::from_secs(5)).unwrap();
+        assert_eq!(response, "x".repeat(262144));
+
+        let temp = tempfile::tempdir().unwrap();
+        let partial = temp.path().join("partial.tmp");
+        std::fs::write(&partial, b"partial output").unwrap();
+        let mut command = std::process::Command::new("powershell.exe");
+        command.args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            "Start-Sleep -Seconds 30",
+        ]);
+        let start = Instant::now();
+        let result: anyhow::Result<String> = run_worker(command, Some(&partial), &|| {
+            start.elapsed() > Duration::from_millis(300)
+        });
+        assert!(result.is_err());
+        assert!(!partial.exists());
+        assert!(start.elapsed() < Duration::from_secs(5));
+    }
+
     #[test]
     fn portable_formats_dimensions_and_errors() {
         let dir = tempfile::tempdir().unwrap();

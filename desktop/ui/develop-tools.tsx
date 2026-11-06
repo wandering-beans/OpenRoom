@@ -530,7 +530,7 @@ export function createDevelopTools({
   svg.onpointerleave = () => svg.classList.remove('crop-hover');
   $('crop-overlay').onchange = draw;
   svg.onpointercancel = () => {
-    if (drag?.pan) photoOffset = drag.pan.offset;
+    if (drag?.pan) { photoOffset = drag.pan.offset; svg.style.cursor = 'grab'; }
     drag = null;
     draw();
   };
