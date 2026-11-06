@@ -12,12 +12,11 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci --prefix desktop
       - run: npm --prefix desktop run build
+      - run: python scripts/test-package-update.py
       - run: npm --prefix desktop run test:unit
       - name: Install UI test browser
         working-directory: desktop
         run: npx playwright install chromium
-      - name: Frontend regression tests
-        run: node scripts/test-desktop-ui.cjs
       - name: Check public source for local paths and secrets
         run: |
           python scripts/test-privacy-check.py
@@ -36,6 +35,8 @@ jobs:
       - run: python scripts/test-rtengine-contract.py .tools/rtengine/build/libopenroom_rtengine.dylib
       - run: cargo test --manifest-path crates/develop-core/Cargo.toml --locked
       - run: cargo test --manifest-path desktop/Cargo.toml --locked
+      - name: Frontend regression tests
+        run: node scripts/test-desktop-ui.cjs
 
   windows-core:
     runs-on: windows-latest
@@ -86,6 +87,7 @@ jobs:
           AE_RAW_ASSETS: ${{ runner.temp }}/raw-assets
       - run: npm ci --prefix desktop
       - run: npm --prefix desktop run build
+      - run: python scripts/test-package-update.py
       - run: cargo test --manifest-path desktop/Cargo.toml --locked
       - run: cargo build --manifest-path desktop/Cargo.toml --locked
       - run: python scripts/test-highlight-recovery.py target/debug/advanced-explorer-desktop.exe

@@ -62,11 +62,15 @@ cargo test --manifest-path desktop/Cargo.toml --locked
 cargo build --manifest-path desktop/Cargo.toml --locked
 ```
 
-`OPENROOM_MSYS2_PREFIX`と`OPENROOM_PYTHON`はrtengineのビルド専用です。GCCの実行ファイルを含むディレクトリをRustビルド全体のPATHに追加する必要はありません。DLLとその依存DLLはCargoの出力先と`deps/`に配置されます。開発時のカメラデータは`.tools/rtengine/data/`を使います。配布用のデータ探索先は、Windowsでは実行ファイルに隣接する`rtengine/`、macOSでは`Contents/Resources/rtengine/`です。Windowsインストーラーの作成と署名は別途必要です。
+`OPENROOM_MSYS2_PREFIX`と`OPENROOM_PYTHON`はrtengineのビルド専用です。GCCの実行ファイルを含むディレクトリをRustビルド全体のPATHに追加する必要はありません。DLLとその依存DLLはCargoの出力先と`deps/`に配置されます。開発時のカメラデータは`.tools/rtengine/data/`を使います。配布用のデータ探索先は、Windowsでは実行ファイルに隣接する`rtengine/`、macOSでは`Contents/Resources/rtengine/`です。Windowsインストーラーは、以下の手順で作成できます。
 
 Windowsでも通常プレビューと原寸処理に別々の常駐ワーカーを使い、現像セッションと調整結果のキャッシュを再利用します。Windowsのパイプ書き込みは専用スレッドで処理し、画像バッファを追加コピーせずに渡します。キャンセルやタイムアウトでは子プロセスを終了し、次のリクエストで再作成します。macOSの通信方式、Metal処理、現像アルゴリズムは維持しています。
 
 CIにはmacOSとWindowsのコア検証を含めています。実機間の画素比較や速度比較には同じ写真・設定を使い、LibRawなどの依存バージョンも記録してください。同じrtengineでも、CPUやコンパイラによる浮動小数点演算の差があるため、OS間の完全な画素一致は保証していません。Windows ARM64とLinuxのrtengine対応は今回の対象外です。
+
+### Windowsインストーラー
+
+`scripts/windows-dev.ps1`を読み込んだPowerShellで、`& $env:OPENROOM_PYTHON scripts/build-windows.py`を実行します。Node.jsもPATHに必要です。出力は`dist/OpenRoom-VERSION-windows-x64-setup.exe`とSHA-256ファイルです。rtengineのDLL、依存DLL、カメラデータとライセンスを同梱します。現在のユーザーの`%LOCALAPPDATA%/OpenRoom`にインストールし、スタートメニューに登録します。管理者権限は不要です。
 
 ### WindowsのGPU処理
 
@@ -121,11 +125,11 @@ RAW検証用の写真はリポジトリに同梱せず、`reports/raw-heif-sampl
 
 ## 署名付きアプリ更新
 
-更新処理はRustの`desktop/src/updates.rs`で行い、画面は`UpdateSettings.tsx`で管理します。配布先はOpenRoomの固定GitHub URLに限定し、TLS、更新用署名、署名に含まれる版番号を検証します。更新ファイルはカタログや写真を含みません。取得・署名検証が失敗した場合はインストールせず、取得したデータは破棄します。
+更新処理はRustの`desktop/src/updates.rs`で行い、画面は`UpdateSettings.tsx`で管理します。配布先はOpenRoomの固定GitHub URLに限定し、TLS、更新用署名、署名に含まれる版番号とファイル名を検証します。OS・CPUごとの対象を明示し、WindowsではPE実行ファイル、macOSではgzipアーカイブであることも確認します。対象の配布がなければエラーを表示し、別のOS用ファイルは選びません。更新ファイルはカタログや写真を含みません。取得・署名検証が失敗した場合はインストールせず、取得したデータは破棄します。
 
 公開リポジトリの更新情報と添付ファイルを認証なしで取得します。更新情報を取得できない場合はエラーを表示し、「最新」とは表示しません。GitHubのトークンをアプリへ埋め込まないでください。
 
-更新を配布するときは、次の順で準備します。
+macOSの更新は、次の順で準備します。
 
 1. `desktop/Cargo.toml`、`desktop/tauri.conf.json`、`desktop/package.json`と各lockファイルのバージョンをそろえ、`bundle.macOS.bundleVersion`を前回より増やす。依存・版の変更後はライセンス目録も更新する。
 2. `sh scripts/build-desktop.sh dist/update-preview/OpenRoom.app`で配布アプリを別の場所にビルドする。引数なしの場合は従来どおり`dist/OpenRoom.app`へ配置する。
@@ -133,8 +137,12 @@ RAW検証用の写真はリポジトリに同梱せず、`reports/raw-heif-sampl
 4. `python3 scripts/package-update.py dist/update-preview/OpenRoom.app --notes release-notes.txt --output dist/releases/vVERSION-update`を実行する。`VERSION`は設定した版番号に置き換える。出力済みのフォルダは上書きしない。
 5. GitHubの同じ版のリリースへ`.app.tar.gz`、`.sig`、チェックサムと対応するソースを添付する。配布条件とダウンロードを確認してから、生成された`latest.json`を`updates/latest.json`へコピーしてコミットする。更新情報をアプリより先に公開しない。
 
-Tauriの更新用署名と、macOSのDeveloper ID署名・公証は別です。現在のアプリはアドホック署名で、Developer ID署名・公証は行っていません。最初のインストール時のmacOSの確認は、更新用署名では省略されません。
+Windowsでは`build-windows.py`の出力を入力にして、`python scripts/package-update.py dist/OpenRoom-VERSION-windows-x64-setup.exe --notes release-notes.txt --output dist/releases/vVERSION-windows-update`を実行します。署名鍵と版番号の管理はmacOSと共通です。生成した`.exe`、`.sig`、チェックサムと対応するソースをGitHubの同じバージョンのリリースへ添付してから、`windows-x86_64.json`を`updates/windows-x86_64.json`へコピーします。macOS用の`updates/latest.json`は置き換えません。初期のWindows更新情報は配布対象が空で、署名済みのWindows更新を公開するまでは「更新はまだ公開されていません」と表示されます。
 
-更新機能に限定したテストは、フロントのビルド後に`node scripts/test-desktop-ui.cjs --updates`、Rustは`cargo test --manifest-path desktop/Cargo.toml updates::tests --locked`で実行できます。後者は一時的なローカルサーバーと使い捨ての署名鍵で、改ざん拒否・版番号の照合・一時アプリの置き換えを確認します。
+Windowsのアプリ内更新はNSISでインストールしたアプリから実行します。署名と形式の検証後にアプリを終了し、インストーラーが置き換えと再起動を行います。開発用の実行ファイルからは更新できません。
+
+Tauriの更新用署名と、WindowsのAuthenticode署名、macOSのDeveloper ID署名・公証は別です。WindowsインストーラーにAuthenticode署名は付けていません。現在のmacOSアプリはアドホック署名で、Developer ID署名・公証は行っていません。最初のインストール時のmacOSの確認は、更新用署名では省略されません。
+
+更新機能に限定したテストは、フロントのビルド後に`node scripts/test-desktop-ui.cjs --updates`、Rustは`cargo test --manifest-path desktop/Cargo.toml updates::tests --locked`で実行できます。後者は一時的なローカルサーバーと使い捨ての署名鍵で、OSの選択・改ざん拒否・版番号とファイル名の照合を確認します。一時アプリの置き換えテストはmacOSで実行します。Windows用の署名作成と配布先の分離は`python scripts/test-package-update.py`で検証できます。
 
 配布ファイル自体を検証する場合は、`OPENROOM_UPDATE_PACKAGE`にパッケージ作成先を指定し、`cargo test --manifest-path desktop/Cargo.toml updates::tests::packaged_release --locked -- --ignored`を実行します。本番公開鍵で署名を確認して一時フォルダへインストールし、アプリのmacOS署名・バージョン・カタログ保持を確認します。

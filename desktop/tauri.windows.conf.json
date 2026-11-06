@@ -1,0 +1,27 @@
+{
+  "bundle": {
+    "targets": [
+      "nsis"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": [
+          "Japanese",
+          "English"
+        ],
+        "startMenuFolder": "OpenRoom"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "windows": {
+        "installMode": "passive"
+      },
+      "endpoints": [
+        "https://raw.githubusercontent.com/wandering-beans/OpenRoom/main/updates/windows-x86_64.json"
+      ]
+    }
+  }
+}

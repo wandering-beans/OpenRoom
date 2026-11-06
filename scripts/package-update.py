@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package an already built macOS app for the signed Tauri update feed."""
+"""Package a built macOS app or Windows NSIS installer for its signed update feed."""
 import argparse
 import hashlib
 import json
@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import plistlib
 import re
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -24,6 +25,9 @@ def main():
     version = config['version']
     if not re.fullmatch(r'\d+\.\d+\.\d+', version):
         raise ValueError('Expected a three-part app version')
+    if app.suffix.lower() == '.exe':
+        package_windows(app, args, root, config)
+        return
     if app.name != 'OpenRoom.app':
         raise ValueError('Expected OpenRoom.app')
     plist = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
@@ -78,6 +82,38 @@ def main():
         staging.rename(args.output)
     print(f'Prepared signed update {version}: {args.output}')
     print('Publish the release assets before promoting latest.json to updates/latest.json.')
+
+
+def package_windows(installer, args, root, config):
+    version = config['version']
+    expected = f'OpenRoom-{version}-windows-x64-setup.exe'
+    if installer.name != expected or installer.read_bytes()[:2] != b'MZ':
+        raise ValueError('Expected the versioned Windows x64 NSIS installer from build-windows.py')
+    key = Path(os.environ['TAURI_SIGNING_PRIVATE_KEY_PATH']).resolve(strict=True)
+    if Path(str(key) + '.pub').read_text().strip() != config['plugins']['updater']['pubkey']:
+        raise ValueError('Signing key does not match the app public key')
+    if args.output.exists():
+        raise ValueError('Output already exists; preserve existing releases')
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=args.output.parent) as temporary:
+        staging = Path(temporary) / 'release'
+        staging.mkdir()
+        artifact = staging / expected
+        shutil.copy2(installer, artifact)
+        subprocess.run(['node', str(root / 'desktop/node_modules/@tauri-apps/cli/tauri.js'),
+                        'signer', 'sign', '--app-version', version, str(artifact)],
+                       check=True, stdout=subprocess.DEVNULL)
+        signature = Path(str(artifact) + '.sig').read_text().strip()
+        manifest = {'version': version, 'notes': args.notes.read_text(encoding='utf-8').strip(),
+                    'platforms': {'windows-x86_64': {
+                        'url': f'https://github.com/wandering-beans/OpenRoom/releases/download/v{version}/{expected}',
+                        'signature': signature}}}
+        (staging / 'windows-x86_64.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        checksum = hashlib.sha256(artifact.read_bytes()).hexdigest()
+        (staging / 'SHA256SUMS.txt').write_text(f'{checksum}  {expected}\n', encoding='utf-8')
+        staging.rename(args.output)
+    print(f'Prepared signed Windows update {version}: {args.output}')
+    print('Publish assets before promoting windows-x86_64.json; never replace the macOS latest.json.')
 
 
 if __name__ == '__main__':
