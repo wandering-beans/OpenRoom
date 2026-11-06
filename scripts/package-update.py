@@ -90,7 +90,9 @@ def package_windows(installer, args, root, config):
     if installer.name != expected or installer.read_bytes()[:2] != b'MZ':
         raise ValueError('Expected the versioned Windows x64 NSIS installer from build-windows.py')
     key = Path(os.environ['TAURI_SIGNING_PRIVATE_KEY_PATH']).resolve(strict=True)
-    if Path(str(key) + '.pub').read_text().strip() != config['plugins']['updater']['pubkey']:
+    windows = json.loads((root / 'desktop/tauri.windows.conf.json').read_text(encoding='utf-8'))
+    public_key = windows['plugins']['updater'].get('pubkey', config['plugins']['updater']['pubkey'])
+    if Path(str(key) + '.pub').read_text().strip() != public_key:
         raise ValueError('Signing key does not match the app public key')
     if args.output.exists():
         raise ValueError('Output already exists; preserve existing releases')

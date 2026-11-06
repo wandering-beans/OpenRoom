@@ -137,7 +137,7 @@ macOSの更新は、次の順で準備します。
 4. `python3 scripts/package-update.py dist/update-preview/OpenRoom.app --notes release-notes.txt --output dist/releases/vVERSION-update`を実行する。`VERSION`は設定した版番号に置き換える。出力済みのフォルダは上書きしない。
 5. GitHubの同じ版のリリースへ`.app.tar.gz`、`.sig`、チェックサムと対応するソースを添付する。配布条件とダウンロードを確認してから、生成された`latest.json`を`updates/latest.json`へコピーしてコミットする。更新情報をアプリより先に公開しない。
 
-Windowsでは`build-windows.py`の出力を入力にして、`python scripts/package-update.py dist/OpenRoom-VERSION-windows-x64-setup.exe --notes release-notes.txt --output dist/releases/vVERSION-windows-update`を実行します。署名鍵と版番号の管理はmacOSと共通です。生成した`.exe`、`.sig`、チェックサムと対応するソースをGitHubの同じバージョンのリリースへ添付してから、`windows-x86_64.json`を`updates/windows-x86_64.json`へコピーします。macOS用の`updates/latest.json`は置き換えません。初期のWindows更新情報は配布対象が空で、署名済みのWindows更新を公開するまでは「更新はまだ公開されていません」と表示されます。
+Windowsでは`build-windows.py`の出力を入力にして、`python scripts/package-update.py dist/OpenRoom-VERSION-windows-x64-setup.exe --notes release-notes.txt --output dist/releases/vVERSION-windows-update`を実行します。版番号はmacOSと共通ですが、署名鍵はOSごとに分けます。Windowsの公開鍵は`desktop/tauri.windows.conf.json`、macOSの公開鍵は`desktop/tauri.conf.json`で管理し、署名時に対象OSの公開鍵と照合します。生成した`.exe`、`.sig`、チェックサムと対応するソースをGitHubの同じバージョンのリリースへ添付してから、`windows-x86_64.json`を`updates/windows-x86_64.json`へコピーします。macOS用の`updates/latest.json`は置き換えません。鍵を変更する場合、旧鍵のアプリは新鍵の更新を受け付けません。新しい公開鍵を含むインストーラーを一度手動で導入し、その後は同じ鍵で署名した新しいバージョンへアプリ内から更新できます。公開鍵と署名は公開できますが、秘密鍵とそのパスワードは公開しないでください。
 
 Windowsのアプリ内更新はNSISでインストールしたアプリから実行します。署名と形式の検証後にアプリを終了し、インストーラーが置き換えと再起動を行います。開発用の実行ファイルからは更新できません。
 

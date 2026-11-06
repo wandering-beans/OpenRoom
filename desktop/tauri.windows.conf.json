@@ -21,7 +21,8 @@
       },
       "endpoints": [
         "https://raw.githubusercontent.com/wandering-beans/OpenRoom/main/updates/windows-x86_64.json"
-      ]
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlBNDkwMTU0MzgyMjcwQzMKUldURGNDSTRWQUZKbW1tc0dVS24vWS9uOVh1aUhaMzJlZ051T2tMOUlwaHJUa1dyaE5Ob1gvSUUK"
     }
   }
 }

@@ -28,7 +28,7 @@ class WindowsUpdates(unittest.TestCase):
         self.assertTrue(mac_feed[0].endswith('/updates/latest.json'))
         self.assertTrue(win_feed[0].endswith('/updates/windows-x86_64.json'))
         self.assertTrue(config['plugins']['updater']['requireSignedVersion'])
-        self.assertNotIn('pubkey', windows['plugins']['updater'])
+        self.assertNotEqual(windows['plugins']['updater']['pubkey'], config['plugins']['updater']['pubkey'])
         self.assertEqual(windows['bundle']['targets'], ['nsis'])
         self.assertEqual(windows['bundle']['windows']['nsis']['installMode'], 'currentUser')
         with tempfile.TemporaryDirectory() as temporary:
@@ -40,7 +40,15 @@ class WindowsUpdates(unittest.TestCase):
             env.pop('TAURI_SIGNING_PRIVATE_KEY', None)
             subprocess.run(['node', CLI, 'signer', 'generate', '--ci', '--password', '',
                             '--write-keys', str(key)], env=env, check=True, stdout=subprocess.DEVNULL)
-            config['plugins']['updater']['pubkey'] = Path(str(key) + '.pub').read_text().strip()
+            windows['plugins']['updater']['pubkey'] = Path(str(key) + '.pub').read_text().strip()
+            fixture = work / 'fixture'
+            (fixture / 'desktop').mkdir(parents=True)
+            windows_config = fixture / 'desktop/tauri.windows.conf.json'
+            windows_config.write_text(json.dumps(windows), encoding='utf-8')
+            run = subprocess.run
+            def sign(command, **kwargs):
+                command[1] = CLI
+                return run(command, **kwargs)
             version = config['version']
             installer = work / f'OpenRoom-{version}-windows-x64-setup.exe'
             # Synthetic non-executable data: the test signs it but never installs or runs it.
@@ -48,8 +56,8 @@ class WindowsUpdates(unittest.TestCase):
             notes = work / 'notes.txt'
             notes.write_text('Windows update fixture', encoding='utf-8')
             args = SimpleNamespace(notes=notes, output=work / 'release')
-            with patch.dict(os.environ, env, clear=True):
-                package.package_windows(installer, args, ROOT, config)
+            with patch.dict(os.environ, env, clear=True), patch.object(package.subprocess, 'run', side_effect=sign):
+                package.package_windows(installer, args, fixture, config)
                 result = json.loads((args.output / 'windows-x86_64.json').read_text())
                 self.assertEqual(list(result['platforms']), ['windows-x86_64'])
                 platform = result['platforms']['windows-x86_64']
@@ -60,16 +68,17 @@ class WindowsUpdates(unittest.TestCase):
                 self.assertFalse((args.output / 'latest.json').exists())
                 self.assertFalse(list(args.output.glob('*.key*')))
                 with self.assertRaisesRegex(ValueError, 'Output already exists'):
-                    package.package_windows(installer, args, ROOT, config)
+                    package.package_windows(installer, args, fixture, config)
                 args.output = work / 'invalid'
                 installer.write_bytes(b'\x1f\x8brenamed macOS archive')
                 with self.assertRaisesRegex(ValueError, 'Expected.*Windows'):
-                    package.package_windows(installer, args, ROOT, config)
+                    package.package_windows(installer, args, fixture, config)
                 self.assertFalse(args.output.exists())
                 installer.write_bytes(b'MZ' + bytes(126))
-                config['plugins']['updater']['pubkey'] = 'wrong-key'
+                windows['plugins']['updater']['pubkey'] = config['plugins']['updater']['pubkey']
+                windows_config.write_text(json.dumps(windows), encoding='utf-8')
                 with self.assertRaisesRegex(ValueError, 'Signing key does not match'):
-                    package.package_windows(installer, args, ROOT, config)
+                    package.package_windows(installer, args, fixture, config)
                 self.assertFalse(args.output.exists())
         self.assertEqual((ROOT / 'desktop/tauri.conf.json').read_bytes(), original)
 
