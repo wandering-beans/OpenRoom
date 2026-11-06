@@ -7,7 +7,11 @@ module.exports = async function testUpdates(page, url) {
   const count = command => page.evaluate(command => calls.filter(call => call.command === command).length, command);
   await page.goto(url); await ready(); await preferences();
   assert.equal(await page.locator('#app-version').textContent(), 'OpenRoom 0.7.9');
-  assert.equal(await count('check_app_update'), 0, 'opening settings must not contact GitHub automatically');
+  await status('最新');
+  assert.equal(await page.locator('#auto-update').isChecked(), true, 'enabled by default');
+  assert.equal(await count('check_app_update'), 1, 'one background check at startup');
+  await page.click('#mcp-close'); await preferences();
+  assert.equal(await count('check_app_update'), 1, 'opening settings must not repeat the startup check');
   await page.click('#check-update'); await status('最新');
   assert.equal(await page.locator('#install-update').count(), 0);
   await page.evaluate(() => window.failUpdateCheck = true);
@@ -61,5 +65,84 @@ module.exports = async function testUpdates(page, url) {
   await page.reload(); await ready(); await preferences();
   assert.equal(await page.locator('#update-title').textContent(), 'Version and Updates');
   await page.click('#check-update'); await status('up to date');
-  console.log('Update UI checks passed: version, network failure, safe notes, save failure, progress, locking, failed installation, restart retry and English labels.');
+  assert.match(await page.locator('label:has(#auto-update)').textContent(), /Check for updates at startup/);
+  await page.uncheck('#auto-update');
+  await page.waitForFunction(() => localStorage.getItem('test-auto-update') === 'false');
+  await page.evaluate(() => { sessionStorage.removeItem('test-startup-checked'); localStorage.removeItem('test-language'); });
+  await page.reload(); await ready(); await preferences();
+  await page.waitForFunction(() => !document.querySelector('#auto-update').disabled);
+  assert.equal(await page.locator('#auto-update').isChecked(), false);
+  assert.equal(await count('check_app_update'), 0, 'off persists across startup and prevents network access');
+  await page.evaluate(() => window.failAutoUpdateSave = true);
+  await page.click('#auto-update');
+  await page.waitForFunction(() => document.querySelector('#auto-update-status').textContent.includes('Injected preference save failure'));
+  assert.equal(await page.locator('#auto-update').isChecked(), false, 'failed save restores the stored setting');
+  await page.evaluate(() => window.failAutoUpdateSave = false);
+  await page.check('#auto-update');
+  await page.waitForFunction(() => localStorage.getItem('test-auto-update') === 'true');
+  assert.equal(await count('check_app_update'), 0, 'enabling applies on the next startup');
+
+  await page.addInitScript(() => {
+    const mode = new URL(location.href).searchParams.get('auto');
+    if (mode === 'network') window.failUpdateCheck = true;
+    if (mode === 'held') { window.holdUpdateCheck = true; window.holdUpdate = true; }
+    if (mode === 'signature') window.failUpdateInstall = true;
+  });
+  const newStartup = async mode => {
+    await page.evaluate(() => sessionStorage.removeItem('test-startup-checked'));
+    await page.goto(url + mode);
+  };
+  await newStartup('?auto=network'); await ready(); await status('Injected network failure');
+  assert.equal(await page.locator('#preferences-dialog').isVisible(), false, 'offline startup does not interrupt the library');
+  assert.equal(await count('install_app_update'), 0);
+
+  await page.evaluate(() => localStorage.setItem('test-startup-update',JSON.stringify({version:'0.8.0',notes:'Startup update'})));
+  await newStartup('?auto=held'); await ready();
+  await page.waitForFunction(() => window.releaseUpdateCheck);
+  assert.equal(await page.locator('#app-shell').evaluate(el => el.inert), false, 'network check must not block startup');
+  await preferences(); await page.uncheck('#auto-update');
+  await page.waitForFunction(() => localStorage.getItem('test-auto-update') === 'false');
+  await page.evaluate(() => window.releaseUpdateCheck()); await status('0.8.0');
+  assert.equal(await count('install_app_update'), 0, 'turning off during a check cancels automatic installation');
+  assert.equal(await page.locator('#auto-update-waiting').count(), 0);
+  await page.check('#auto-update');
+  await page.waitForFunction(() => localStorage.getItem('test-auto-update') === 'true');
+
+  await newStartup('?auto=held'); await ready();
+  await page.waitForFunction(() => window.releaseUpdateCheck);
+  await page.evaluate(() => { document.body.dataset.catalogBusy='test'; window.releaseUpdateCheck(); });
+  await page.locator('#auto-update-waiting').waitFor({state:'attached'});
+  assert.equal(await count('install_app_update'), 0, 'busy catalog defers automatic installation');
+  assert.equal(await page.locator('#preferences-dialog').isVisible(), false);
+  await page.setViewportSize({width:1320,height:880});
+  if (!await page.locator('#annotation-memo').isVisible()) await page.click('#toggle-inspector');
+  await page.waitForFunction(() => !document.querySelector('#annotation-save').disabled);
+  await page.fill('#annotation-memo','Keep this unsaved draft');
+  await page.evaluate(() => { delete document.body.dataset.catalogBusy; window.failSave = true; });
+  await page.click('#annotation-save');
+  await page.waitForFunction(() => document.querySelector('#annotation-status').textContent.includes('保存できませんでした'));
+  await page.waitForTimeout(1200); // Allow an automatic-update timer tick while the draft remains unsaved.
+  assert.equal(await count('install_app_update'),0,'failed saves and unsaved edits must defer automatic installation');
+  assert.equal(await page.inputValue('#annotation-memo'),'Keep this unsaved draft');
+  await page.evaluate(() => window.failSave = false);
+  await page.click('#annotation-save');
+  await page.waitForFunction(() => window.releaseUpdate);
+  assert.equal(await page.locator('#preferences-dialog').isVisible(), true);
+  assert.equal(await page.locator('#auto-update').isDisabled(), true);
+  await page.evaluate(() => window.releaseUpdate());
+  await page.waitForFunction(() => calls.some(c => c.command === 'restart_catalog'));
+  assert.equal(await count('install_app_update'), 1);
+  await page.reload(); await ready();
+  await page.waitForFunction(() => calls.some(c => c.command === 'take_startup_update_check'));
+  assert.equal(await count('check_app_update'), 0, 'UI reload in the same process must not repeat startup updating');
+
+  await newStartup('?startup=new&auto=signature');
+  await page.locator('#catalog-setup').waitFor({state:'visible'});
+  await status('Injected signature failure');
+  assert.equal(await page.locator('#preferences-dialog').isVisible(), true, 'automatic failure is visible even before the first catalog');
+  assert.equal(await count('restart_catalog'), 0);
+  assert.equal(await count('install_app_update'), 1);
+  assert.equal(await page.locator('#app-shell').evaluate(el => el.inert), true, 'first-catalog protection is preserved after failure');
+  await page.evaluate(() => localStorage.removeItem('test-startup-update'));
+  console.log('Update UI checks passed: default-on startup, persistent opt-out, save/network/signature failures, once-per-process check, nonblocking checks, busy deferral, automatic installation/restart, first catalog and manual updates.');
 };

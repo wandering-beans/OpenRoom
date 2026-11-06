@@ -3,13 +3,31 @@ use crate::{AppState, Reply};
 use base64::Engine;
 use serde::Serialize;
 use std::path::Path;
-use std::{sync::atomic::Ordering, time::Duration};
+use std::{sync::atomic::{AtomicBool, Ordering}, time::Duration};
 use tauri::{Emitter, Manager, State};
 use tauri_plugin_updater::{Update, UpdaterExt};
 use tokio::sync::Mutex;
 
 #[derive(Default)]
-pub struct UpdateState(Mutex<Option<Update>>);
+pub struct UpdateState {
+    pending: Mutex<Option<Update>>,
+    startup_checked: AtomicBool,
+}
+
+impl UpdateState {
+    fn claim_startup_check(&self, enabled: bool, installed: bool) -> bool {
+        !self.startup_checked.swap(true, Ordering::SeqCst) && enabled && installed
+    }
+}
+
+#[tauri::command]
+pub fn take_startup_update_check(app: tauri::AppHandle, state: State<'_, UpdateState>) -> Reply<bool> {
+    let enabled = crate::preferences::get_auto_update(app)?;
+    let installed = update_target().ok().is_some_and(|target| {
+        std::env::current_exe().is_ok_and(|path| installed_application(&path, target))
+    });
+    Ok(state.claim_startup_check(enabled, installed))
+}
 
 #[derive(Serialize)]
 pub struct AvailableUpdate {
@@ -164,7 +182,7 @@ pub async fn check_app_update(
     state: State<'_, UpdateState>,
 ) -> Reply<Option<AvailableUpdate>> {
     let target = update_target()?;
-    let mut pending = state.0.try_lock().map_err(|_| "更新処理が進行中です。")?;
+    let mut pending = state.pending.try_lock().map_err(|_| "更新処理が進行中です。")?;
     *pending = None;
     let update = app
         .updater_builder()
@@ -213,7 +231,7 @@ pub async fn install_app_update(app: tauri::AppHandle, state: State<'_, UpdateSt
         return Err("更新はインストール済みのOpenRoomから実行してください。".into());
     }
     ensure_idle(&app)?;
-    let mut pending = state.0.try_lock().map_err(|_| "更新処理が進行中です。")?;
+    let mut pending = state.pending.try_lock().map_err(|_| "更新処理が進行中です。")?;
     let update = pending.as_ref().ok_or("先に更新を確認してください。")?;
     validate_release(update)?;
     let mut downloaded = 0;

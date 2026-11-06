@@ -1441,6 +1441,8 @@ async function refreshMcpPhotos(ids: number[]) {
 }
 const preferences = createPreferences({
   error: showError,
+  canAutoUpdate: () => !scanning && !saving && !rotating && !confirmingChange && !photoExport.busy
+    && !metadataDirty && !develop.dirty && !develop.busy && !document.body.dataset.catalogBusy,
   async prepareUpdate() {
     if (scanning || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから更新してください。"));
     await developSelectionTask;

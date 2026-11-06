@@ -37,6 +37,8 @@ jobs:
       - run: cargo test --manifest-path desktop/Cargo.toml --locked
       - name: Frontend regression tests
         run: node scripts/test-desktop-ui.cjs
+      - name: Startup update regression tests
+        run: node scripts/test-desktop-ui.cjs --updates
 
   windows-core:
     runs-on: windows-latest
@@ -100,3 +102,5 @@ jobs:
         run: npx playwright install chromium
       - name: Windows frontend regression tests
         run: node scripts/test-desktop-ui.cjs
+      - name: Startup update regression tests
+        run: node scripts/test-desktop-ui.cjs --updates

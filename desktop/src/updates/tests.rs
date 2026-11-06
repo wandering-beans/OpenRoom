@@ -438,3 +438,12 @@ async fn update_selection_never_crosses_os_and_verifies_signature_before_payload
     }
     server.abort();
 }
+
+#[test]
+fn startup_update_check_runs_once_per_process_only_when_enabled_and_installed() {
+    for (enabled, installed, expected) in [(true, true, true), (false, true, false), (true, false, false)] {
+        let state = UpdateState::default();
+        assert_eq!(state.claim_startup_check(enabled, installed), expected);
+        assert!(!state.claim_startup_check(true, true));
+    }
+}

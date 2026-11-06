@@ -34,6 +34,9 @@ export interface McpStatus {
 }
 
 export interface Commands {
+  get_auto_update: { args: undefined; result: boolean };
+  set_auto_update: { args: { enabled: boolean }; result: void };
+  take_startup_update_check: { args: undefined; result: boolean };
   app_version: { args: undefined; result: string };
   check_app_update: { args: undefined; result: AvailableUpdate | null };
   install_app_update: { args: undefined; result: void };

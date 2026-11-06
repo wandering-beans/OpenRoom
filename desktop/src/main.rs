@@ -683,6 +683,7 @@ fn main() {
             library::remove_from_catalog,
             library::relink_folder,
             preferences::get_language, preferences::set_language,
+            preferences::get_auto_update, preferences::set_auto_update, updates::take_startup_update_check,
             updates::app_version, updates::check_app_update, updates::install_app_update,
             arm_close_guard,
             close_window,

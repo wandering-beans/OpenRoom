@@ -125,10 +125,21 @@ async function run() {
           invoke: async (command, args = {}) => {
             const call = { command, args, start: performance.now() };
             window.calls.push(call);
+            if (command === 'get_auto_update') return localStorage.getItem('test-auto-update') !== 'false';
+            if (command === 'set_auto_update') {
+              if (window.failAutoUpdateSave) throw Error('Injected preference save failure');
+              localStorage.setItem('test-auto-update', String(args.enabled)); return;
+            }
+            if (command === 'take_startup_update_check') {
+              if (sessionStorage.getItem('test-startup-checked')) return false;
+              sessionStorage.setItem('test-startup-checked','true');
+              return localStorage.getItem('test-auto-update') !== 'false';
+            }
             if (command === 'app_version') return '0.7.9';
             if (command === 'check_app_update') {
+              if (window.holdUpdateCheck) await new Promise(resolve => { window.releaseUpdateCheck = resolve; });
               if (window.failUpdateCheck) throw Error('Injected network failure');
-              return window.availableUpdate || null;
+              return window.availableUpdate || JSON.parse(localStorage.getItem('test-startup-update') || 'null');
             }
             if (command === 'install_app_update') {
               if (window.holdUpdate) await new Promise(resolve => { window.releaseUpdate = resolve; });

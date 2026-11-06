@@ -1,5 +1,9 @@
 // UI text only. User filenames, tags, notes, and custom names are never translated.
 export const english = {
+  "起動時に更新を確認": "Check for updates at startup",
+  "オンの場合、起動時に更新が見つかると自動で適用し、再起動します。初期設定はオンです。": "When enabled, available updates are installed automatically at startup and the app restarts. Enabled by default.",
+  "処理や編集が終わると自動更新します。": "The update will install automatically when processing and editing have finished.",
+  "設定を保存できませんでした：{0}": "Could not save the setting: {0}",
   "バージョンと更新": "Version and Updates",
   "更新を適用すると、編集を保存してアプリを再起動します。": "Updating saves your edits and restarts the app.",
   "更新を確認": "Check for Updates",
