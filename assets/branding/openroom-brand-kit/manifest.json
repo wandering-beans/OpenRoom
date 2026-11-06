@@ -5,8 +5,8 @@
   "files": [
     {
       "path": "README.md",
-      "bytes": 4610,
-      "sha256": "89fc96a62166f3fc6e0d204e08c0ac1864bc1b6433842c37b2ea2cb45df74ead"
+      "bytes": 4500,
+      "sha256": "7a93e2bc1cca0a9ead2d03892577b653a38c6f09aea847a81bd484652f25f66c"
     },
     {
       "path": "icons/OpenRoom.iconset/icon_128x128.png",
@@ -230,16 +230,6 @@
       "format": "PNG",
       "width": 1200,
       "height": 1496
-    },
-    {
-      "path": "prompts/horizontal-logo.txt",
-      "bytes": 1099,
-      "sha256": "e0b7e066e655c5e992947d22a105cb2390a667b64aa326d908662564075130ee"
-    },
-    {
-      "path": "prompts/icon-master.txt",
-      "bytes": 1841,
-      "sha256": "0f1fca83c864d62bcd548f9a82528a72124ec8624d0df2d360b0cfdb2b9d0631"
     },
     {
       "path": "sources/brand.css",

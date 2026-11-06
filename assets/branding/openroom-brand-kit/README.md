@@ -20,7 +20,6 @@
 | 起動画面の表示見本 | `splash/openroom-splash-preview.png` | 読み込み表示を含む画面見本 |
 | 色・書体の指定 | `sources/brand.css` | 黒・白と分光色のアクセント、システム書体 |
 | 素材一覧 | `index.html` / `preview.png` | ブラウザ表示用と画像での確認用 |
-| 生成記録 | `prompts/` | imagegenによるアイコン原本と横組みロゴの生成プロンプト |
 | ファイル一覧 | `manifest.json` | 画像寸法、形式、SHA-256を含む一覧 |
 
 ## 使い方

@@ -2,6 +2,8 @@
 
 OpenRoomは、写真の整理・選別・RAW現像を行うデスクトップアプリです。写真を元の保存場所に置いたまま管理し、原本を書き換えずに編集できます。日本語と英語に対応しています。
 
+公式サイトのソースコードは[OpenRoom-Website](https://github.com/wandering-beans/OpenRoom-Website)で管理しています。
+
 ## はじめに
 
 現在のmacOSビルドはApple Silicon・macOS 27以降向けです。開発中のアプリで、公開配布用の署名・公証は行っていません。Windows 11（x64）ではインストール・起動・RAW現像を確認しました。Linuxでのアプリ起動は未確認です。ソースから起動する場合は[ビルド手順](DEVELOPMENT.md)を参照してください。

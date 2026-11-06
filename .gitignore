@@ -6,8 +6,7 @@
 /desktop/target/
 /dist/
 /desktop/node_modules/
-/website/node_modules/
-/website/dist/
+/website/
 /desktop/ui-dist/
 
 **/__pycache__/
@@ -63,8 +62,13 @@ fixtures/
 !/assets/branding/**/*.png
 !/desktop/icons/**/*.png
 !/desktop/ui/public/branding/*.png
-!/website/assets/*.png
-!/website/assets/*.jpg
+
+# Local design experiments and AI generation instructions are not distribution assets.
+/assets/branding/*.prompt.txt
+/assets/branding/openroom-brand-kit/prompts/
+/assets/branding/openroom-icon-v*.png
+/assets/branding/openroom-icon-wide-spectrum-v1.png
+/assets/branding/openroom-logo-v1.png
 
 # Keep only the sanitized fixtures required by the automated format tests.
 !/crates/media-core/tests/fixtures/
