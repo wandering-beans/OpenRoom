@@ -61,6 +61,8 @@ fixtures/
 !/assets/branding/**/*.png
 !/desktop/icons/**/*.png
 !/desktop/ui/public/branding/*.png
+!/website/assets/*.png
+!/website/assets/*.jpg
 
 # Keep only the sanitized fixtures required by the automated format tests.
 !/crates/media-core/tests/fixtures/

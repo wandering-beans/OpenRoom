@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080808">
+  <meta name="description" content="OpenRoomは無料・オープンソースの写真管理・RAW現像アプリ。整理、比較、部分補正、書き出しをWindowsとMacで。">
+  <link rel="canonical" href="https://deepdive.boats/">
+  <link rel="icon" href="/assets/icon.png">
+  <link rel="stylesheet" href="/styles.css">
+  <title>OpenRoom | 写真管理・RAW現像</title>
+  <script type="module" src="/script.js"></script>
+</head>
+<body>
+  <a href="#main" class="skip">本文へ移動</a>
+  <header class="header wrap">
+    <a class="brand" href="#" aria-label="OpenRoom ホーム"><img src="/assets/icon.png" width="36" height="36" alt=""><span>OpenRoom</span></a>
+    <nav aria-label="メインナビゲーション"><a href="#features">機能</a><a class="button compact" href="#download">ダウンロード <span aria-hidden="true">↓</span></a></nav>
+  </header>
+  <main id="main">
+    <section class="hero wrap">
+      <p class="eyebrow">無料の写真管理・RAW現像ソフト</p>
+      <h1>写真を選ぶ。<br>光と色を仕上げる。</h1>
+      <p class="hero-description">写真の整理からRAW現像、書き出しまで。<br>原本を保持して、自分のパソコンで編集できます。</p>
+      <a class="button primary" href="#download">無料でダウンロード <span aria-hidden="true">↓</span></a>
+      <p class="platforms">Windows / macOS</p>
+      <figure class="hero-screen"><img src="/assets/openroom-develop.jpg" width="1322" height="910" alt="OpenRoomの現像画面。雪山の写真と、明るさや色を調整するパネルを表示"><figcaption>Windows版の実画面</figcaption></figure>
+    </section>
+    <section id="features" class="feature-section wrap">
+      <div class="feature-heading"><p class="eyebrow">写真の整理</p><h2>見比べて<br>残したい一枚へ。</h2><p>一覧、ルーペ、比較、選別表示で候補を確認。<br>星評価やフラグ、カラーラベルで整理し、<br>撮影日やカメラ、レンズで絞り込めます。</p></div>
+      <figure class="feature-screen"><img src="/assets/openroom-library.jpg" width="1322" height="910" loading="lazy" alt="OpenRoomのライブラリ画面。読み込んだ写真を一覧表示"><figcaption>ライブラリ画面</figcaption></figure>
+    </section>
+    <section class="feature-section develop-section wrap">
+      <div class="feature-heading"><p class="eyebrow">RAW現像</p><h2>光も、色も<br>細部まで。</h2><p>露光量、ホワイトバランス、トーンカーブ、色別調整。<br>ブラシやグラデーションを使った部分補正で、<br>写真の一部だけを調整することもできます。</p></div>
+      <figure class="feature-screen"><img src="/assets/openroom-detail.jpg" width="1322" height="910" loading="lazy" alt="OpenRoomの現像画面で、写真と調整項目を確認"><figcaption>現像画面</figcaption></figure>
+    </section>
+    <section class="capabilities wrap" aria-label="その他の機能">
+      <article><h3>原本を保持</h3><p>元の写真を書き換えずに編集。設定はカタログに保存し、仕上がりは別の画像に書き出します。</p></article>
+      <article><h3>設定をまとめて適用</h3><p>現像設定のコピー、複数写真への同期、プリセットで、同じ撮影条件の写真を仕上げられます。</p></article>
+      <article><h3>用途に合わせて書き出し</h3><p>JPEG・PNG・TIFFに対応。サイズや画質を指定し、白枠・黒枠を付けて保存できます。</p></article>
+    </section>
+    <section id="download" class="download-section">
+      <div class="wrap">
+        <div class="download-heading"><p class="eyebrow">ダウンロード</p><h2>OpenRoomをはじめる。</h2><p>お使いのOSに合った最新版を選んでください。</p></div>
+        <form id="download-form">
+          <div class="consent"><div><h3>ダウンロード前に</h3><p><a href="https://github.com/wandering-beans/OpenRoom/blob/main/TERMS.md" target="_blank" rel="noopener noreferrer">利用規約を読む <span aria-hidden="true">↗</span></a></p></div><label for="terms-agreement"><input id="terms-agreement" type="checkbox" required autocomplete="off"><span>利用規約を確認し、同意します。</span></label></div>
+          <div class="download-grid">
+            <article class="download-card"><svg class="os-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m2 4 9-1v8H2zm11-1 9-1v9h-9zM2 13h9v8l-9-1zm11 0h9v9l-9-1z"/></svg><h3>Windows</h3><p>Windows 11 · x64</p><button class="button primary" type="submit" name="platform" value="windows" data-platform="windows" disabled>Windows版をダウンロード <span aria-hidden="true">↓</span></button><p class="release-meta" data-meta="windows">最新の公開版を確認中…</p><p class="download-note">開発中のプレビュー版です。</p><a class="release-notes" data-notes="windows" href="https://github.com/wandering-beans/OpenRoom/releases">リリースノート <span aria-hidden="true">↗</span></a></article>
+            <article class="download-card"><svg class="os-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 2c.1 1.5-.9 3.1-2.2 3.8-.7.4-1.4.5-2 .4-.2-1.4.8-2.9 1.8-3.6.8-.6 1.6-.8 2.4-.9zM18.5 12.7c0-2 1.6-3 1.7-3.1-1-1.5-2.6-1.7-3.2-1.7-1.4-.2-2.8.9-3.5.9-.7 0-1.8-.9-3-.8-1.6 0-3 1-3.8 2.3-1.6 2.8-.4 7 1.1 9.2.8 1.1 1.6 2.3 2.8 2.2 1.1 0 1.6-.7 3-.7s1.8.7 3 .7c1.2 0 2-1.1 2.7-2.2.9-1.3 1.3-2.5 1.3-2.6-.1 0-2.1-.8-2.1-3.2z"/></svg><h3>macOS</h3><p>macOS 27以降 · Apple Silicon</p><button class="button primary" type="submit" name="platform" value="macos" data-platform="macos" disabled>Mac版をダウンロード <span aria-hidden="true">↓</span></button><p class="release-meta" data-meta="macos">最新の公開版を確認中…</p><p class="download-note">開発中のアプリです。署名・公証は行っていません。</p><a class="release-notes" data-notes="macos" href="https://github.com/wandering-beans/OpenRoom/releases">リリースノート <span aria-hidden="true">↗</span></a></article>
+          </div>
+          <p id="release-status" class="release-status" role="status">最新の公開版を確認しています…</p>
+          <noscript><p class="release-status">利用規約への同意とダウンロードにはJavaScriptを有効にしてください。</p></noscript>
+        </form>
+      </div>
+    </section>
+    <section class="faq wrap"><h2>よくある質問</h2><div><details><summary>無料で使えますか？<span aria-hidden="true">+</span></summary><p>無料でダウンロードできます。OpenRoomの独自コードはGPL-3.0-or-laterで公開しています。利用者の写真や書き出した画像には、OpenRoomのライセンスは適用されません。</p></details><details><summary>写真の原本は移動されますか？<span aria-hidden="true">+</span></summary><p>元の保存場所に置いたまま管理します。保存済みプレビューは原本が未接続でも閲覧できますが、現像と書き出しには原本が必要です。カタログと写真原本は、それぞれバックアップしてください。</p></details><details><summary>対応形式や制限を確認したい<span aria-hidden="true">+</span></summary><p>DNG・CR3・ARW・RAF・NEFなどのRAWと、JPEG、HEIF、TIFFなどを読み込めます。RAWはカメラや圧縮方式によって読み込めない場合があります。入力上限は64MP・1GiBです。<a href="https://github.com/wandering-beans/OpenRoom#対応形式と制限">対応形式と制限の詳細</a>をご確認ください。</p></details></div></section>
+  </main>
+  <footer class="footer wrap"><a class="brand" href="#"><img src="/assets/icon.png" width="30" height="30" alt=""><span>OpenRoom</span></a><nav aria-label="関連情報"><a href="https://github.com/wandering-beans/OpenRoom">GitHub</a><a href="https://github.com/wandering-beans/OpenRoom/blob/main/TERMS.md">利用規約</a><a href="https://github.com/wandering-beans/OpenRoom/issues">お問い合わせ</a></nav></footer>
+</body>
+</html>
