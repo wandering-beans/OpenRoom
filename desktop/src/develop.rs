@@ -33,11 +33,11 @@ fn render_frame(
     bound: u32,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<engine::RenderedImage> {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     {
         crate::rtengine_worker::render(base, settings, bound, cancelled)
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
         let _ = bound;
         engine::render(base, settings, cancelled)
@@ -387,7 +387,7 @@ fn load_base(
     if let Some(image) = cached_base(request, bound, resident, retain, cancelled)? {
         return Ok(image);
     }
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     if engine::is_native_raw(&request.source) {
         let image = crate::rtengine_worker::prepare(&request.source, bound, cancelled)?;
         return remember_base(image, request, bound, resident, retain, cancelled);
@@ -629,7 +629,10 @@ pub async fn export_develop(
             .dialog()
             .file()
             .set_parent(&window)
-            .add_filter(crate::preferences::text(&app, "写真", "Photos"), &[extension])
+            .add_filter(
+                crate::preferences::text(&app, "写真", "Photos"),
+                &[extension],
+            )
             .set_file_name(name)
             .blocking_save_file()
         else {
@@ -708,7 +711,7 @@ pub fn run_worker() -> bool {
     let Some(flag) = args.first().and_then(|value| value.to_str()) else {
         return false;
     };
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     if flag == "--rtengine-resident" {
         if let Err(error) = crate::rtengine_worker::run() {
             eprintln!("{error:#}");
@@ -727,7 +730,9 @@ pub fn run_worker() -> bool {
         return false;
     }
     let result = (|| -> Result<()> {
-        let threads = if cfg!(target_os = "macos") && flag == "--develop-export" {
+        let threads = if cfg!(any(target_os = "macos", target_os = "windows"))
+            && flag == "--develop-export"
+        {
             std::thread::available_parallelism().map_or(4, |n| n.get().min(8))
         } else {
             4
@@ -741,7 +746,9 @@ pub fn run_worker() -> bool {
                     ensure!(args.len() == 4, "Invalid prefetch arguments");
                     let settings: Settings = serde_json::from_slice(&std::fs::read(&args[3])?)?;
                     let preview = prefetch::render_worker(
-                        Path::new(&args[1]), Path::new(&args[2]), &settings,
+                        Path::new(&args[1]),
+                        Path::new(&args[2]),
+                        &settings,
                     )?;
                     println!("{}", serde_json::to_string(&preview)?);
                 }
@@ -821,18 +828,34 @@ mod tests {
         let original = std::fs::read(&source).unwrap();
         state.library.generate(&state, id, &|| false, true).unwrap();
         state.library.updates.active.store(id, Ordering::SeqCst);
-        for (revision, turns, dimensions) in [(0, 1, (37, 67)), (1, 0, (67, 37)), (2, 3, (37, 67))] {
-            let settings = Settings { quarter_turns: turns, ..Settings::default() };
-            catalog.save_develop_recipe(id, &settings.catalog_recipe().unwrap(), revision).unwrap();
+        for (revision, turns, dimensions) in [(0, 1, (37, 67)), (1, 0, (67, 37)), (2, 3, (37, 67))]
+        {
+            let settings = Settings {
+                quarter_turns: turns,
+                ..Settings::default()
+            };
+            catalog
+                .save_develop_recipe(id, &settings.catalog_recipe().unwrap(), revision)
+                .unwrap();
             assert!(!state.library.generate(&state, id, &|| false, true).unwrap());
             assert!(state.library.generate_explicit(&state, id).unwrap());
             let preview = state.library.lookup(&catalog, id, 1600).unwrap().unwrap();
             assert_eq!((preview.render_width, preview.render_height), dimensions);
-            assert_eq!(catalog.library_preview(id).unwrap().unwrap().stamp, catalog.preview_stamp(id).unwrap());
-            assert_eq!(catalog.preview_update(id).unwrap(), Some((revision + 1, false)));
+            assert_eq!(
+                catalog.library_preview(id).unwrap().unwrap().stamp,
+                catalog.preview_stamp(id).unwrap()
+            );
+            assert_eq!(
+                catalog.preview_update(id).unwrap(),
+                Some((revision + 1, false))
+            );
             assert!(catalog.pending_preview_updates().unwrap().is_empty());
         }
-        assert_eq!(std::fs::read(source).unwrap(), original, "rotation must not modify the original");
+        assert_eq!(
+            std::fs::read(source).unwrap(),
+            original,
+            "rotation must not modify the original"
+        );
     }
 
     #[test]
@@ -1204,10 +1227,13 @@ mod tests {
                 .map(|entry| entry.unwrap().metadata().unwrap().len())
                 .sum::<u64>();
             peak = peak.max(bytes);
-            let outputs = std::fs::read_dir(&state.cache).unwrap()
+            let outputs = std::fs::read_dir(&state.cache)
+                .unwrap()
                 .filter_map(Result::ok)
-                .filter(|entry| entry.file_name().to_string_lossy().starts_with("develop-")
-                    && entry.path().extension().is_some_and(|ext| ext == "png"))
+                .filter(|entry| {
+                    entry.file_name().to_string_lossy().starts_with("develop-")
+                        && entry.path().extension().is_some_and(|ext| ext == "png")
+                })
                 .count();
             assert!(outputs <= 2, "unused render outputs grew to {outputs}");
             index += 1;
@@ -1401,9 +1427,16 @@ mod tests {
             .set_len(999_500_000)
             .unwrap();
         let result = tauri::async_runtime::block_on(preview_inner(
-            &state, &develop, id,
-            Settings { exposure: 2., ..Default::default() }, 0,
-        )).expect("working files over 1 GB must not block development");
+            &state,
+            &develop,
+            id,
+            Settings {
+                exposure: 2.,
+                ..Default::default()
+            },
+            0,
+        ))
+        .expect("working files over 1 GB must not block development");
         assert_eq!(image::image_dimensions(&result.path).unwrap(), (67, 37));
         assert!(request.base.exists());
         assert_eq!(original, std::fs::read(&source).unwrap());

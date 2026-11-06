@@ -1,0 +1,24 @@
+diff --git a/rtengine/imagedata.cc b/rtengine/imagedata.cc
+index 7c428c4..a87ef70 100644
+--- a/rtengine/imagedata.cc
++++ b/rtengine/imagedata.cc
+@@ -319,7 +319,8 @@ static struct tm timeFromTS(const time_t ts)
+         struct tm tm;
+         return *gmtime_r(&ts, &tm);
+ #else
+-        return *gmtime(&ts);
++        const auto* converted = gmtime(&ts);
++        return converted ? *converted : tm{};
+ #endif
+ }
+ 
+@@ -350,8 +351,7 @@ FramesData::FramesData(const Glib::ustring &fname, time_t ts) :
+     h_(-1)
+ {
+     GStatBuf statbuf = {};
+-    g_stat(fname.c_str(), &statbuf);
+-    modTimeStamp = statbuf.st_mtime;
++    modTimeStamp = g_stat(fname.c_str(), &statbuf) == 0 ? statbuf.st_mtime : 0;
+     modTime = timeFromTS(modTimeStamp);
+ 
+     make.clear();

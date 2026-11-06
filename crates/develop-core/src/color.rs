@@ -1,5 +1,8 @@
 use crate::Settings;
-#[cfg(all(target_os = "macos", feature = "metal"))]
+#[cfg(any(
+    all(target_os = "macos", feature = "metal"),
+    all(target_os = "windows", feature = "direct3d")
+))]
 #[path = "gpu.rs"]
 mod gpu;
 

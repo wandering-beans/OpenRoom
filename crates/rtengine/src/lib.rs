@@ -69,6 +69,10 @@ struct Frame {
     temperature: f64,
     green: f64,
 }
+#[cfg_attr(
+    target_os = "windows",
+    link(name = "openroom_rtengine", kind = "raw-dylib")
+)]
 unsafe extern "C" {
     fn openroom_rt_init(data: *const c_char, cache: *const c_char) -> i32;
     fn openroom_rt_open(
@@ -127,7 +131,11 @@ fn initialize() -> Result<()> {
     let bundled = executable
         .parent()
         .context("Missing executable directory")?
-        .join("../Resources/rtengine");
+        .join(if cfg!(target_os = "windows") {
+            "rtengine"
+        } else {
+            "../Resources/rtengine"
+        });
     let data = if bundled.is_dir() {
         bundled
     } else {

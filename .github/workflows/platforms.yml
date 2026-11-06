@@ -31,5 +31,65 @@ jobs:
       - run: cargo test --manifest-path crates/media-core/Cargo.toml --locked -- --include-ignored
         env:
           AE_RAW_ASSETS: ${{ runner.temp }}/raw-assets
+      - run: python scripts/test-build-rtengine.py
+      - run: cargo test --manifest-path crates/rtengine/Cargo.toml --locked
+      - run: python scripts/test-rtengine-contract.py .tools/rtengine/build/libopenroom_rtengine.dylib
       - run: cargo test --manifest-path crates/develop-core/Cargo.toml --locked
       - run: cargo test --manifest-path desktop/Cargo.toml --locked
+
+  windows-core:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      OPENROOM_PYTHON: python
+      VCPKGRS_TRIPLET: x64-windows-static-md
+      VCPKG_MAX_CONCURRENCY: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: UCRT64
+          update: true
+          pacboy: >-
+            gcc:p cmake:p ninja:p pkgconf:p gtkmm3:p lcms2:p fftw:p
+            lensfun:p libiptcdata:p exiv2:p fmt:p libraw:p
+      - name: Configure native toolchains
+        run: |
+          "OPENROOM_MSYS2_PREFIX=${{ steps.msys2.outputs.msys2-location }}/ucrt64" >> $env:GITHUB_ENV
+          "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          & "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" install 'libheif[aom]:x64-windows-static-md'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile Direct3D color shader without requiring a GPU
+        run: |
+          $fxc = Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/fxc.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $fxc) { throw 'Windows SDK shader compiler is missing' }
+          & $fxc.FullName /T cs_5_0 /E correct_color /Gis /O3 /Fo "$env:RUNNER_TEMP/color.cso" crates/develop-core/native/color.hlsl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - run: python scripts/test-build-rtengine.py
+      - run: cargo test --manifest-path crates/rtengine/Cargo.toml --locked
+      - run: python scripts/test-rtengine-contract.py .tools/rtengine/build-windows-x86_64/openroom_rtengine.dll
+      - run: cargo test --manifest-path crates/develop-core/Cargo.toml --locked
+      - run: cargo test --manifest-path crates/develop-core/Cargo.toml --locked --no-default-features
+      - run: python scripts/fetch-media-fixtures.py "${{ runner.temp }}/raw-assets"
+      - run: cargo test --manifest-path crates/media-core/Cargo.toml --locked -- --include-ignored
+        env:
+          AE_RAW_ASSETS: ${{ runner.temp }}/raw-assets
+      - run: npm ci --prefix desktop
+      - run: npm --prefix desktop run build
+      - run: cargo test --manifest-path desktop/Cargo.toml --locked
+      - run: cargo build --manifest-path desktop/Cargo.toml --locked
+      - run: python scripts/test-highlight-recovery.py target/debug/advanced-explorer-desktop.exe
+      - name: Resident worker recovery
+        run: |
+          $env:AE_TEST_EXECUTABLE = (Resolve-Path target/debug/advanced-explorer-desktop.exe).Path
+          cargo test --manifest-path desktop/Cargo.toml --locked resident_worker_recovers_after_exit_and_cancellation -- --ignored

@@ -325,7 +325,7 @@ fn texture_changes_medium_detail_at_preview_and_full_size_without_tinting() {
         );
     }
 }
-#[cfg(all(target_os = "macos", feature = "rtengine"))]
+#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
 #[test]
 fn native_adjustments_have_an_effect_and_are_deterministic() {
     let directory = tempfile::tempdir().unwrap();
@@ -342,7 +342,7 @@ fn native_adjustments_have_an_effect_and_are_deterministic() {
     .unwrap();
     assert_adjustments(&engine::prepare(&source, 0).unwrap());
 }
-#[cfg(all(target_os = "macos", feature = "rtengine"))]
+#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
 #[test]
 fn lens_corrections_match_preview_and_export_without_changing_original() {
     let directory = tempfile::tempdir().unwrap();
@@ -1282,7 +1282,7 @@ fn raster_metadata_reference_is_neutral_and_survives_recipe_storage() {
     }
 }
 
-#[cfg(all(target_os = "macos", feature = "rtengine"))]
+#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
 #[test]
 fn jpeg_makernote_temperature_ignores_unused_auto_wb_values_and_bad_metadata() {
     use image::ImageEncoder;

@@ -5,11 +5,12 @@ edition = "2024"
 license = "GPL-3.0-or-later"
 
 [features]
-default = ["rtengine", "metal"]
+default = ["rtengine", "metal", "direct3d"]
+direct3d = []
 metal = []
 rtengine = ["dep:advanced-explorer-rtengine"]
 
-[target.'cfg(target_os = "macos")'.dependencies]
+[target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
 advanced-explorer-rtengine = { path = "../rtengine", optional = true }
 
 [dependencies]

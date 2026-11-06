@@ -1,4 +1,4 @@
-//! Metal accelerates the existing pointwise color transform; unsupported inputs stay on the CPU.
+//! Native GPU compute accelerates the existing pointwise color transform; unsupported inputs stay on the CPU.
 use super::*;
 use image::Rgba32FImage;
 use std::sync::OnceLock;
@@ -19,7 +19,9 @@ struct Parameters {
 }
 const _: () = assert!(std::mem::size_of::<Parameters>() == 27 * 16);
 unsafe extern "C" {
-    fn openroom_metal_color(
+    #[cfg_attr(target_os = "macos", link_name = "openroom_metal_color")]
+    #[cfg_attr(target_os = "windows", link_name = "openroom_d3d_color")]
+    fn openroom_gpu_color(
         pixels: *mut f32,
         pixel_bytes: usize,
         parameters: *const Parameters,
@@ -113,21 +115,35 @@ impl ColorTransform {
         // Reuse the CPU transfer samples, including their interpolation and extended-range behavior.
         static TRANSFER: OnceLock<Vec<f32>> = OnceLock::new();
         let transfer = TRANSFER.get_or_init(|| {
-            (0..=4096)
+            let samples = (0..=4096)
                 .map(|i| linear(i as f32 / 4096.))
                 .chain((0..=65536).map(|i| srgb(i as f32 / 65536.)))
-                .collect()
+                .collect::<Vec<_>>();
+            #[cfg(target_os = "windows")]
+            {
+                // D3D's approximate pow loses color precision when HDR channels nearly cancel.
+                // Sample the CPU transfer above white as well; keep the Metal table unchanged.
+                let mut samples = samples;
+                samples.extend((0..=65536).map(|i| linear(1. + i as f32 * (63. / 65536.))));
+                samples.extend((0..=65536).map(|i| srgb(1. + (i as f32 / 1024.).powi(2))));
+                samples
+            }
+            #[cfg(target_os = "macos")]
+            samples
         });
         let tone = if self.has_tone {
             self.tone.as_slice()
         } else {
             &[0.]
         };
+        #[cfg(target_os = "macos")]
         let shader = include_str!("../native/color.metal");
+        #[cfg(target_os = "windows")]
+        let shader = include_str!("../native/color.hlsl");
         // SAFETY: the bridge is synchronous, validates allocation sizes, and commits only a completed
         // command. The mutable pixel slice is exclusive; every other pointer lives through the call.
         unsafe {
-            openroom_metal_color(
+            openroom_gpu_color(
                 pixels.as_mut_ptr(),
                 pixels.len() * 4,
                 &params,
@@ -165,9 +181,84 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires a real Metal device; compares the GPU with the authoritative CPU path"]
-    fn metal_colors_match_cpu_and_measure_transfer_inclusive_cost() {
-        let input = Rgba32FImage::from_fn(1024, 683, |x, y| {
+    fn explicit_gpu_disable_preserves_input_for_cpu_fallback() {
+        if std::env::var("OPENROOM_DISABLE_GPU").as_deref() != Ok("1") {
+            let result = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "color::gpu::tests::explicit_gpu_disable_preserves_input_for_cpu_fallback",
+                ])
+                .env("OPENROOM_DISABLE_GPU", "1")
+                .output()
+                .unwrap();
+            assert!(
+                result.status.success(),
+                "{}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+            return;
+        }
+        let settings = Settings {
+            exposure: 2.,
+            ..Default::default()
+        };
+        let mut pixels = Rgba32FImage::from_pixel(1021, 683, Rgba([0.2, 0.4, 0.6, 0.5]));
+        let original = pixels.clone();
+        assert!(!ColorTransform::new(&settings).apply_gpu(&mut pixels, &settings));
+        assert_eq!(pixels, original);
+    }
+
+    #[test]
+    #[ignore = "requires a real GPU and a full-resolution allocation"]
+    fn gpu_full_resolution_dispatch_covers_rows_and_releases_large_buffers() {
+        let settings = Settings {
+            exposure: 0.7,
+            saturation: 15.,
+            vignette: -20.,
+            ..Default::default()
+        };
+        let transform = ColorTransform::new(&settings);
+        // Cross the D3D11 limit of 65535 groups in one dispatch dimension.
+        let (width, height) = (4103, 4093);
+        let source = |x: u32, y: u32| {
+            Rgba([
+                x as f32 / width as f32,
+                y as f32 / height as f32,
+                0.18,
+                (x % 4) as f32 / 3.,
+            ])
+        };
+        let mut pixels = Rgba32FImage::from_fn(width, height, source);
+        assert!(transform.apply_gpu(&mut pixels, &settings));
+        let count = width * height;
+        for i in (0..count)
+            .step_by(104729)
+            .chain([65535 * 256 - 1, 65535 * 256, count - 1])
+        {
+            let (x, y) = (i % width, i / width);
+            let input = source(x, y);
+            let expected = transform.apply(
+                [input[0], input[1], input[2]],
+                &settings,
+                (x as f32 + 0.5) / width as f32,
+                (y as f32 + 0.5) / height as f32,
+            );
+            let actual = pixels.get_pixel(x, y);
+            for c in 0..3 {
+                assert!((actual[c] - expected[c]).abs() <= 0.0002 * expected[c].abs().max(1.));
+            }
+            assert_eq!(actual[3], input[3]);
+        }
+        drop(pixels);
+        // A small frame after the transient large allocation must still use the GPU.
+        let mut preview = Rgba32FImage::from_pixel(1021, 683, source(0, 0));
+        assert!(transform.apply_gpu(&mut preview, &settings));
+    }
+
+    #[test]
+    #[ignore = "requires a real GPU device; compares the GPU with the authoritative CPU path"]
+    fn gpu_colors_match_cpu_and_measure_transfer_inclusive_cost() {
+        let input = Rgba32FImage::from_fn(1021, 683, |x, y| {
             let n = x.wrapping_mul(374761393) ^ y.wrapping_mul(668265263);
             let n = n.wrapping_mul(1274126177);
             Rgba([
@@ -226,7 +317,7 @@ mod tests {
                 let mut gpu = input.clone();
                 assert!(
                     transform.apply_gpu(&mut gpu, &settings),
-                    "Metal must run, not silently fall back"
+                    "GPU must run, not silently fall back"
                 );
                 let mut timed_input = input.clone();
                 let started = Instant::now();
@@ -241,8 +332,8 @@ mod tests {
                         let rgb = transform.apply(
                             [pixel[0], pixel[1], pixel[2]],
                             &settings,
-                            ((i % 1024) as f32 + 0.5) / 1024.,
-                            ((i / 1024) as f32 + 0.5) / 683.,
+                            ((i % 1021) as f32 + 0.5) / 1021.,
+                            ((i / 1021) as f32 + 0.5) / 683.,
                         );
                         pixel[..3].copy_from_slice(&rgb);
                     });

@@ -55,7 +55,7 @@ cp native/rawler/LICENSE "$app/Contents/Resources/licenses/Rawler-LGPL-2.1.txt"
 cp native/rawler/OPENROOM_PATCH.txt native/rawler/no-prefetch.patch native/rawler/camera-previews.patch "$app/Contents/Resources/licenses/"
 cp THIRD_PARTY.md "$app/Contents/Resources/licenses/"
 cp native/rtengine/COPYING.GPL-3.0 "$app/Contents/Resources/licenses/RawTherapee-GPL-3.0.txt"
-cp native/rtengine/source.json native/rtengine/float-preview.patch "$app/Contents/Resources/licenses/"
+cp native/rtengine/source.json native/rtengine/float-preview.patch native/rtengine/metadata-time.patch "$app/Contents/Resources/licenses/"
 codesign --force --deep --sign - "$app"
 # Refresh the bundle timestamp so macOS invalidates its cached app icon.
 touch "$app"

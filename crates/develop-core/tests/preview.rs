@@ -92,7 +92,7 @@ fn cached_previews_match_uncached_sliders_and_preserve_transparency() {
     for _ in 0..3 {
         renderer.render(&settings, &|| false).unwrap();
     }
-    #[cfg(all(target_os = "macos", feature = "rtengine"))]
+    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
     {
         std::fs::remove_file(source).unwrap();
         assert!(

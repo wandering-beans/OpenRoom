@@ -3,6 +3,7 @@
 import ctypes as c
 from importlib import import_module
 import json
+import os
 from pathlib import Path
 import struct
 import subprocess
@@ -44,6 +45,7 @@ def profile(path, offset):
 
 
 def measure(library, offset):
+    dll_directory = os.add_dll_directory(str(library.resolve().parent)) if os.name == "nt" else None
     engine = c.CDLL(str(library.resolve()))
     signatures = {
         'init': ([c.c_char_p, c.c_char_p], c.c_int),
@@ -59,13 +61,14 @@ def measure(library, offset):
         function = getattr(engine, 'openroom_rt_' + name)
         function.argtypes, function.restype = args, result
     with tempfile.TemporaryDirectory(prefix='rtengine-contract-') as temporary:
-        directory = Path(temporary)
+        directory = Path(temporary) / '日本語 photos'
+        directory.mkdir()
         profiles = directory / 'dcpprofiles'
         profiles.mkdir()
         source = directory / 'neutral.dng'
         import_module('test-highlight-recovery').neutral_dng(source)
-        assert engine.openroom_rt_init(bytes(directory), bytes(directory)) == 0, engine.openroom_rt_error()
-        session = engine.openroom_rt_open(bytes(source), None, 0, 0, 128)
+        assert engine.openroom_rt_init(str(directory).encode('utf-8'), str(directory).encode('utf-8')) == 0, engine.openroom_rt_error()
+        session = engine.openroom_rt_open(str(source).encode('utf-8'), None, 0, 0, 128)
         assert session, engine.openroom_rt_error()
         try:
             camera = engine.openroom_rt_camera(session).decode()

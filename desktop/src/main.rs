@@ -10,7 +10,7 @@ mod mcp;
 mod media;
 mod preferences;
 mod updates;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 mod rtengine_worker;
 mod workflow;
 use advanced_explorer::{Annotation, Catalog, Cursor, Detail, Folder, Query, Root, ScanReport};

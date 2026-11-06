@@ -3,3 +3,6 @@
 /licenses/native/** -text -whitespace
 /licenses/npm/** -text -whitespace
 /licenses/rust/** -text -whitespace
+
+# Unified diffs require context markers on empty lines.
+/native/rtengine/*.patch text eol=lf -whitespace

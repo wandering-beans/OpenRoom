@@ -3,7 +3,6 @@
 import array
 import hashlib
 import math
-import signal
 from pathlib import Path
 import struct
 import sys
@@ -92,7 +91,6 @@ def float_pixels(path):
 
 def main():
     binary = Path(sys.argv[1]).resolve()
-    signal.signal(signal.SIGALRM, resident.timeout)
     with tempfile.TemporaryDirectory(prefix='highlight-regression-') as temporary:
         directory = Path(temporary)
         source = directory / 'neutral.dng'

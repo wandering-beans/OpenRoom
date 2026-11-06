@@ -1,13 +1,16 @@
 //! Non-destructive photo development with optional native processing and Metal acceleration.
 mod camera_profile;
-#[cfg(any(test, all(target_os = "macos", feature = "rtengine")))]
+#[cfg(any(
+    test,
+    all(any(target_os = "macos", target_os = "windows"), feature = "rtengine")
+))]
 mod camera_saturation;
 mod color;
 mod curve;
 pub mod masks;
 mod raster_tone;
 mod raw_color;
-#[cfg(all(target_os = "macos", feature = "rtengine"))]
+#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
 mod rtengine;
 mod settings;
 use anyhow::{Context, Result, ensure};
@@ -19,9 +22,9 @@ use serde::{Deserialize, Serialize};
 pub use settings::Settings;
 use std::{borrow::Cow, io::Write, path::Path, time::Instant};
 
-#[cfg(all(target_os = "macos", feature = "rtengine"))]
+#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
 pub const RENDER_VERSION: &str = "develop-rtengine-5.13-19241791-v12";
-#[cfg(not(all(target_os = "macos", feature = "rtengine")))]
+#[cfg(not(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine")))]
 pub const RENDER_VERSION: &str = "develop-v9";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -52,11 +55,11 @@ pub struct WorkingImage {
 /// Owns one immutable source and reuses its native stage while Rust-only sliders change.
 pub struct PreviewRenderer {
     working: WorkingImage,
-    #[cfg(all(target_os = "macos", feature = "rtengine"))]
+    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
     native_preview: Option<NativePreview>,
 }
 
-#[cfg(all(target_os = "macos", feature = "rtengine"))]
+#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
 struct NativePreview {
     adjustments: advanced_explorer_rtengine::Adjustments,
     source_size: u64,
@@ -68,7 +71,7 @@ impl PreviewRenderer {
     pub fn new(working: WorkingImage) -> Self {
         Self {
             working,
-            #[cfg(all(target_os = "macos", feature = "rtengine"))]
+            #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
             native_preview: None,
         }
     }
@@ -82,8 +85,13 @@ impl PreviewRenderer {
         settings: &Settings,
         cancelled: &(dyn Fn() -> bool + Sync),
     ) -> Result<RenderedImage> {
-        #[cfg(all(target_os = "macos", feature = "rtengine"))]
-        if self.working.pixels.width().max(self.working.pixels.height()) <= 1600
+        #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+        if self
+            .working
+            .pixels
+            .width()
+            .max(self.working.pixels.height())
+            <= 1600
             && rtengine::required(&self.working, settings)
         {
             let start = Instant::now();
@@ -135,7 +143,7 @@ pub struct RenderedImage {
     pub info: RenderInfo,
 }
 
-#[cfg(all(target_os = "macos", feature = "rtengine"))]
+#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
 pub fn is_native_raw(source: &Path) -> bool {
     rtengine::is_raw(source)
 }
@@ -143,7 +151,7 @@ pub fn is_native_raw(source: &Path) -> bool {
 /// Decode only once per source/preview size. RAW always uses sensor data.
 pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
     ensure!(bound == 0 || bound <= 4096, "Invalid working image bound");
-    #[cfg(all(target_os = "macos", feature = "rtengine"))]
+    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
     if rtengine::is_raw(source) {
         return rtengine::prepare_raw(source, bound);
     }
@@ -201,7 +209,7 @@ pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
     });
     let has_raw_color = photo.raw.is_some();
     let raster_wb_temperature = None;
-    #[cfg(all(target_os = "macos", feature = "rtengine"))]
+    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
     let raster_wb_temperature = if !is_raw {
         advanced_explorer_rtengine::raster_temperature(source).unwrap_or(None)
     } else {
@@ -212,7 +220,10 @@ pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
         info: BaseInfo {
             auto_ca_supported: None,
             camera_saturation: None,
-            native_source: if cfg!(all(target_os = "macos", feature = "rtengine")) {
+            native_source: if cfg!(all(
+                any(target_os = "macos", target_os = "windows"),
+                feature = "rtengine"
+            )) {
                 Some(source.canonicalize()?)
             } else {
                 None
@@ -539,8 +550,15 @@ fn detail(
 }
 
 fn needs_detail(settings: &Settings) -> bool {
-    [settings.texture, settings.clarity, settings.sharpen, settings.noise_luma, settings.noise_color]
-        .iter().any(|value| *value != 0.)
+    [
+        settings.texture,
+        settings.clarity,
+        settings.sharpen,
+        settings.noise_luma,
+        settings.noise_color,
+    ]
+    .iter()
+    .any(|value| *value != 0.)
 }
 
 fn spatial<'a>(
@@ -578,7 +596,7 @@ fn process(
     settings: &Settings,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<Rgba32FImage> {
-    #[cfg(all(target_os = "macos", feature = "rtengine"))]
+    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
     if rtengine::required(&working, settings) {
         settings.validate()?;
         ensure!(!cancelled(), "現像対象が変更されました。");
@@ -674,12 +692,22 @@ fn process(
         color::ColorTransform::for_raster(settings)
     } else {
         color::ColorTransform::new(settings)
-    }.with_camera_saturation(info.camera_saturation.unwrap_or(1.));
+    }
+    .with_camera_saturation(info.camera_saturation.unwrap_or(1.));
     let (width, height) = pixels.dimensions();
-    #[cfg(all(target_os = "macos", feature = "metal"))]
+    #[cfg(any(
+        all(target_os = "macos", feature = "metal"),
+        all(target_os = "windows", feature = "direct3d")
+    ))]
     let gpu_applied = use_gpu && transform.apply_gpu(&mut pixels, settings);
-    #[cfg(not(all(target_os = "macos", feature = "metal")))]
-    let gpu_applied = { let _ = use_gpu; false };
+    #[cfg(not(any(
+        all(target_os = "macos", feature = "metal"),
+        all(target_os = "windows", feature = "direct3d")
+    )))]
+    let gpu_applied = {
+        let _ = use_gpu;
+        false
+    };
     if !gpu_applied {
         pixels
             .as_mut()
@@ -872,7 +900,7 @@ pub fn export_source_with_options(
     settings.validate()?;
     options.validate()?;
     ensure!(!destination.exists(), "Destination already exists");
-    #[cfg(all(target_os = "macos", feature = "rtengine"))]
+    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
     if rtengine::is_raw(source) {
         let working = rtengine::prepare_export(source, settings)?;
         return export_working(

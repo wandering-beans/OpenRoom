@@ -3,7 +3,7 @@
 [利用ガイドに戻る](README.md)
 
 ## ビルドと起動
-Rust stable、Node.js 22.12以上と対象OSのビルド環境が必要です。デスクトップはTauri 2＋React＋TypeScript＋Viteです。ライブラリの未編集プレビューはmacOSでSwiftとImageIO/Core Imageを使用します。macOSの現像はrtengineとRustの組み合わせで、RAWには固定したrtengineを使います。Windows/LinuxのRAWは従来どおりrawler、HEIF/AVIFは全OSでlibheifを使います。
+Rust stable、Node.js 22.12以上と対象OSのビルド環境が必要です。デスクトップはTauri 2＋React＋TypeScript＋Viteです。ライブラリの未編集プレビューはmacOSでSwiftとImageIO/Core Imageを使用します。macOSとWindows x64の現像はrtengineとRustの組み合わせで、RAWには同じコミットとパッチで固定したrtengineを使います。Linuxと`--no-default-features`では従来のRAW現像を使います。rawlerは埋め込みプレビューやメタデータの読み込みにも必要なため残しています。HEIF/AVIFは全OSでlibheifを使います。
 
 フロントエンドのソースは`desktop/ui/`、Viteの生成物は`desktop/ui-dist/`、Rustのバックエンドは`desktop/src/`に分離しています。フロントからのネイティブ呼び出しは`desktop/ui/backend.ts`を通します。フロント全体をTypeScript／TSXで記述し、厳格な型チェックを行います。写真一覧・現像操作・履歴・マスク・比較・設定・書き出しはReactで描画し、保存や画像の位置計算は型付きコントローラーが扱います。
 
@@ -28,7 +28,62 @@ open dist/OpenRoom.app
 
 `./scripts/cargo-local.sh`はPATHのcargoを使用し、なければ一時領域のRustツールチェーンを探します。一時領域が消えた場合はRustを導入し直してください。
 
-Windows/Linuxでも共通の検索・カタログ・描画処理を使用します。パッケージ作成には各OSのTauriビルド環境とlibheifが必要です。Linuxはlibheif-devとHEVC/AV1デコーダー、Windowsはvcpkgのlibheifを使用します。他OSでの起動は今回未確認です。
+Windows/Linuxでも共通の検索・カタログ・描画処理を使用します。Linuxはlibheif-devとHEVC/AV1デコーダー、Windowsはvcpkgのlibheifを使用します。
+
+### Windows x64のコア開発
+
+Windows 11 x64ではRustのMSVCツールチェーン、Visual Studio 2022 Build ToolsのC++開発ツールとWindows SDK、Node.js 24、MSYS2 UCRT64を使用します。Tauriの画面表示にはWebView2も必要です。rtengineだけをUCRT64でDLLにし、Rustとは既存のC ABIで接続します。C++オブジェクトの生成と解放はDLL内で完結します。
+
+MSYS2のUCRT64ターミナルで次のパッケージを導入します。
+
+```sh
+pacman -Syu
+pacman -S --needed mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,pkgconf,gtkmm3,lcms2,fftw,lensfun,libiptcdata,exiv2,fmt,libraw,python}
+```
+
+PowerShellでvcpkgを用意し、HEVCとAV1に対応するlibheifをビルドします。すでにvcpkgがある場合は、その環境を使えます。
+
+```powershell
+git clone https://github.com/microsoft/vcpkg.git .tools/vcpkg
+& .tools/vcpkg/bootstrap-vcpkg.bat -disableMetrics
+& .tools/vcpkg/vcpkg.exe install 'libheif[aom]:x64-windows-static-md'
+```
+
+リポジトリ直下で次を実行します。`windows-dev.ps1`の既定のMSYS2配置先は`$env:USERPROFILE\.local\msys64\ucrt64`です。別の場所に導入した場合は`-Msys2Prefix`、vcpkgの配置先には`-VcpkgRoot`を指定します。PythonはUCRT64のものを使い、`-Python`で別の実行ファイルも指定できます。
+
+```powershell
+. ./scripts/windows-dev.ps1
+cargo test --manifest-path crates/rtengine/Cargo.toml --locked
+cargo test --manifest-path crates/develop-core/Cargo.toml --locked
+& $env:OPENROOM_PYTHON scripts/test-rtengine-contract.py .tools/rtengine/build-windows-x86_64/openroom_rtengine.dll
+npm ci --prefix desktop
+npm --prefix desktop run build
+cargo test --manifest-path desktop/Cargo.toml --locked
+cargo build --manifest-path desktop/Cargo.toml --locked
+```
+
+`OPENROOM_MSYS2_PREFIX`と`OPENROOM_PYTHON`はrtengineのビルド専用です。GCCの実行ファイルを含むディレクトリをRustビルド全体のPATHに追加する必要はありません。DLLとその依存DLLはCargoの出力先と`deps/`に配置されます。開発時のカメラデータは`.tools/rtengine/data/`を使います。配布用のデータ探索先は、Windowsでは実行ファイルに隣接する`rtengine/`、macOSでは`Contents/Resources/rtengine/`です。Windowsインストーラーの作成と署名は別途必要です。
+
+Windowsでも通常プレビューと原寸処理に別々の常駐ワーカーを使い、現像セッションと調整結果のキャッシュを再利用します。Windowsのパイプ書き込みは専用スレッドで処理し、画像バッファを追加コピーせずに渡します。キャンセルやタイムアウトでは子プロセスを終了し、次のリクエストで再作成します。macOSの通信方式、Metal処理、現像アルゴリズムは維持しています。
+
+CIにはmacOSとWindowsのコア検証を含めています。実機間の画素比較や速度比較には同じ写真・設定を使い、LibRawなどの依存バージョンも記録してください。同じrtengineでも、CPUやコンパイラによる浮動小数点演算の差があるため、OS間の完全な画素一致は保証していません。Windows ARM64とLinuxのrtengine対応は今回の対象外です。
+
+### WindowsのGPU処理
+
+Windowsでは既定でDirect3D 11のコンピュートシェーダーを使い、対応する高性能GPUを優先します。露出、ホワイトバランス、トーン、カーブ、彩度、カラーミキサー、モノクロ、カラーグレーディング、周辺減光、粒子の全体補正が対象です。macOSでは既存のMetal処理を使います。両OSで補正パラメーターの組み立てを共有し、WindowsのHDR変換にもCPUで生成したテーブルを使います。
+
+512×512画素未満の画像と旧RAW色変換はCPUで処理します。GPUの初期化、メモリ確保、実行に失敗した場合も、入力画像を変更せずCPU処理へ戻ります。GPUの応答待ちは5秒までとし、応答停止やデバイス喪失後はワーカーを再起動するまでCPUを使います。表示用のGPUバッファは再利用し、原寸画像の大きなバッファは処理後に解放します。
+
+RAWのデコード、rtengineのノイズ除去・シャープ処理、幾何変換、ローカルマスク、ファイルへの書き出しは引き続きCPUで処理します。特に書き出しは既存の16 bit精度を維持するため、GPUへ切り替えていません。
+
+GPUを無効にして比較する場合は、PowerShellで`$env:OPENROOM_DISABLE_GPU = '1'`を設定してからアプリを起動します。設定を外すには`Remove-Item Env:OPENROOM_DISABLE_GPU`を実行し、アプリを再起動してください。
+
+実GPUがある環境では、次のテストでCPUとの画素差、透過度、原寸画像の処理、GPU無効時の動作を確認できます。速度は最適化ビルドで測り、GPUへの転送と読み戻しを含めます。CIではGPU実機テストを自動実行せず、HLSLのコンパイルとCPUへの切り替えを検証します。
+
+```powershell
+. ./scripts/windows-dev.ps1
+cargo test --manifest-path crates/develop-core/Cargo.toml --locked --release --lib color::gpu::tests -- --include-ignored --nocapture --test-threads=1
+```
 
 ## データと検証
 

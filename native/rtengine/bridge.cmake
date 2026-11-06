@@ -14,7 +14,11 @@ add_library(openroom_rtengine SHARED
 target_include_directories(openroom_rtengine PRIVATE
     "${PROJECT_SOURCE_DIR}/rtgui" "${CMAKE_BINARY_DIR}/rtgui")
 target_link_libraries(openroom_rtengine PRIVATE rtengine)
-target_link_options(openroom_rtengine PRIVATE "-Wl,-dead_strip_dylibs")
+if(APPLE)
+    target_link_options(openroom_rtengine PRIVATE "-Wl,-dead_strip_dylibs")
+elseif(WIN32)
+    set_target_properties(openroom_rtengine PROPERTIES PREFIX "")
+endif()
 target_compile_definitions(openroom_rtengine PRIVATE CLIVERSION)
 set_target_properties(openroom_rtengine PROPERTIES
     CXX_STANDARD 11 INSTALL_NAME_DIR "${CMAKE_BINARY_DIR}"

@@ -1797,7 +1797,7 @@ mod tests {
         let (_dir, state, _) = fixture();
         let existing = state.cache.join("damaged.develop-v6-0.tif");
         std::fs::write(&existing, b"old").unwrap();
-        std::fs::File::open(&existing).unwrap().set_modified(SystemTime::UNIX_EPOCH).unwrap();
+        std::fs::OpenOptions::new().write(true).open(&existing).unwrap().set_modified(SystemTime::UNIX_EPOCH).unwrap();
         let owned = tempfile::Builder::new().prefix("develop-prefetch-").tempdir_in(&state.cache).unwrap();
         let prefetched = owned.path().join("base.tif");
         std::fs::write(&prefetched, b"prefetch").unwrap();

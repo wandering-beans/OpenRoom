@@ -6,7 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import signal
+import threading
 import subprocess
 
 
@@ -24,12 +24,13 @@ def worker(binary):
         process.wait(timeout=10)
 
 
-def timeout(_signal, _frame):
-    raise TimeoutError('Resident preview exceeded 120 seconds')
-
-
 def render(process, source, bound, settings):
-    signal.alarm(120)
+    timed_out = threading.Event()
+    def timeout():
+        timed_out.set()
+        process.kill()
+    timer = threading.Timer(120, timeout)
+    timer.start()
     try:
         request = {'source': str(source.resolve()), 'bound': bound, 'settings': settings, 'bytes': 0}
         process.stdin.write(json.dumps(request).encode() + b'\n')
@@ -43,7 +44,10 @@ def render(process, source, bound, settings):
         assert len(pixels) == header['bytes'], 'Truncated resident preview'
         return info, pixels
     finally:
-        signal.alarm(0)
+        timer.cancel()
+        timer.join()
+        if timed_out.is_set():
+            raise TimeoutError('Resident preview exceeded 120 seconds')
 
 
 def main():
@@ -52,7 +56,6 @@ def main():
     parser.add_argument('after', type=Path)
     parser.add_argument('photos', type=Path, nargs='+')
     args = parser.parse_args()
-    signal.signal(signal.SIGALRM, timeout)
     detail = {'version': 1, 'exposure': .5, 'contrast': 12, 'highlights': -25,
               'shadows': 20, 'vibrance': 15, 'sharpen': 40, 'noise_luma': 15,
               'noise_color': 10, 'texture': 15, 'clarity': 10}

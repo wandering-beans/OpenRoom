@@ -6,12 +6,19 @@ use anyhow::{Context, Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::{
     io::{BufRead, BufReader, Read, Write},
-    os::{fd::OwnedFd, unix::net::UnixStream},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{Mutex, mpsc},
     time::Duration,
 };
+
+#[cfg(target_os = "macos")]
+use std::os::{fd::OwnedFd, unix::net::UnixStream as WorkerInput};
+#[cfg(target_os = "windows")]
+#[path = "rtengine_pipe.rs"]
+mod pipe;
+#[cfg(target_os = "windows")]
+use pipe::WorkerInput;
 
 #[derive(Serialize, Deserialize)]
 struct Request {
@@ -38,7 +45,7 @@ enum Response {
 type Frame = Result<Response>;
 struct Worker {
     child: Child,
-    input: UnixStream,
+    input: WorkerInput,
     output: mpsc::Receiver<Frame>,
     reader: Option<std::thread::JoinHandle<()>>,
     loaded: Option<(PathBuf, u32, u64, std::time::SystemTime)>,
@@ -108,17 +115,29 @@ fn read_base(reader: &mut impl Read, info: BaseInfo, bytes: usize) -> Result<Wor
 }
 impl Worker {
     fn start() -> Result<Self> {
-        let (input, child_input) = UnixStream::pair()?;
-        input.set_write_timeout(Some(Duration::from_millis(10)))?;
-        let child_input: OwnedFd = child_input.into();
+        #[cfg(target_os = "macos")]
+        let (input, child_input) = {
+            let (input, child_input) = WorkerInput::pair()?;
+            input.set_write_timeout(Some(Duration::from_millis(10)))?;
+            (input, Stdio::from(OwnedFd::from(child_input)))
+        };
+        #[cfg(target_os = "windows")]
+        let child_input = Stdio::piped();
         let mut child = Command::new(crate::media::worker_executable()?)
             .arg("--rtengine-resident")
             .env("OMP_NUM_THREADS", "4")
             .env("OMP_MAX_ACTIVE_LEVELS", "1")
-            .stdin(Stdio::from(child_input))
+            .stdin(child_input)
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
             .spawn()?;
+        #[cfg(target_os = "windows")]
+        let input = WorkerInput::new(
+            child
+                .stdin
+                .take()
+                .context("Missing rtengine worker stdin")?,
+        );
         let mut stdout = BufReader::new(
             child
                 .stdout
@@ -173,6 +192,12 @@ impl Worker {
         let started = std::time::Instant::now();
         let mut header = serde_json::to_vec(request)?;
         header.push(b'\n');
+        #[cfg(target_os = "windows")]
+        {
+            ensure!(!cancelled(), "現像対象が変更されました。");
+            self.input.send(header, pixels)?;
+        }
+        #[cfg(target_os = "macos")]
         for mut bytes in [header.as_slice(), pixels.as_slice()] {
             while !bytes.is_empty() {
                 ensure!(!cancelled(), "現像対象が変更されました。");
@@ -200,6 +225,8 @@ impl Worker {
                 started.elapsed() < Duration::from_secs(120),
                 "rtengine worker timed out"
             );
+            #[cfg(target_os = "windows")]
+            self.input.check()?;
             match self.output.recv_timeout(Duration::from_millis(10)) {
                 Ok(result) => {
                     if result.is_ok() {
@@ -381,7 +408,12 @@ pub fn run() -> Result<()> {
             if request.prepare {
                 return Ok(None);
             }
-            resident.as_mut().unwrap().1.render(&request.settings, &|| false).map(Some)
+            resident
+                .as_mut()
+                .unwrap()
+                .1
+                .render(&request.settings, &|| false)
+                .map(Some)
         });
         let (header, bytes) = match result {
             Ok(None) => {

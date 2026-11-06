@@ -41,7 +41,7 @@ keyring = { version = "3.6.3", features = ["sync-secret-service", "crypto-rust",
 
 [dev-dependencies]
 tauri = { version = "2", features = ["test"] }
-reqwest = { version = "0.13", default-features = false, features = ["json"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls"] }
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
