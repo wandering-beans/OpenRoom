@@ -6,11 +6,13 @@ OpenRoomは、写真の整理・選別・RAW現像を行うデスクトップア
 
 GitHub Releasesやソースコードから取得する場合も、OpenRoomは無保証で提供します。利用前に[ダウンロード利用規約](TERMS.md)と[無保証・免責について](DISCLAIMER.md)をご確認ください。使用前に写真原本とカタログをバックアップしてください。
 
-[OpenRoom 0.7.12の配布ページ](https://github.com/wandering-beans/OpenRoom/releases/tag/v0.7.12)から、Windows x64版のインストーラーとApple Silicon向けmacOS版のZIPをダウンロードできます。新しい免責案内を同梱していない旧ビルドは非公開です。
+[OpenRoom 0.7.13の配布ページ](https://github.com/wandering-beans/OpenRoom/releases/tag/v0.7.13)から、Windows x64版のインストーラーとApple Silicon向けmacOS版のZIPをダウンロードできます。旧ビルドは非公開です。
 
 ## はじめに
 
-0.7.12のmacOS版はApple Silicon・macOS 26以降向けです。Windowsの発行元署名とmacOSのDeveloper ID署名・公証は付いていません。Windows 11（x64）ではインストール・起動・RAW現像を確認しました。Linuxでのアプリ起動は未確認です。ソースから起動する場合は[ビルド手順](DEVELOPMENT.md)を参照してください。
+0.7.13のmacOS版はApple Silicon・macOS 26以降向けです。Windowsの発行元署名とmacOSのDeveloper ID署名・公証は付いていません。Windows 11（x64）ではインストール・起動・RAW現像を確認しました。Linuxでのアプリ起動は未確認です。ソースから起動する場合は[ビルド手順](DEVELOPMENT.md)を参照してください。
+
+初回起動時に利用規約と免責事項を確認し、「同意して続ける」を選んでください。「同意せず終了」を選ぶと、カタログを開かずに終了します。旧版から更新した場合も、初回は同意が必要です。同じ文面には次回から同意を求めません。
 
 1. 写真の入ったフォルダを追加します。原本をコピーせず、一覧表示用のプレビューを作成します。
 2. ライブラリで写真を選び、星評価・フラグ・カラーラベルで整理します。撮影日やカメラ、レンズなどでも絞り込めます。

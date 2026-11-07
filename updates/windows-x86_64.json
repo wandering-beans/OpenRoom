@@ -1,10 +1,10 @@
 {
-  "version": "0.7.12",
-  "notes": "OpenRoom 0.7.12では、GitHubから取得した場合も確認できるよう、無保証・免責の案内を整えました。\n\n- 環境設定に日本語・英語の免責案内とGPLライセンス全文を追加しました。\n- 配布アプリに利用規約と日本語の免責文書を同梱しました。\n- ソースコードと配布物の秘密情報チェックを実施しました。\n\nWindows版はx64向けのインストーラーです。macOS版はApple Silicon向けのZIPです。macOS版のアプリ内更新は配信していないため、ZIPを展開し、既存のアプリを終了してから置き換えてください。\n\nWindowsの発行元署名とmacOSのDeveloper ID署名・公証は付いていません。\n\nOpenRoomは現状のまま無保証で提供します。使用前に写真原本とカタログをバックアップしてください。免責の範囲はGPL第15〜17条と適用法令に従い、法令上免除できない責任を排除するものではありません。詳しくは同梱のDISCLAIMER.md、TERMS.md、LICENSEをご確認ください。",
+  "version": "0.7.13",
+  "notes": "OpenRoom 0.7.13では、初回起動時に利用規約と免責事項を表示します。「同意して続ける」を選ぶとカタログを開けます。「同意せず終了」を選ぶと、カタログを開かずにアプリが終了します。\n\n旧版からの更新でも、最初の起動時に同意を求めます。同意した文面は端末内に保存します。次回の起動では同じ文面を再表示せず、規約か免責事項の本文が変わったときに再度表示します。\n\nWindows x64版はインストーラーから利用できます。Apple Silicon向けのmacOS版（macOS 26以降）はZIPを展開し、起動中のOpenRoomを終了してから既存のアプリを置き換えてください。Windows版はアプリ内更新に対応しています。macOS版は手動更新です。\n\nWindowsの発行元署名とmacOSのDeveloper ID署名・公証は付いていません。",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.12/OpenRoom-0.7.12-windows-x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbXE2RktnTGgxUy9aY2tsbGhQakhXWGhpb29tdGpPcCtGVTI3TVFPZ014d0JORnJKMC96V2dNZjVBcEtqVjhYdFF6My96N01lUTVZOTNrU2plSjJFWFFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MDE2MDYzCWZpbGU6T3BlblJvb20tMC43LjEyLXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xMgo4V05yelpPOEZjbU54SjVQU3cyYUVhV2J3c3FCU1dMZUd3MlBjWHZWNUNWRVV5MnVxUEFRSXNjSlY3c0kxcnNpVlA1NldEalpGZ096VFIyd2w1ZXhDZz09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.13/OpenRoom-0.7.13-windows-x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbXZxQnpEY0sweXVia2E1TFJmSUxKWFhHYno5OUFLTDBXdjIwNXk1enozUDdFczkwN2tLbVp6NmhqaEhnRlZYaXNnLzhnZzEyVCtLOS9WTy9adlJ1SUEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MDE5NDU5CWZpbGU6T3BlblJvb20tMC43LjEzLXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xMwp3dFcxbVBNcFBNeW83YVh5b1VNR08zYmlyOFlYV2tHczdXeXhZRDJuMG5KM2xLcXRXT3dmQWJSK3JLNHVYN2dXUEVsV3ZLcnpCM2padDZnMnhEZ3pEZz09Cg=="
     }
   }
 }
