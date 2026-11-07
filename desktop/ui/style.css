@@ -397,6 +397,9 @@ body:not(.develop-mode) .develop-left { display: none; }
 #preferences-dialog::backdrop { background: #0009; }
 #preferences-dialog h2 { margin: 0 0 14px; font-size: 20px; }
 #preferences-dialog p { line-height: 1.6; }
+#legal-notice { margin: 16px 0; padding: 12px 0; border-block: 1px solid #727272; font-size: 12px; }
+#legal-notice summary { cursor: pointer; }
+#legal-notice pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; }
 #preferences-dialog fieldset { border: 0; padding: 0; }
 #preferences-dialog label { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 8px; }
 #preferences-dialog .mcp-enable { flex-direction: row; align-items: center; }

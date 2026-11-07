@@ -26,7 +26,7 @@ def main():
         shutil.copytree(native['data'], staging / 'rtengine')
         notices = staging / 'licenses'
         shutil.copytree(root / 'licenses', notices / 'third-party')
-        for name in ['LICENSE', 'COPYRIGHT.md', 'THIRD_PARTY.md']:
+        for name in ['LICENSE', 'COPYRIGHT.md', 'THIRD_PARTY.md', 'DISCLAIMER.md', 'TERMS.md']:
             shutil.copy2(root / name, notices / name)
         for name in ['source.json', 'float-preview.patch', 'metadata-time.patch', 'COPYING.GPL-3.0']:
             shutil.copy2(root / 'native/rtengine' / name, notices / name)

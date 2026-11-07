@@ -4,6 +4,10 @@ OpenRoomは、写真の整理・選別・RAW現像を行うデスクトップア
 
 公式サイトのソースコードは[OpenRoom-Website](https://github.com/wandering-beans/OpenRoom-Website)で管理しています。
 
+GitHub Releasesやソースコードから取得する場合も、OpenRoomは無保証で提供します。利用前に[ダウンロード利用規約](TERMS.md)と[無保証・免責について](DISCLAIMER.md)をご確認ください。使用前に写真原本とカタログをバックアップしてください。
+
+現在、免責案内とアプリ内表示を整備するため、旧ビルドの公開配布とアプリ内更新の配信を停止しています。
+
 ## はじめに
 
 現在のmacOSビルドはApple Silicon・macOS 27以降向けです。開発中のアプリで、公開配布用の署名・公証は行っていません。Windows 11（x64）ではインストール・起動・RAW現像を確認しました。Linuxでのアプリ起動は未確認です。ソースから起動する場合は[ビルド手順](DEVELOPMENT.md)を参照してください。

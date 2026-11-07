@@ -9,6 +9,11 @@ module.exports = async function testLanguage(page, url) {
   await page.waitForFunction(() => window.listeners['open-preferences'], null, {timeout:3000});
   await preferences();
   await page.locator('#preferences-dialog[open]').waitFor();
+  assert.ok((await page.locator('#legal-notice').innerText()).includes('取得経路を問わず'));
+  await page.locator('#legal-notice summary').click();
+  assert.equal(await page.locator('#legal-notice pre').textContent(), require('node:fs').readFileSync(require('node:path').resolve(__dirname, '../LICENSE'), 'utf8'));
+  assert.ok((await page.locator('#legal-notice pre').innerText()).includes('15. Disclaimer of Warranty.'));
+  await page.locator('#legal-notice summary').click();
   assert.equal(await page.locator('#app-shell').evaluate(shell => shell.inert), true);
   await page.click('#check-update');
   await page.waitForFunction(() => calls.some(c => c.command === 'check_app_update'));
@@ -27,6 +32,8 @@ module.exports = async function testLanguage(page, url) {
   assert.equal(await page.evaluate(() => calls.some(c => ['catalog_path', 'roots', 'mcp_ready'].includes(c.command))), false);
   await preferences();
   assert.equal(await page.locator('#preferences-title').textContent(), 'Settings');
+  assert.ok((await page.locator('#legal-notice').innerText()).includes('regardless of how you obtained it'));
+  assert.ok((await page.locator('#legal-notice').innerText()).includes('cannot be excluded or limited by law'));
   await Promise.all([page.waitForNavigation(), page.selectOption('#ui-language', 'ja')]);
   await page.waitForFunction(() => window.listeners['open-preferences']);
   await page.evaluate(() => document.body.dataset.catalogBusy = 'true');

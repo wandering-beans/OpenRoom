@@ -4,6 +4,7 @@ import { createPortal, flushSync } from 'react-dom';
 import { command, listen, type Language, type McpStatus, type Unlisten } from '../backend';
 import { errorText, language, t } from '../i18n';
 import { UpdateSettings } from './UpdateSettings';
+import licenseText from '../../../LICENSE?raw';
 
 interface PreferencesActions {
   changeLanguage(value: Language): Promise<void>;
@@ -117,6 +118,14 @@ function Preferences({ changeLanguage, prepareUpdate, canAutoUpdate, error, ref 
     </select></label>
     <p className="panel-note">{t('言語を変更すると、編集を保存して画面を再読み込みします。')}</p>
     <p id="language-status" role="status">{languageStatus}</p>
+    <section id="legal-notice" aria-labelledby="legal-title">
+      <h3 id="legal-title">{t('ライセンス・無保証・免責')}</h3>
+      <p>Copyright (C) 2026 OpenRoom contributors · GPL-3.0-or-later</p>
+      <p>{t('OpenRoomは取得経路を問わず現状のまま無保証で提供します。使用前に写真原本とカタログをバックアップしてください。')}</p>
+      <p>{t('法令により責任が求められる場合または書面で別途合意した場合を除き、開発者・著作権者・配布者は、使用または使用不能によって生じたデータの消失・破損などの損害について責任を負いません。')}</p>
+      <p>{t('保証の否認と責任の制限はGPL第15〜17条に従います。法令により免除または制限できない責任は除きます。GPLの条件に従って複製・改変・再配布できます。')}</p>
+      <details><summary>{t('GPLライセンス全文（英語）')}</summary><pre lang="en">{licenseText}</pre></details>
+    </section>
     <h3 id="mcp-title">{t('AI連携')}</h3>
     <p>{t('同じPCのAIエージェントから、開いているカタログを操作できます。')}</p>
     <p id="mcp-status" role="status">{status}</p>
