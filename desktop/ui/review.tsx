@@ -5,7 +5,7 @@ import { element as $ } from './dom';
 import { t } from './i18n';
 // Library comparison selects photos; development comparison selects recipe states.
 
-export function createReview({ preview, src, activate, remove, menu, next, zoomed, key }: { preview(photo: Photo, bound: number, retry: boolean): Promise<Preview>; src(path: string): string; activate(id: number): Promise<boolean>; remove(id: number): Promise<void>; menu(id: number, event: MouseEvent): void; next(id: number): Promise<void>; zoomed(value: number): void; key(photo: Photo): string }) {
+export function createReview({ preview, src, activate, remove, menu, next, zoomed, key }: { preview(photo: Photo, bound: number, retry: boolean): Promise<Preview>; src(path: string): string; activate(id: number): Promise<boolean>; remove(id: number): Promise<void>; menu(id: number, event: MouseEvent | KeyboardEvent): void; next(id: number): Promise<void>; zoomed(value: number): void; key(photo: Photo): string }) {
   const stage = $('review-photos');
   const view = createView(stage);
   const cards = new Map<number | null | undefined, Card>();
@@ -110,6 +110,12 @@ export function createReview({ preview, src, activate, remove, menu, next, zoome
     area.onclick = () => choose(photo.id);
     area.ondblclick = async () => { if (await choose(photo.id)) zoom(card.zoom ? 0 : 1); };
     element.oncontextmenu = event => { event.preventDefault(); menu(photo.id, event); };
+    area.onkeydown = event => {
+      if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+        event.preventDefault();
+        menu(photo.id, event);
+      }
+    };
     let pan: {x:number;y:number;left:number;top:number} | null = null, gestureScale: number | null = null;
     area.onpointerdown = async event => {
       if (event.button !== 0 || mode !== 'compare') return;

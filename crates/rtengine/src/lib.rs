@@ -82,6 +82,7 @@ unsafe extern "C" {
         height: u32,
         bound: u32,
     ) -> *mut c_void;
+    fn openroom_rt_reopen(session: *mut c_void, bound: u32) -> *mut c_void;
     fn openroom_rt_render(
         session: *mut c_void,
         adjustments: *const Adjustments,
@@ -207,6 +208,17 @@ impl Session {
         .ok_or_else(error)?;
         Ok(Self { handle })
     }
+    /// Start an independent preview processor over this session's decoded RAW.
+    pub fn at_preview_size(&mut self, bound: u32) -> Result<Self> {
+        ensure!((1..=4096).contains(&bound), "Invalid preview size");
+        let _guard = ENGINE
+            .lock()
+            .map_err(|_| anyhow::anyhow!("rtengine session failed"))?;
+        let handle = NonNull::new(unsafe { openroom_rt_reopen(self.handle.as_ptr(), bound) })
+            .ok_or_else(error)?;
+        Ok(Self { handle })
+    }
+
     pub fn render(&mut self, adjustments: &Adjustments) -> Result<Rendered> {
         let _guard = ENGINE
             .lock()

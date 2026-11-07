@@ -40,9 +40,11 @@ impl Updates {
         self.interrupt();
         Foreground(self)
     }
-    pub(crate) fn busy(&self) -> bool {
+    pub(crate) fn rendering(&self) -> bool {
         self.foreground.load(Ordering::SeqCst) > 0
-            || self.last_input.lock().unwrap().elapsed() < Duration::from_millis(1000)
+    }
+    pub(crate) fn busy(&self) -> bool {
+        self.rendering() || self.last_input.lock().unwrap().elapsed() < Duration::from_millis(1000)
     }
     pub fn interrupt(&self) {
         self.generation.fetch_add(1, Ordering::SeqCst);

@@ -21,6 +21,7 @@ struct OpenRoomFrame {
 extern "C" {
 OPENROOM_RT_API int openroom_rt_init(const char* data, const char* cache);
 OPENROOM_RT_API void* openroom_rt_open(const char* source, const float* rgba, uint32_t width, uint32_t height, uint32_t bound);
+OPENROOM_RT_API void* openroom_rt_reopen(void* session, uint32_t bound);
 OPENROOM_RT_API int openroom_rt_render(void* session, const OpenRoomAdjustments* adjustments, OpenRoomFrame* result);
 OPENROOM_RT_API int openroom_rt_copy(void* session, float* pixels, size_t count);
 OPENROOM_RT_API void openroom_rt_close(void* session);

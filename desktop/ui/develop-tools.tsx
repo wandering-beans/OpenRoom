@@ -743,7 +743,7 @@ export function createDevelopTools({
         <button className="mask-layer" data-mask-index={index} aria-pressed={index === maskIndex} onClick={() => {
           finishGesture(); maskIndex = index;
           setMode(['brush', 'linear', 'radial'].includes(mask.shapes[0]?.kind) ? mask.shapes[0].kind : 'brush');
-        }}><img alt="" width={40} height={40} src={maskImage(mask, thumbWidth, thumbHeight) || undefined} /><span>{mask.name + (mask.enabled ? '' : t('（無効）'))}</span></button>
+        }}><img draggable={false} alt="" width={40} height={40} src={maskImage(mask, thumbWidth, thumbHeight) || undefined} /><span>{mask.name + (mask.enabled ? '' : t('（無効）'))}</span></button>
         {index === maskIndex && <div id="mask-layer-settings">
           <label><input id="mask-enabled" type="checkbox" checked={mask.enabled} onChange={event => edit(value => { value.masks[index].enabled = event.target.checked; }, t('マスク設定'))} />{t('有効')}</label>
           <label><input id="mask-invert" type="checkbox" checked={mask.invert} onChange={event => edit(value => { value.masks[index].invert = event.target.checked; }, t('マスク設定'))} />{t('反転')}</label>

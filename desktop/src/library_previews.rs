@@ -73,6 +73,7 @@ pub struct Store {
     usage: Mutex<Usage>,
     queue: crate::preview_queue::Queue,
     workspace: std::sync::RwLock<()>,
+    shared_outputs: Mutex<()>,
     early: Mutex<HashMap<i64, (String, serde_json::Value)>>,
     avif: AtomicBool,
     encoder_available: bool,
@@ -176,7 +177,7 @@ fn working_files(cache: &Path) -> Result<Vec<PathBuf>> {
     Ok(paths)
 }
 
-// Call with the workspace lock held and no active shared-file writer.
+// Call with the shared output lock held. Private job directories are never pruned here.
 fn reclaim_work_space(cache: &Path) -> Result<()> {
     let mut paths = working_files(cache)?;
     paths.sort_by_cached_key(|path| {
@@ -266,6 +267,7 @@ impl Store {
             usage: Mutex::new(usage),
             queue: Default::default(),
             workspace: Default::default(),
+            shared_outputs: Default::default(),
             early: Default::default(),
             updates: Default::default(),
             avif: AtomicBool::new(encoder_available),
@@ -458,16 +460,39 @@ impl Store {
     }
 
     pub(crate) fn discard_work_directory(&self, path: &Path) {
-        let _workspace = self.workspace.write().unwrap();
+        let _workspace = self.workspace.read().unwrap();
         let _ = std::fs::remove_dir_all(path);
     }
 
+    // Backup and removal take the exclusive guard. Independent job directories can run together.
+    pub(crate) fn with_private_workspace<T>(
+        &self,
+        operation: impl FnOnce() -> Result<T>,
+    ) -> Result<T> {
+        let wait = advanced_explorer_develop::timing::start("foreground-workspace-lock");
+        let _workspace = self.workspace.read().unwrap();
+        drop(wait);
+        operation()
+    }
+
+    #[cfg(test)]
     pub fn with_work_space<T>(
         &self,
         state: &AppState,
         operation: impl FnOnce() -> Result<T>,
     ) -> Result<T> {
-        let _workspace = self.workspace.write().unwrap();
+        self.with_private_workspace(|| self.publish_work(state, operation))
+    }
+
+    // Caller holds a workspace read guard. Only publication and pruning touch shared render files.
+    pub(crate) fn publish_work<T>(
+        &self,
+        state: &AppState,
+        operation: impl FnOnce() -> Result<T>,
+    ) -> Result<T> {
+        let wait = advanced_explorer_develop::timing::start("publish-lock");
+        let _outputs = self.shared_outputs.lock().unwrap();
+        drop(wait);
         reclaim_work_space(&state.cache)?;
         let before = working_files(&state.cache)?
             .into_iter()
@@ -739,8 +764,14 @@ impl Store {
         if self.lookup_stored(catalog, id, 1600)?.is_none() {
             catalog.refresh_preview_source(id)?;
         }
-        let _job = self.queue.enter(id, priority, cancelled)?;
+        let wait = advanced_explorer_develop::timing::start("queue");
+        let _job = self
+            .queue
+            .enter(id, priority, cancelled, &|| self.updates.rendering())?;
+        drop(wait);
+        let wait = advanced_explorer_develop::timing::start("workspace-lock");
         let _workspace = self.workspace.read().unwrap();
+        drop(wait);
         let mut usage = self.usage.lock().unwrap();
         let stamp = catalog.preview_stamp(id)?;
         let old = catalog.library_preview(id)?;
@@ -793,7 +824,9 @@ impl Store {
         let required = usage.reserved + IMPORT_RESERVE;
         // Concurrent import workers own their directories; only tidy shared render outputs
         // before the first job starts. Working bytes never consume the stored-preview budget.
-        if usage.reserved == 0 {
+        if usage.reserved == 0
+            && let Ok(_outputs) = self.shared_outputs.try_lock()
+        {
             reclaim_work_space(&state.cache)?;
         }
         self.reserve(state, &mut usage, required, evict)?;
@@ -919,7 +952,13 @@ impl Store {
                     continue;
                 }
                 ensure!(!cancelled(), "プレビュー生成を中止しました。");
+                let compress = advanced_explorer_develop::timing::start(if bound == 384 {
+                    "compress-384"
+                } else {
+                    "compress-1600"
+                });
                 let bytes = advanced_explorer_media::preview::encode(pixels, bound == 384, avif)?;
+                drop(compress);
                 ensure!(
                     bytes.len() < 16 * 1024 * 1024,
                     "プレビューが保存予約量を超えています。"
@@ -933,6 +972,7 @@ impl Store {
                         .is_symlink(),
                     "プレビュー保存先にシンボリックリンクは使えません。"
                 );
+                let _publish = advanced_explorer_develop::timing::start("publish");
                 let file = temporary.path().join(format!("{bound}.{extension}"));
                 std::fs::write(&file, bytes)?;
                 std::fs::rename(&file, &target)?;
@@ -947,6 +987,7 @@ impl Store {
                 } else {
                     images.large_bytes = std::fs::metadata(&target)?.len();
                 }
+                let _catalog = advanced_explorer_develop::timing::start("catalog-update");
                 ensure!(
                     !cancelled()
                         && catalog.save_library_preview(
@@ -973,6 +1014,7 @@ impl Store {
                     "生成中に原本が変更されました。再走査してください。"
                 );
             }
+            let _catalog = advanced_explorer_develop::timing::start("catalog-update");
             ensure!(
                 !cancelled()
                     && catalog.save_library_preview(
@@ -1122,11 +1164,13 @@ fn prepare_batch(
         let stopped = AtomicBool::new(false);
         std::thread::scope(|scope| -> Result<()> {
             let (send, receive) = std::sync::mpsc::channel();
-            for _ in 0..2 {
+            for _ in 0..state.library.queue.capacity() {
                 let send = send.clone();
                 let pending = &pending;
                 let stopped = &stopped;
                 scope.spawn(move || {
+                    #[cfg(any(target_os = "macos", target_os = "windows"))]
+                    crate::rtengine_worker::begin_batch();
                     let cancelled =
                         || state.cancel.load(Ordering::SeqCst) || stopped.load(Ordering::SeqCst);
                     let catalog = match Catalog::open(&state.db) {
@@ -1947,6 +1991,55 @@ mod tests {
         let mut usage = state.library.usage.lock().unwrap();
         assert!(state.library.reserve(&state, &mut usage, IMPORT_RESERVE, false).is_err(),
             "stored previews must still respect their own budget");
+    }
+
+    #[test]
+    fn private_develop_job_can_overlap_import_without_exposing_its_files() {
+        let (_directory, state, _) = fixture();
+        let (started, ready) = std::sync::mpsc::channel();
+        let (release, finish) = std::sync::mpsc::channel();
+        let (done, result) = std::sync::mpsc::channel();
+        std::thread::scope(|scope| {
+            let store = &state.library;
+            let cache = &state.cache;
+            scope.spawn(move || {
+                store
+                    .with_private_workspace(|| {
+                        let job = tempfile::tempdir_in(cache)?;
+                        let data = job.path().join("preview.png");
+                        std::fs::write(&data, b"private")?;
+                        started.send(())?;
+                        finish.recv()?;
+                        assert_eq!(std::fs::read(data)?, b"private");
+                        Ok(())
+                    })
+                    .unwrap()
+            });
+            ready.recv().unwrap();
+            assert!(
+                store.workspace.try_write().is_err(),
+                "backup must wait for live jobs"
+            );
+            let state = &state;
+            scope.spawn(move || {
+                done.send(store.generate(state, 1, &|| false, true))
+                    .unwrap()
+            });
+            let generated = result.recv_timeout(std::time::Duration::from_secs(15));
+            let backup = state.db.with_file_name("snapshot.openroom");
+            let destination = backup.clone();
+            let (saved, snapshot) = std::sync::mpsc::channel();
+            scope.spawn(move || saved.send(store.backup(&state.db, &destination)).unwrap());
+            let blocked = snapshot.recv_timeout(std::time::Duration::from_millis(50)).is_err();
+            release.send(()).unwrap();
+            assert!(generated.unwrap().unwrap());
+            assert!(blocked, "backup must wait for the private render");
+            snapshot.recv_timeout(std::time::Duration::from_secs(15)).unwrap().unwrap();
+            let original = Catalog::open(&state.db).unwrap().library_preview(1).unwrap().unwrap();
+            let copy = Catalog::open(&backup).unwrap().library_preview(1).unwrap().unwrap();
+            assert_eq!(copy.data, original.data);
+            assert!(!directory(&backup).join("working").exists());
+        });
     }
 
     #[test]

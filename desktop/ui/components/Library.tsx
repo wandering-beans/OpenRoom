@@ -56,7 +56,7 @@ export function PhotoTile({ photo, index, film, selected, active, adjusted, styl
       <span className={film ? 'film-number' : 'grid-number'}>{index + 1}</span>
     </span>
     <div ref={thumb} className="thumb" title={failure || undefined}>
-      {preview && <img ref={image} src={source(preview.path)} alt="" decoding="async" onLoad={() => setLoaded(true)} onError={() => {
+      {preview && <img draggable={false} ref={image} src={source(preview.path)} alt="" decoding="async" onLoad={() => setLoaded(true)} onError={() => {
         setPreview(null); setLoaded(false); setFailure(t('プレビュー不可')); if (!attempt) setAttempt(1);
       }} />}
       {!loaded && <span className="placeholder">{failure ? t('プレビュー不可') : photo.extension.toUpperCase()}</span>}

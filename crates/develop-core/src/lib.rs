@@ -13,6 +13,7 @@ mod raw_color;
 #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
 mod rtengine;
 mod settings;
+pub mod timing;
 use anyhow::{Context, Result, ensure};
 use image::{
     DynamicImage, ImageBuffer, ImageDecoder, ImageEncoder, Rgba, Rgba32FImage, RgbaImage, imageops,

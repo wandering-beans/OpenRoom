@@ -18,6 +18,17 @@ function App() {
   </>;
 }
 
+document.addEventListener('contextmenu', event => {
+  const target = event.target;
+  if (target instanceof Element) {
+    if (target.closest('input, textarea, [contenteditable]:not([contenteditable="false"])')) return;
+    const selection = document.getSelection();
+    if (selection && !selection.isCollapsed && selection.containsNode(target,true) &&
+        target.closest('.terms-documents, #photo-details, #selection-details, #develop-photo-info')) return;
+  }
+  event.preventDefault();
+});
+
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing application root');
 const root = createRoot(container);

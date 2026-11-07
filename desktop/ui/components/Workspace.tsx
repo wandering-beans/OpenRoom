@@ -3,7 +3,7 @@ export function Workspace() {
   <div id="app-shell" inert>
   <button id="toggle-modulebar" aria-label="モジュールバーを切り替え" aria-expanded="true" title="モジュールバー (F5)">▴</button>
   <header id="module-bar" className="module-bar">
-    <div className="identity"><img className="app-mark" src="branding/openroom-icon-small.png" width="40" height="40" alt="" /><div><small>OpenRoom</small></div></div>
+    <div className="identity"><img draggable={false} className="app-mark" src="branding/openroom-icon-small.png" width="40" height="40" alt="" /><div><small>OpenRoom</small></div></div>
     <nav aria-label="モジュール">
       <button id="module-library" className="module active" aria-current="page">ライブラリ</button>
       <button id="module-develop" className="module" title="現像 (D)">現像</button>
@@ -16,7 +16,7 @@ export function Workspace() {
       <aside id="sidebar" className="sidebar" aria-label="ライブラリとフォルダ">
         <details id="navigator-panel" className="navigator panel" open>
           <summary className="panel-heading"><h2>ナビゲーター</h2><div className="navigator-zoom"><button id="navigator-fit" className="active">全体</button><button id="navigator-100">100%</button><button id="navigator-50">50%</button></div></summary>
-          <div id="navigator-preview" className="navigator-preview"><img id="navigator-image" alt="選択した写真" hidden /><div id="navigator-viewport" aria-hidden="true" hidden></div><span id="navigator-empty">写真を選択してください</span></div>
+          <div id="navigator-preview" className="navigator-preview"><img draggable={false} id="navigator-image" alt="選択した写真" hidden /><div id="navigator-viewport" aria-hidden="true" hidden></div><span id="navigator-empty">写真を選択してください</span></div>
           <div id="navigator-resize" className="panel-resize" role="separator" tabIndex={0} aria-label="ナビゲーターの高さ" aria-orientation="horizontal" aria-controls="navigator-preview" title="ドラッグまたは上下キーで高さを調整"></div>
         </details>
         <div className="sidebar-scroll">
@@ -60,7 +60,7 @@ export function Workspace() {
         <div className="photo-stage">
           <section id="viewport" aria-label="写真一覧" tabIndex={0} hidden><div id="grid" role="group"></div></section>
           <section id="viewer" aria-label="ルーペ表示" tabIndex={0}>
-            <svg id="develop-overlay" tabIndex={-1} aria-label="写真上の編集範囲"></svg><div id="image-area"><img id="compare-image" alt="比較基準" hidden /><img id="full-image" crossOrigin="anonymous" alt="" hidden /><p id="view-message" role="status" hidden></p></div>
+            <svg id="develop-overlay" tabIndex={-1} aria-label="写真上の編集範囲"></svg><div id="image-area"><img draggable={false} id="compare-image" alt="比較基準" hidden /><img draggable={false} id="full-image" crossOrigin="anonymous" alt="" hidden /><p id="view-message" role="status" hidden></p></div>
           </section>
           <section id="review-view" aria-label="写真の比較・選別" hidden>
             <div className="review-toolbar"><p id="review-message" role="status"></p><div id="compare-controls"><button id="compare-swap">入れ替え</button><button id="compare-promote">候補を基準に</button><label><input id="compare-linked" type="checkbox" defaultChecked />拡大・移動を連動</label></div></div>

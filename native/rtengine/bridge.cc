@@ -92,10 +92,15 @@ public:
     std::string camera;
     ProcParams previous;
 
-    Session(const char* path, const float* rgba, uint32_t width, uint32_t height, uint32_t bound) : raw(!rgba) {
+    Session(const char* path, const float* rgba, uint32_t width, uint32_t height, uint32_t bound, InitialImage* shared = nullptr) : raw(!rgba) {
         App::get().mut_options().prevdemo = bound == 384 ? PD_Fast : PD_Sidecar;
         int code = 0;
-        initial = rgba ? static_cast<InitialImage*>(new LinearSource(rgba, width, height)) : InitialImage::load(path, true, &code);
+        if (shared) {
+            shared->increaseRef();
+            initial = shared;
+        } else {
+            initial = rgba ? static_cast<InitialImage*>(new LinearSource(rgba, width, height)) : InitialImage::load(path, true, &code);
+        }
         if (!initial || code) throw std::runtime_error("rtengine cannot decode the photo (" + std::to_string(code) + ")");
         auto_ca_supported = raw && initial->getImageSource()->getSensorType() == ST_BAYER;
         initial->getImageSource()->getFullSize(source_width, source_height);
@@ -360,6 +365,15 @@ extern "C" void* openroom_rt_open(const char* path, const float* rgba, uint32_t 
     try {
         Diagnostics diagnostics;
         return new Session(path, rgba, width, height, bound);
+    } catch (const std::exception& e) { last_error = e.what(); return nullptr; }
+}
+extern "C" void* openroom_rt_reopen(void* session, uint32_t bound) {
+    try {
+        Diagnostics diagnostics;
+        auto* previous = static_cast<Session*>(session);
+        if (!previous || !previous->raw) throw std::runtime_error("Expected a decoded RAW");
+        previous->processor->stopProcessing();
+        return new Session(nullptr, nullptr, 0, 0, bound, previous->initial);
     } catch (const std::exception& e) { last_error = e.what(); return nullptr; }
 }
 extern "C" int openroom_rt_render(void* session, const OpenRoomAdjustments* adjustments, OpenRoomFrame* frame) {

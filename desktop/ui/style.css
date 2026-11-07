@@ -556,3 +556,13 @@ html[lang=en]{--crop-tool-caption:'Tool:'}
 .copy-settings-actions span { flex: 1; }
 .copy-settings-actions button { padding: 7px 12px; }
 #copy-settings-confirm { background: #2867a6; }
+
+body { -webkit-user-select: none; user-select: none; }
+input, textarea, [contenteditable]:not([contenteditable="false"]), .terms-documents,
+#selection-details, #photo-details, #develop-photo-info {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+#full-image.can-pan { cursor: grab; }
+#full-image.panning { cursor: grabbing; }

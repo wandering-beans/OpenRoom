@@ -5,9 +5,39 @@ module.exports = async function testCatalogRemoval(page) {
   const first = page.locator('.film-tile[title="photo-0000.jpg"]');
   const second = page.locator('.film-tile[title="photo-0001.jpeg"]');
   await first.waitFor();
+  assert.equal(await page.locator('#search').evaluate(el =>
+    ['c','v'].every(key => el.dispatchEvent(new KeyboardEvent('keydown',
+      {key,ctrlKey:true,bubbles:true,cancelable:true})))),true);
+  const inspectorInitiallyHidden = !await page.locator('#library-inspector').isVisible();
+  if (inspectorInitiallyHidden) await page.locator('#toggle-inspector').click();
+  const fileSummary = page.locator('details:has(#selection-details) > summary');
+  const fileInitiallyClosed = await fileSummary.evaluate(el=>!el.parentElement.open);
+  if (fileInitiallyClosed) await fileSummary.click();
+  await page.locator('#selection-details dd').first().waitFor({state:'attached'});
+  const nativeCopy = await page.locator('#selection-details').evaluate(details => {
+    const text = details.querySelector('dd') || details;
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    const selection = document.getSelection();
+    selection.removeAllRanges(); selection.addRange(range);
+    const selected = selection.toString();
+    const shortcuts = text.dispatchEvent(new KeyboardEvent('keydown',{key:'c',ctrlKey:true,bubbles:true,cancelable:true}));
+    const context = text.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}));
+    selection.removeAllRanges();
+    return {selected,shortcuts,context};
+  });
+  assert(nativeCopy.selected && nativeCopy.shortcuts && nativeCopy.context);
+  if (fileInitiallyClosed) await fileSummary.click();
+  if (inspectorInitiallyHidden) await page.locator('#toggle-inspector').click();
+  await first.focus();
+  await page.keyboard.press('ContextMenu');
+  await page.locator('#photo-menu').waitFor();
+  await page.keyboard.press('Escape');
   await first.click({button:'right'});
   await page.click('#disk-remove');
   await page.locator('#discard-dialog[open]').waitFor();
+  assert.equal(await page.locator('#discard-dialog').evaluate(el =>
+    el.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}))),false);
   assert.match(await page.locator('#discard-message').textContent(), /photo-0000.jpg.*ゴミ箱/);
   await page.keyboard.press('Escape');
   assert.equal(await page.evaluate(() => calls.filter(c => c.command === 'trash_photos').length), 0);
@@ -25,6 +55,12 @@ module.exports = async function testCatalogRemoval(page) {
   assert.match(await page.locator('#error').textContent(), /Recycle bin unavailable/);
 
   const rootLabel = page.locator('.folder-row[data-folder=""] .folder-label');
+  for (const key of ['Shift+F10','ContextMenu']) {
+    await rootLabel.focus();
+    await page.keyboard.press(key);
+    await page.locator('#photo-menu').waitFor();
+    await page.keyboard.press('Escape');
+  }
   await rootLabel.click({button:'right'}); await page.click('#disk-remove');
   await page.locator('#discard-dialog[open]').waitFor();
   assert.match(await page.locator('#discard-message').textContent(), /登録写真1999枚/);

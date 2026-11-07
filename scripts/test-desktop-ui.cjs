@@ -414,6 +414,9 @@ async function run() {
     if (process.argv.includes('--terms')) {
       await page.goto(`http://127.0.0.1:${server.address().port}?terms=first&startup=new`);
       await page.locator('#terms-screen').waitFor();
+      assert.equal(await page.locator('.terms-documents pre').first().evaluate(el => getComputedStyle(el).userSelect),'text');
+      assert.equal(await page.locator('#terms-screen').evaluate(el => el.dispatchEvent(
+        new MouseEvent('contextmenu',{bubbles:true,cancelable:true}))),false);
       assert.equal(await page.locator('#app-shell').count(), 0);
       assert.deepEqual(await page.evaluate(() => [...new Set(calls.map(call => call.command))].sort()), ['get_language', 'start_workspace']);
       await page.locator('#terms-decline').click();
@@ -440,6 +443,10 @@ async function run() {
       assert.deepEqual(failures, []); return;
     }
     await page.goto(`http://127.0.0.1:${server.address().port}?startup=new`);
+    await page.locator('#catalog-setup').waitFor();
+    assert.equal(await page.locator('#startup-screen').evaluate(el => el.dispatchEvent(
+      new MouseEvent('contextmenu',{bubbles:true,cancelable:true}))),false);
+    assert.equal(await page.locator('#startup-screen img').evaluate(el=>el.draggable),false);
     await page.locator('#catalog-setup').waitFor({state:'visible'});
     await page.setViewportSize({width:900,height:600});
     const setupLayout = await page.evaluate(() => {
@@ -867,6 +874,25 @@ async function run() {
       }
     }
     await checkPhotoPan('#full-image');
+    await page.click('#navigator-100');
+    for (let step=0;step<4;step++) await page.click('#zoom-in');
+    await page.waitForFunction(() => {
+      const area = document.querySelector('#image-area');
+      return area.scrollWidth > area.clientWidth + 100;
+    });
+    const dragStart = await page.evaluate(() => {
+      const area = document.querySelector('#image-area'), image = document.querySelector('#full-image');
+      area.scrollLeft = (area.scrollWidth - area.clientWidth) / 2;
+      const a = area.getBoundingClientRect(), b = image.getBoundingClientRect();
+      return {left:area.scrollLeft,zoom:document.querySelector('#zoom-level').textContent,
+        x:(Math.max(a.left,b.left)+Math.min(a.right,b.right))/2,
+        y:(Math.max(a.top,b.top)+Math.min(a.bottom,b.bottom))/2};
+    });
+    await page.mouse.move(dragStart.x,dragStart.y);
+    await page.mouse.down(); await page.mouse.move(dragStart.x-40,dragStart.y,{steps:6}); await page.mouse.up();
+    closeTo(await page.locator('#image-area').evaluate(el=>el.scrollLeft),dragStart.left+40,'mouse pan distance',2);
+    assert.equal(await page.textContent('#zoom-level'),dragStart.zoom,'drag must not trigger click zoom');
+    await page.click('#navigator-fit');
     console.log('Library photo panning checks passed.');
     async function checkNavigatorViewport(label) {
       const collapsed = !await page.locator('#sidebar').isVisible();
@@ -1078,9 +1104,18 @@ async function run() {
       'library selection and zoom must never start development');
     await page.evaluate(() => {window.holdOriginalLoad = true;});
     assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), [1], 'library preloads only the selected photo');
+    const interactions = await page.evaluate(() => {
+      const menu = id => document.querySelector(id).dispatchEvent(new MouseEvent('contextmenu', { bubbles:true, cancelable:true }));
+      return {panel:menu('#viewer'), input:menu('#search'),
+        selection:getComputedStyle(document.querySelector('#module-library')).userSelect,
+        metadata:getComputedStyle(document.querySelector('#photo-details')).userSelect,
+        draggable:[...document.images].some(image => image.draggable)};
+    });
+    assert.deepEqual(interactions, {panel:false,input:true,selection:'none',metadata:'text',draggable:false});
     await page.click('#high-quality');
     await page.waitForFunction(() => window.releaseOriginalLoad);
-    assert.equal(await page.locator('#full-image').isVisible(),false,'the library preview must not be presented as the completed development image');
+    assert.equal(await page.locator('#full-image').isVisible(),true,'keep the current library image while development loads');
+    assert.equal(await page.locator('#develop-exposure').isEnabled(), true, 'exposure is usable when settings arrive');
     assert.match(await page.textContent('#develop-status'),/原本/);
     await page.evaluate(() => {window.holdOriginalLoad = false;window.releaseOriginalLoad();});
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-'));
@@ -2013,6 +2048,15 @@ async function run() {
     await require('./test-crop-pan.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     await require('./test-masks.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     await require('./test-histogram.cjs')(page, `http://127.0.0.1:${server.address().port}`);
+    await page.goto(`http://127.0.0.1:${server.address().port}`);
+    await page.evaluate(() => { window.holdOriginalLoad = true; });
+    await page.click('#module-develop');
+    await page.waitForFunction(() => window.releaseOriginalLoad);
+    await page.click('#film-next');
+    await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-2-'));
+    await page.evaluate(() => { window.releaseOriginalLoad(); });
+    await page.waitForFunction(() => completedDevelopPreviews.some(p => p.id === 1));
+    assert.match(await page.locator('#full-image').getAttribute('src'), /develop-2-/);
     // Repeated numeric input must not cancel the slow frame or render twice on release.
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.click('#module-develop');
@@ -2034,8 +2078,9 @@ async function run() {
       }
       window.releaseDevelopPreview();
     });
-    // Hold the next frame so the intermediate result cannot disappear between assertions.
-    await page.waitForFunction(() => document.getElementById('full-image').src.includes('-0.2-384'));
+    // A late frame cannot replace the display with an obsolete exposure.
+    await page.waitForFunction(() => typeof window.releaseDevelopPreview === 'function');
+    assert.ok(!(await page.locator('#full-image').getAttribute('src')).includes('-0.2-384'));
     assert.equal(await page.locator('#develop-exposure-value').inputValue(),'0.8');
     await page.waitForFunction(() => typeof window.releaseDevelopPreview === 'function');
     await page.evaluate(() => {

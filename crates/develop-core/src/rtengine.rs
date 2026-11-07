@@ -32,6 +32,7 @@ fn camera_saturation(source: &Path) -> Result<f32> {
     if let Some(cached) = cache.as_ref().filter(|cached| cached.key == key) {
         return Ok(cached.gain);
     }
+    let _match_color = crate::timing::start("camera-match");
     let gain = match advanced_explorer_media::embedded_raw_preview(source) {
         Ok(camera) => {
             // Fix the calibration size and settings so editor, library and full-size exports agree.
@@ -81,8 +82,28 @@ fn native(
         key.3 = 0;
     }
     if cached.as_ref().is_none_or(|hit| hit.key != key) {
-        *cached = None;
-        let session = Session::open(source, pixels, bound)?;
+        let previous = cached.take();
+        let _load = crate::timing::start("native-open");
+        let session = if let Some(mut previous) = previous.filter(|old| {
+            // The four-colour Sony SRF fixture varies between independent reference renders.
+            // Keep its original decoder path until shared-input equivalence can be established.
+            let srf = source
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("srf"));
+            pixels.is_none()
+                && !srf
+                && bound == 1600
+                && old.key.3 == 384
+                && old.key.4 == 0
+                && old.key.0 == key.0
+                && old.key.1 == key.1
+                && old.key.2 == key.2
+                && std::env::var_os("AE_BENCH_FRESH_RAW").is_none()
+        }) {
+            previous.session.at_preview_size(bound)?
+        } else {
+            Session::open(source, pixels, bound)?
+        };
         *cached = Some(CachedSession {
             key,
             session,

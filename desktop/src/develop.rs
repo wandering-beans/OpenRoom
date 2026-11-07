@@ -2,7 +2,7 @@
 use crate::{AppState, Catalog, Preview, Reply, media, prepare_render, work};
 use advanced_explorer::{HistoryEdit, HistoryEntry};
 use advanced_explorer_develop::{self as engine, BaseInfo, RenderInfo, Settings, WorkingImage};
-use anyhow::{Result, ensure};
+use anyhow::{Context, Result, ensure};
 use base64::Engine;
 use serde::Serialize;
 use std::{
@@ -377,8 +377,20 @@ fn remember_base(
     }
     Ok(image)
 }
+#[cfg(test)]
 fn load_base(
     request: &Request,
+    bound: u32,
+    resident: &Mutex<Option<Resident>>,
+    retain: bool,
+    cancelled: &(dyn Fn() -> bool + Sync),
+) -> Result<Arc<WorkingImage>> {
+    load_base_into(request, &request.base, bound, resident, retain, cancelled)
+}
+
+fn load_base_into(
+    request: &Request,
+    output: &Path,
     bound: u32,
     resident: &Mutex<Option<Resident>>,
     retain: bool,
@@ -392,7 +404,7 @@ fn load_base(
         let image = crate::rtengine_worker::prepare(&request.source, bound, cancelled)?;
         return remember_base(image, request, bound, resident, retain, cancelled);
     }
-    let temp = request.base.with_extension(format!("{}.tmp", nonce()?));
+    let temp = output.with_extension(format!("{}.tmp", nonce()?));
     let result = (|| -> Result<WorkingImage> {
         let mut command = std::process::Command::new(media::worker_executable()?);
         command
@@ -404,8 +416,8 @@ fn load_base(
         ensure!(!cancelled(), "現像対象が変更されました。");
         // Validate the complete replacement before publishing over a damaged cache.
         let image = engine::read_base(&temp, info.clone())?;
-        std::fs::rename(&temp, &request.base)?;
-        std::fs::write(&request.base_info, serde_json::to_vec(&info)?)?;
+        std::fs::rename(&temp, output)?;
+        std::fs::write(output.with_extension("json"), serde_json::to_vec(&info)?)?;
         Ok(image)
     })();
     if result.is_err() {
@@ -437,18 +449,48 @@ async fn preview_inner(
         }
     })
     .await?;
+    // Prefetch and foreground consumers serialize only identical develop requests.
+    let _flight = if bound == 1600 {
+        let flight = develop.prefetch.flight(id, &request);
+        let lock = flight.lock.clone().lock_owned();
+        tokio::pin!(lock);
+        let guard = loop {
+            tokio::select! {
+                guard = &mut lock => break guard,
+                _ = tokio::time::sleep(std::time::Duration::from_millis(20)) => {
+                    if generation.load(Ordering::SeqCst) != version { return Err("Preview cancelled".into()); }
+                }
+            }
+        };
+        if hit.is_none() {
+            if let Some(error) = flight.error.lock().unwrap().clone() {
+                return Err(error);
+            }
+        }
+        Some((flight, guard))
+    } else {
+        None
+    };
+    if generation.load(Ordering::SeqCst) != version {
+        return Err("Preview cancelled".into());
+    }
     if bound == 1600 {
         let entry = develop.prefetch.get(id, &request);
         if let Some(entry) = entry {
             let resident = develop.resident.clone();
             let generation = generation.clone();
             let request = request.clone();
-            let frame = work(move || {
-                let cancelled = || generation.load(Ordering::SeqCst) != version;
-                entry.preview(&request, &resident, &cancelled)
-            })
-            .await;
-            if let Ok(frame) = frame {
+            let display = entry.clone();
+            if let Ok(frame) = work(move || display.preview()).await {
+                if let Ok(owner) = develop.prefetch.base_job.clone().try_lock_owned() {
+                    tauri::async_runtime::spawn_blocking(move || {
+                        let _owner = owner;
+                        let cancelled = || generation.load(Ordering::SeqCst) != version;
+                        if !cancelled() {
+                            let _ = entry.load_base(&request, &resident, &cancelled);
+                        }
+                    });
+                }
                 return Ok(frame);
             }
         }
@@ -458,12 +500,11 @@ async fn preview_inner(
         if let Ok(permit) = develop.jobs.clone().try_acquire_owned() {
             let resident = develop.resident.clone();
             let pool = develop.pool.clone();
-            let _ = work(move || {
+            tauri::async_runtime::spawn_blocking(move || {
                 let _permit = permit;
                 let cancelled = || generation.load(Ordering::SeqCst) != version;
                 pool.install(|| cached_base(&request, bound, &resident, true, &cancelled))
-            })
-            .await;
+            });
         }
         return Ok(hit);
     }
@@ -514,45 +555,58 @@ async fn preview_inner(
     let copied = state.clone();
     work(move || {
         let cancelled = || generation.load(Ordering::SeqCst) != version;
-        let reusable =
-            pool.install(|| cached_base(&request, bound, &resident, true, &cancelled))?;
-        let operation = || {
+        copied.library.with_private_workspace(|| {
             pool.install(|| {
                 ensure!(!cancelled(), "現像対象が変更されました。");
                 Catalog::open(&copied.db)?.detail(id)?;
                 if let Some(hit) = cached(&request) {
                     return Ok(hit);
                 }
-                let base = match reusable {
-                    Some(base) => base,
-                    None => load_base(&request, bound, &resident, true, &cancelled)?,
-                };
+                let job = tempfile::Builder::new()
+                    .prefix("develop-render-")
+                    .tempdir_in(&copied.cache)?;
+                let staged_base = job.path().join("base.tif");
+                let base =
+                    load_base_into(&request, &staged_base, bound, &resident, true, &cancelled)?;
                 let rendered = render_frame(&base, &settings, bound, &cancelled)?;
+                let png = job.path().join("preview.png");
                 ensure!(!cancelled(), "現像対象が変更されました。");
-                let temp = request.image.with_extension(format!("{}.tmp", nonce()?));
-                let result = (|| -> Result<DevelopedPreview> {
-                    advanced_explorer_media::write_preview(&temp, &rendered.image)?;
+                advanced_explorer_media::write_preview(&png, &rendered.image)?;
+                let mut info = base.info.clone();
+                engine::refresh_raw_profile(&mut info);
+                let frame = DevelopedPreview {
+                    path: request.image.to_string_lossy().into_owned(),
+                    inline_image: None,
+                    image_bytes: std::fs::metadata(&png)?.len(),
+                    info: rendered.info,
+                    base: info,
+                };
+                let metadata = job.path().join("preview.json");
+                std::fs::write(&metadata, serde_json::to_vec(&frame)?)?;
+                let current = self::request(
+                    copied.db.clone(),
+                    copied.cache.clone(),
+                    copied.renderer.clone(),
+                    id,
+                    &settings,
+                    bound,
+                )?;
+                ensure!(
+                    current.image == request.image,
+                    "生成中に原本が変更されました。"
+                );
+                copied.library.publish_work(&copied, || {
                     ensure!(!cancelled(), "現像対象が変更されました。");
-                    std::fs::rename(&temp, &request.image)?;
-                    let mut info = base.info.clone();
-                    engine::refresh_raw_profile(&mut info);
-                    let value = DevelopedPreview {
-                        path: request.image.to_string_lossy().into_owned(),
-                        inline_image: None,
-                        image_bytes: std::fs::metadata(&request.image)?.len(),
-                        info: rendered.info,
-                        base: info,
-                    };
-                    std::fs::write(&request.metadata, serde_json::to_vec(&value)?)?;
-                    Ok(value)
-                })();
-                if result.is_err() {
-                    let _ = std::fs::remove_file(&temp);
-                }
-                result
+                    if staged_base.exists() {
+                        std::fs::rename(staged_base.with_extension("json"), &request.base_info)?;
+                        std::fs::rename(&staged_base, &request.base)?;
+                    }
+                    std::fs::rename(&png, &request.image)?;
+                    std::fs::rename(&metadata, &request.metadata)?;
+                    Ok(frame)
+                })
             })
-        };
-        copied.library.with_work_space(&copied, operation)
+        })
     })
     .await
 }
@@ -580,14 +634,35 @@ pub fn library_pixels(
         settings,
         1600,
     )?;
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    if let Some(result) = crate::rtengine_worker::library(&request.source, settings, cancelled) {
+        return result;
+    }
     let temporary = tempfile::tempdir_in(&state.cache)?;
     let recipe = temporary.path().join("settings.json");
-    let output = temporary.path().join("library.png");
+    let png_handoff = std::env::var_os("AE_BENCH_RGB_HANDOFF").is_none();
+    let output = temporary.path().join(if png_handoff { "library.png" } else { "library.rgb" });
     std::fs::write(&recipe, serde_json::to_vec(settings)?)?;
     // A cancellable short-lived worker cannot evict or block the editor's resident RAW session.
-    let result = agent_preview_with_source(&request.source, &output, &recipe, 1600, cancelled)?;
+    let worker = engine::timing::start("worker-round-trip");
+    let result =
+        agent_preview_with_source(&request.source, &output, &recipe, 1600, !png_handoff, cancelled)?;
+    drop(worker);
+    let _read = engine::timing::start("pixel-read");
     let info = result.info;
-    let pixels = image::open(&output)?.into_rgb8();
+    ensure!(
+        info.width > 0 && info.height > 0 && info.width.max(info.height) <= 1600,
+        "Invalid library preview dimensions"
+    );
+    let pixels = if png_handoff {
+        ensure!(image::image_dimensions(&output)? == (info.width, info.height), "Invalid library image");
+        image::open(&output)?.into_rgb8()
+    } else {
+        let length = u64::from(info.width) * u64::from(info.height) * 3;
+        ensure!(std::fs::metadata(&output)?.len() == length, "Incomplete library preview");
+        image::RgbImage::from_raw(info.width, info.height, std::fs::read(output)?)
+            .context("Invalid library pixel buffer")?
+    };
     Ok((
         pixels,
         Preview {
@@ -665,7 +740,7 @@ pub fn agent_preview(
     bound: u32,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<RenderInfo> {
-    Ok(agent_preview_with_source(source, output, recipe, bound, cancelled)?.info)
+    Ok(agent_preview_with_source(source, output, recipe, bound, false, cancelled)?.info)
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 struct AgentPreview {
@@ -679,13 +754,18 @@ fn agent_preview_with_source(
     output: &Path,
     recipe: &Path,
     bound: u32,
+    library: bool,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<AgentPreview> {
     ensure!(!cancelled(), "Preview cancelled");
     if !cfg!(test) || std::env::var_os("AE_TEST_EXECUTABLE").is_some() {
         let mut command = std::process::Command::new(media::worker_executable()?);
         command
-            .arg("--develop-agent-preview")
+            .arg(if library {
+                "--develop-library-preview"
+            } else {
+                "--develop-agent-preview"
+            })
             .arg(source)
             .arg(output)
             .arg(recipe)
@@ -695,9 +775,7 @@ fn agent_preview_with_source(
         let settings: Settings = serde_json::from_slice(&std::fs::read(recipe)?)?;
         let base = engine::prepare(source, bound)?;
         let rendered = engine::render(&base, &settings, cancelled)?;
-        image::DynamicImage::ImageRgba8(rendered.image)
-            .to_rgb8()
-            .save_with_format(output, image::ImageFormat::from_path(output)?)?;
+        write_worker_pixels(output, rendered.image, library)?;
         Ok(AgentPreview {
             info: rendered.info,
             source_width: base.info.source_width,
@@ -706,14 +784,24 @@ fn agent_preview_with_source(
     }
 }
 
+fn write_worker_pixels(path: &Path, image: image::RgbaImage, library: bool) -> Result<()> {
+    let rgb = image::DynamicImage::ImageRgba8(image).into_rgb8();
+    if library {
+        std::fs::write(path, rgb.as_raw())?;
+    } else {
+        rgb.save_with_format(path, image::ImageFormat::from_path(path)?)?;
+    }
+    Ok(())
+}
+
 pub fn run_worker() -> bool {
     let args: Vec<_> = std::env::args_os().skip(1).collect();
     let Some(flag) = args.first().and_then(|value| value.to_str()) else {
         return false;
     };
     #[cfg(any(target_os = "macos", target_os = "windows"))]
-    if flag == "--rtengine-resident" {
-        if let Err(error) = crate::rtengine_worker::run() {
+    if matches!(flag, "--rtengine-resident" | "--rtengine-import") {
+        if let Err(error) = crate::rtengine_worker::run(flag == "--rtengine-import") {
             eprintln!("{error:#}");
             std::process::exit(1);
         }
@@ -723,6 +811,7 @@ pub fn run_worker() -> bool {
         "--develop-base",
         "--develop-export",
         "--develop-agent-preview",
+        "--develop-library-preview",
         "--develop-prefetch",
     ]
     .contains(&flag)
@@ -766,16 +855,23 @@ pub fn run_worker() -> bool {
                     engine::write_base(Path::new(&args[2]), &base)?;
                     println!("{}", serde_json::to_string(&base.info)?);
                 }
-                "--develop-agent-preview" => {
+                "--develop-agent-preview" | "--develop-library-preview" => {
                     ensure!(args.len() == 5, "Invalid preview arguments");
                     let bound: u32 = args[4].to_str().unwrap_or("").parse()?;
                     ensure!([384, 1600].contains(&bound), "Invalid preview size");
                     let settings: Settings = serde_json::from_slice(&std::fs::read(&args[3])?)?;
+                    let prepare = engine::timing::start("prepare");
                     let base = engine::prepare(Path::new(&args[1]), bound)?;
+                    drop(prepare);
+                    let render = engine::timing::start("develop");
                     let rendered = engine::render(&base, &settings, &|| false)?;
-                    image::DynamicImage::ImageRgba8(rendered.image)
-                        .to_rgb8()
-                        .save_with_format(&args[2], image::ImageFormat::from_path(&args[2])?)?;
+                    drop(render);
+                    let _handoff = engine::timing::start("pixel-write");
+                    write_worker_pixels(
+                        Path::new(&args[2]),
+                        rendered.image,
+                        flag == "--develop-library-preview",
+                    )?;
                     println!(
                         "{}",
                         serde_json::to_string(&AgentPreview {

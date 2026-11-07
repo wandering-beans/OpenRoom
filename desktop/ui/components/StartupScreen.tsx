@@ -2,7 +2,7 @@ export function StartupScreen() {
   return <>
   <section id="startup-screen" className="startup-screen" role="status" aria-label="OpenRoomを起動しています">
     <div className="startup-identity">
-      <img src="branding/openroom-icon.png" width="512" height="512" alt="" />
+      <img draggable={false} src="branding/openroom-icon.png" width="512" height="512" alt="" />
       <h1>OpenRoom</h1>
       <p>RAW PHOTO EDITOR</p>
     </div>

@@ -44,7 +44,19 @@ const fields: Record<string, [NumericSetting, string, number, number, number?][]
     ['grain', t("粒子の適用量"), 0, 100], ['grain_size', t("粒子サイズ"), 0, 100], ['grain_roughness', t("粒子の粗さ"), 0, 100],
   ],
 };
-export function createDevelop({ invoke, show, compare, saved, error, selectedIds, photoInfo }: { invoke: Invoke; show(result: DevelopedPreview, interactive?: boolean): void; compare(result: DevelopedPreview | null, mode?: string): void; saved(id: number, refreshPreview?: boolean): void; error: ErrorHandler; selectedIds(): number[]; photoInfo(item: Photo): Promise<PhotoMetadata> }) {
+export function createDevelop({
+  invoke, show, placeholder, selectedKey, compare, saved, error, selectedIds, photoInfo,
+}: {
+  invoke: Invoke;
+  show(result: DevelopedPreview, interactive: boolean, current: () => boolean): Promise<boolean>;
+  placeholder(item: Photo | null): void;
+  selectedKey(): string | null;
+  compare(result: DevelopedPreview | null, mode?: string): void;
+  saved(id: number, refreshPreview?: boolean): void;
+  error: ErrorHandler;
+  selectedIds(): number[];
+  photoInfo(item: Photo): Promise<PhotoMetadata>;
+}) {
   let active = false, item: Photo | null = null, settings: Settings | null = null, defaults: Settings | null = null, baseline: Settings | null = null, revision = 0;
   let loading = false, saving = false, exporting = false, before = false, bound = 1600;
   let epoch = 0, renderToken = 0, running: false | { bound: number } = false, pending = false, timer: ReturnType<typeof setTimeout> | undefined;
@@ -351,7 +363,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     if (previewBound === 384) warmupPending = false;
     const flight = {gestureRender, bound: previewBound};
     running = flight; pending = false;
-    const token = renderToken, selection = epoch;
+    const token = renderToken, selection = epoch, key = selectedKey();
     if (!warming && !saveFailed) status(interacting ? t("編集中") : t("原本を読み込み・現像中…"));
     try {
       const result = await invoke('develop_preview', { id: item.id, settings: tools.previewSettings(before ? defaults! : settings), bound: previewBound });
@@ -359,9 +371,9 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
         if (previewBound === 384) interactivePrepared = true;
         else if (!interactivePrepared) warmupPending = true;
       }
-      const ongoingGesture = interacting && gestureRender;
-      if (!warming && running === flight && active && selection === epoch && (token === renderToken || ongoingGesture)) {
-        show(result, gestureRender); histogram(result); tools.update();
+      const current = () => running === flight && active && selection === epoch && token === renderToken && key === selectedKey();
+      if (!warming && current() && await show(result, gestureRender, current) && current()) {
+        histogram(result); tools.update();
         const comparison=tools.comparison();
         if(comparison && !interacting){
           const other=await invoke('develop_preview',{id:item.id,settings:comparison.settings,bound});
@@ -384,6 +396,8 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     clearTimeout(gestureTimer);
     clearTimeout(saveTimer);
     const selection = ++epoch;
+    clearTimeout(timer); timer = undefined;
+    running = false;
     ++renderToken; pending = false; warmupPending = false; interactivePrepared = false;
     invoke('cancel_develop_preview').catch(error);
     tools.select(next?.id, settings); compare(null);
@@ -391,7 +405,7 @@ export function createDevelop({ invoke, show, compare, saved, error, selectedIds
     autoCaSupported = false;
     rasterTemperature = null;
     whiteBalanceReady = false;
-    $('full-image').hidden = true;
+    placeholder(next ?? null);
     $('develop-histogram').removeAttribute('title');
     for (const channel of [0, 1, 2, 'common']) $(`develop-hist-${channel}`).setAttribute('points','0,90 255,90');
     clippingIndicators(null);

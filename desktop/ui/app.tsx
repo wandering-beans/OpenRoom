@@ -36,6 +36,7 @@ let aiIds: number[] = [], developSelectionTask = Promise.resolve();
 const selectedPhotos = new Set<number>();
 const adjustedPhotos = new Set<number>();
 const adjustmentRequests = new Map<number, Promise<Recipe>>();
+let libraryImageKey: string | null = null;
 let viewMode: ViewMode = 'loupe', zoom = 0, currentPreview: Preview | null = null;
 let zoomAnchor: Anchor | null = null;
 let pendingPhotoAnchor: Anchor | null = null;
@@ -52,7 +53,7 @@ let thumbnailWorkers = 0;
 let scanViewPending = false;
 let scanCancelled = false;
 const developVersions = new Map<number, number>();
-const itemKey = (item: Photo) => `${item.id}:${item.modified}:${item.size}:${developVersions.get(item.id) || 0}`;
+const itemKey = (item: Photo) => `${item.id}:${item.root_id}:${item.path}:${item.modified}:${item.size}:${developVersions.get(item.id) || 0}`;
 const bytes = (size: number) => size >= 1048576 ? `${(size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(size / 1024))} KB`;
 
 const libraryFilters = createLibraryFilters({invoke, query, refresh, error:showError, resize:scheduleDraw});
@@ -73,6 +74,7 @@ async function setPhotoAttributes(attributes: Partial<Pick<Photo, 'rating' | 'fl
 const develop = createDevelop({
   invoke, error: showError,
   photoInfo: photoJob,
+  selectedKey: () => items[selected] ? itemKey(items[selected]) : null,
   selectedIds:()=>selectedPhotos.size?[...selectedPhotos]:items[selected]?[items[selected].id]:[],
   compare(result,mode){
     const image=$('compare-image');
@@ -80,7 +82,30 @@ const develop = createDevelop({
     if(result){image.width=result.info.width; image.height=result.info.height; image.src=result.inline_image ?? convertFileSrc(result.path); zoom=0;}
     applyZoom();
   },
-  show(result, interactive = false) {
+  placeholder(item) {
+    const key = item && itemKey(item);
+    const image = $('full-image');
+    image.onload = image.onerror = null;
+    if (key && key === libraryImageKey && !image.hidden) return;
+    currentPreview = null;
+    const preview = key && (largePreviews.get(`${key}:1600`) || readyThumbnails.get(key));
+    if (preview && item) {
+      currentPreview = preview;
+      setPreviewImage(preview, key);
+      image.alt = item.name;
+      $('view-message').hidden = true;
+    } else {
+      libraryImageKey = null;
+      image.hidden = true;
+      image.removeAttribute('src');
+    }
+  },
+  async show(result, interactive, current) {
+    const decoded = new Image();
+    decoded.crossOrigin = 'anonymous';
+    decoded.src = result.inline_image ?? convertFileSrc(result.path);
+    await decoded.decode();
+    if (!current()) return false;
     // Changing preview resolution must not shrink a photo viewed at 100% while dragging.
     const displayScale = interactive && currentPreview
       ? Math.max(currentPreview.render_width, currentPreview.render_height) / Math.max(result.info.width, result.info.height) : 1;
@@ -91,7 +116,8 @@ const develop = createDevelop({
     image.onload = () => { $('view-message').hidden = true; };
     image.onerror = () => { $('view-message').textContent = t("現像画像を読み込めません"); $('view-message').hidden = false; };
     setPreviewImage(currentPreview);
-    $('navigator-image').src = result.inline_image ?? convertFileSrc(result.path); $('navigator-image').hidden = false;
+    $('navigator-image').src = decoded.src; $('navigator-image').hidden = false;
+    return true;
   },
   saved(id, refreshPreview = true) {
     $('error').hidden = true;
@@ -185,6 +211,20 @@ async function photoMenu(index: number, event: { preventDefault(): void; current
   const ids = selectedPhotos.size ? [...selectedPhotos] : [items[index].id];
   photoExport.menu({ kind: 'photos', ids }, (event.clientX ?? 0) || rect?.left || 0, (event.clientY ?? 0) || rect?.bottom || 0, tile ?? grid);
 }
+$('viewer').addEventListener('contextmenu', event => {
+  const image = $('full-image');
+  const rect = image.getBoundingClientRect();
+  if (!image.hidden && event.clientX >= rect.left && event.clientX < rect.right &&
+      event.clientY >= rect.top && event.clientY < rect.bottom) {
+    void photoMenu(selected, event).catch(showError);
+  }
+});
+$('viewer').addEventListener('keydown', event => {
+  if (event.target === $('viewer') && (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) {
+    void photoMenu(selected, event).catch(showError);
+  }
+});
+
 async function relinkFolder(sourceRoot: number, path: string) {
   if (!await allowChange()) return;
   const dialog = $('relink-dialog');
@@ -202,7 +242,7 @@ async function relinkFolder(sourceRoot: number, path: string) {
   }
   if (!report) return;
   if (report.linked > 0) {
-    readyThumbnails.clear(); thumbnailRequests.clear(); largePreviews.clear(); photoMetadata.clear();
+    libraryImageKey = null; readyThumbnails.clear(); thumbnailRequests.clear(); largePreviews.clear(); photoMetadata.clear();
     if (rootId === sourceRoot) {
       rootId = null; folderPath = null; allFoldersSelected = false;
       $('title').textContent = t('すべての写真');
@@ -256,7 +296,7 @@ async function removeLibraryItems(selection: CatalogRemoval, mode: 'catalog' | '
     aiIds = []; $('ai-selection').hidden = true;
   } catch (error) { failure = error; }
   finally {
-    readyThumbnails.clear(); thumbnailRequests.clear(); largePreviews.clear(); photoMetadata.clear();
+    libraryImageKey = null; readyThumbnails.clear(); thumbnailRequests.clear(); largePreviews.clear(); photoMetadata.clear();
     delete document.body.dataset.catalogBusy;
     $('app-shell').inert = false;
   }
@@ -292,7 +332,7 @@ async function setModule(name: Module) {
   updatePanelButton('sidebar');
   ++viewEpoch; ++qualityEpoch;
   invoke('cancel_preview').catch(showError);
-  $('full-image').hidden = true;
+  if (!isDevelop) $('full-image').hidden = true;
   $('library-inspector').hidden = true;
   document.body.classList.toggle('develop-mode', isDevelop);
   for (const module of ['library', 'develop']) {
@@ -304,10 +344,12 @@ async function setModule(name: Module) {
   $('high-quality').textContent = isDevelop ? t("原寸表示") : t("現像で原本を表示");
   $('high-quality').title = isDevelop ? t("原本由来の画像を原寸で表示") : t("現像画面を開いて原本を読み込む");
   if (isDevelop) review.show('', [], null);
-  await develop.activate(isDevelop, items[selected] || null);
+  const activation = develop.activate(isDevelop, items[selected] || null);
+  if (isDevelop) await setViewMode('loupe', true);
+  await activation;
   updateDevelopPrefetch();
   updatePanelButton('develop-panel');
-  await setViewMode('loupe');
+  if (!isDevelop) await setViewMode('loupe', true);
 }
 $('module-library').onclick = () => setModule('library');
 $('module-develop').onclick = () => setModule('develop');
@@ -747,7 +789,7 @@ async function scan(scanRootIds: (number | null)[] = [null]) {
     for (const id of scanRootIds) {
       const result = await invoke('scan', { rootId: id });
       if (result.indexed || result.missing || result.previews?.generated) {
-        thumbnailRequests.clear(); readyThumbnails.clear(); largePreviews.clear(); photoMetadata.clear();
+        libraryImageKey = null; thumbnailRequests.clear(); readyThumbnails.clear(); largePreviews.clear(); photoMetadata.clear();
       }
       await loadFolders();
       await refresh(items[selected]?.id);
@@ -953,9 +995,9 @@ function updateNavigation() {
   $('film-previous').disabled = index < 0 || previous < 0;
   $('film-next').disabled = index < 0 || (next >= items.length && !hasMore);
 }
-async function setViewMode(mode: ViewMode) {
+async function setViewMode(mode: ViewMode, changeAllowed = false) {
   if (develop.active && mode !== 'loupe') { await setModule('library'); if (develop.active) return; }
-  if (!await allowChange()) return;
+  if (!changeAllowed && !await allowChange()) return;
   if (mode === 'compare' || mode === 'survey') {
     if (selected >= 0) selectedPhotos.add(items[selected].id);
     if (selectedPhotos.size < 2 && items.length) {
@@ -1006,13 +1048,13 @@ async function displayPhoto() {
   const image = $('full-image');
   currentPreview = null;
   const warm=largePreviews.get(`${itemKey(item)}:1600`) || readyThumbnails.get(itemKey(item));
-  if(warm) setPreviewImage(warm);
+  if(warm) setPreviewImage(warm, itemKey(item));
   else {image.removeAttribute('src');image.hidden=true;}
   image.alt = item.name;
   $('view-message').textContent = t("プレビューを読み込み中…");
   $('view-message').hidden = Boolean(warm);
   thumbnail(item).then(preview => {
-    if (token === viewEpoch && !currentPreview && !warm) setPreviewImage(preview);
+    if (token === viewEpoch && !currentPreview && !warm) setPreviewImage(preview, itemKey(item));
   }).catch(() => {});
   try {
     await invoke('cancel_preview');
@@ -1038,12 +1080,13 @@ async function showLarge(item: Photo, bound: number, token = viewEpoch, retried 
       if (token === viewEpoch) return showLarge(item,bound,token,true);
     }).catch(showError);
   };
-  setPreviewImage(result);
+  setPreviewImage(result, itemKey(item));
 }
 async function highQuality() {
   if (develop.active) develop.highQuality();
 }
-function setPreviewImage(preview: Preview) {
+function setPreviewImage(preview: Preview, libraryKey: string | null = null) {
+  libraryImageKey = libraryKey;
   const image = $('full-image');
   const anchor = pendingPhotoAnchor || zoomAnchor;
   pendingPhotoAnchor = null;
@@ -1093,6 +1136,7 @@ function updateNavigatorViewport() {
 function applyZoom() {
   zoomAnchor = null;
   const image = $('full-image');
+  image.classList.toggle('can-pan', Boolean(zoom) && !develop.active && viewMode === 'loupe');
   const area = $('image-area');
   const style = getComputedStyle(area);
   let width = area.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
@@ -1284,7 +1328,37 @@ $('photo-rotate-right').onclick = () => rotatePhoto(1);
 $('photo-label').onchange=()=>setPhotoAttributes({label:$('photo-label').value});
 $('navigator-100').onclick = () => { chooseZoom(1); highQuality(); };
 $('navigator-50').onclick = () => { chooseZoom(.5); highQuality(); };
-$('full-image').onclick = event => {
+const loupeImage = $('full-image'), loupeArea = $('image-area');
+let photoPan: { pointer: number; x: number; y: number; left: number; top: number; view: number } | null = null;
+let draggedPhoto = false;
+loupeImage.onpointerdown = event => {
+  if (event.button !== 0 || !event.isPrimary) return;
+  draggedPhoto = false;
+  if (event.pointerType === 'touch' || !zoom || develop.active || viewMode !== 'loupe') return;
+  photoPan = { pointer:event.pointerId, x:event.clientX, y:event.clientY, left:loupeArea.scrollLeft, top:loupeArea.scrollTop, view:viewEpoch };
+  loupeImage.setPointerCapture(event.pointerId);
+};
+loupeImage.onpointermove = event => {
+  if (!photoPan || event.pointerId !== photoPan.pointer || photoPan.view !== viewEpoch) return;
+  const dx = event.clientX - photoPan.x, dy = event.clientY - photoPan.y;
+  if (!draggedPhoto && Math.hypot(dx,dy) < 3) return;
+  draggedPhoto = true;
+  loupeImage.classList.add('panning');
+  loupeArea.scrollLeft = photoPan.left - dx;
+  loupeArea.scrollTop = photoPan.top - dy;
+  event.preventDefault();
+};
+loupeImage.onlostpointercapture = () => {
+  if (photoPan && photoPan.view !== viewEpoch) draggedPhoto = true;
+  photoPan = null;
+  loupeImage.classList.remove('panning');
+};
+loupeImage.onclick = event => {
+  if (draggedPhoto) {
+    draggedPhoto = false;
+    event.preventDefault();
+    return;
+  }
   const image = $('full-image').getBoundingClientRect();
   const area = $('image-area');
   const viewport = area.getBoundingClientRect();
@@ -1341,6 +1415,7 @@ document.addEventListener('keydown', event => {
   if (!(event.target as Element).closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]')
       && (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey
       && ['c', 'v'].includes(event.key.toLowerCase()) && items[selected]) {
+    if (event.key.toLowerCase() === 'c' && document.getSelection()?.toString()) return;
     event.preventDefault();
     if (!event.repeat && !develop.busy && !$('workspace').inert) {
       if (event.key.toLowerCase() === 'c') void develop.copySettings(items[selected].id);
@@ -1449,7 +1524,7 @@ async function refreshMcpPhotos(ids: number[]) {
   const keepId = items[selected]?.id, selectedIds = [...selectedPhotos];
   const changed = ids.length ? ids : items.map(item => item.id);
   for (const id of changed) developVersions.set(id, (developVersions.get(id) || 0) + 1);
-  thumbnailRequests.clear(); readyThumbnails.clear(); largePreviews.clear(); photoMetadata.clear();
+  libraryImageKey = null; thumbnailRequests.clear(); readyThumbnails.clear(); largePreviews.clear(); photoMetadata.clear();
   await loadFolders();
   await refresh(keepId, true);
   for (const id of selectedIds) if (items.some(item => item.id === id)) selectedPhotos.add(id);

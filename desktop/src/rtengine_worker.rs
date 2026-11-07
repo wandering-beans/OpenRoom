@@ -33,6 +33,8 @@ struct Request {
 #[derive(Serialize, Deserialize)]
 struct Header {
     #[serde(default)]
+    source_size: [u32; 2],
+    #[serde(default)]
     base: Option<BaseInfo>,
     info: Option<RenderInfo>,
     error: Option<String>,
@@ -40,7 +42,7 @@ struct Header {
 }
 enum Response {
     Prepared(Box<WorkingImage>),
-    Rendered(RenderedImage),
+    Rendered(RenderedImage, [u32; 2]),
 }
 type Frame = Result<Response>;
 struct Worker {
@@ -85,7 +87,10 @@ fn read_frame(reader: &mut impl BufRead) -> Frame {
     reader.read_exact(&mut bytes)?;
     let image = image::RgbaImage::from_raw(info.width, info.height, bytes)
         .context("Invalid rtengine frame")?;
-    Ok(Response::Rendered(RenderedImage { image, info }))
+    Ok(Response::Rendered(
+        RenderedImage { image, info },
+        header.source_size,
+    ))
 }
 fn read_base(reader: &mut impl Read, info: BaseInfo, bytes: usize) -> Result<WorkingImage> {
     let count = u64::from(info.width) * u64::from(info.height);
@@ -114,7 +119,8 @@ fn read_base(reader: &mut impl Read, info: BaseInfo, bytes: usize) -> Result<Wor
     Ok(WorkingImage { pixels, info })
 }
 impl Worker {
-    fn start() -> Result<Self> {
+    fn start(import: bool) -> Result<Self> {
+        let _start = engine::timing::start("worker-start");
         #[cfg(target_os = "macos")]
         let (input, child_input) = {
             let (input, child_input) = WorkerInput::pair()?;
@@ -124,7 +130,11 @@ impl Worker {
         #[cfg(target_os = "windows")]
         let child_input = Stdio::piped();
         let mut child = Command::new(crate::media::worker_executable()?)
-            .arg("--rtengine-resident")
+            .arg(if import {
+                "--rtengine-import"
+            } else {
+                "--rtengine-resident"
+            })
             .env("OMP_NUM_THREADS", "4")
             .env("OMP_MAX_ACTIVE_LEVELS", "1")
             .stdin(child_input)
@@ -278,7 +288,7 @@ pub fn render(
         Some(working),
         cancelled,
     )? {
-        Response::Rendered(frame) => Ok(frame),
+        Response::Rendered(frame, _) => Ok(frame),
         Response::Prepared(_) => anyhow::bail!("Unexpected prepared frame"),
     }
 }
@@ -311,7 +321,7 @@ pub fn prepare(
             );
             Ok(*base)
         }
-        Response::Rendered(_) => anyhow::bail!("Unexpected rendered frame"),
+        Response::Rendered(_, _) => anyhow::bail!("Unexpected rendered frame"),
     }
 }
 
@@ -335,23 +345,132 @@ fn request(
             Err(error) => anyhow::bail!("rtengine worker lock failed: {error}"),
         }
     };
+    exchange(&mut worker, request, working, cancelled)
+}
+
+fn exchange(
+    worker: &mut Option<Worker>,
+    request: &mut Request,
+    working: Option<&WorkingImage>,
+    cancelled: &(dyn Fn() -> bool + Sync),
+) -> Frame {
     if worker.is_none() {
-        *worker = Some(Worker::start()?);
+        *worker = Some(Worker::start(false)?);
     }
-    let result = worker
+    let frame = worker
         .as_mut()
         .unwrap()
         .request(request, working, cancelled);
-    if result.is_err() {
+    if frame.is_err() {
         *worker = None;
     }
-    result
+    frame
 }
 
-pub fn run() -> Result<()> {
-    let threads = std::thread::available_parallelism()
-        .map_or(4, usize::from)
-        .min(8);
+// Warm only the selected RAW. Never queue speculative work behind an active slider request.
+pub(super) fn warm_interactive(
+    source: &Path,
+    settings: &Settings,
+    cancelled: &(dyn Fn() -> bool + Sync),
+) -> Result<()> {
+    if !engine::is_native_raw(source) || cancelled() {
+        return Ok(());
+    }
+    let Ok(mut worker) = INTERACTIVE.try_lock() else {
+        return Ok(());
+    };
+    let source = source.canonicalize()?;
+    let metadata = std::fs::metadata(&source)?;
+    let key = (source.clone(), 384, metadata.len(), metadata.modified()?);
+    if worker.as_ref().and_then(|worker| worker.loaded.as_ref()) == Some(&key) {
+        return Ok(());
+    }
+    let mut warmup = Request {
+        prepare: false,
+        source,
+        bound: 384,
+        settings: settings.clone(),
+        base: None,
+        bytes: 0,
+    };
+    exchange(&mut worker, &mut warmup, None, cancelled)?;
+    Ok(())
+}
+
+// Each batch thread owns its decoder and drops it when the batch ends.
+thread_local! {
+    static IMPORT: std::cell::RefCell<Option<Worker>> = const { std::cell::RefCell::new(None) };
+    static IMPORT_THREAD: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+pub fn begin_batch() {
+    IMPORT_THREAD.set(
+        (!cfg!(test) || std::env::var_os("AE_TEST_EXECUTABLE").is_some())
+            && std::env::var_os("AE_BENCH_SEPARATE_WORKERS").is_none(),
+    );
+}
+
+pub fn library(
+    source: &Path,
+    settings: &Settings,
+    cancelled: &(dyn Fn() -> bool + Sync),
+) -> Option<Result<(image::RgbImage, crate::Preview)>> {
+    if !IMPORT_THREAD.get() {
+        return None;
+    }
+    Some(IMPORT.with_borrow_mut(|slot| {
+        let _worker = engine::timing::start("import-pipe-round-trip");
+        ensure!(!cancelled(), "Library preview cancelled");
+        if slot.is_none() {
+            *slot = Some(Worker::start(true)?);
+        }
+        let reply = slot.as_mut().unwrap().request(
+            &mut Request {
+                source: source.to_owned(),
+                bound: 1600,
+                settings: settings.clone(),
+                prepare: false,
+                base: None,
+                bytes: 0,
+            },
+            None,
+            cancelled,
+        );
+        let (frame, size) = match reply {
+            Ok(Response::Rendered(frame, size)) => (frame, size),
+            other => {
+                *slot = None;
+                return Err(other
+                    .err()
+                    .unwrap_or_else(|| anyhow::anyhow!("Missing library pixels")));
+            }
+        };
+        ensure!(
+            size[0] > 0 && size[1] > 0 && frame.info.width.max(frame.info.height) <= 1600,
+            "Invalid library preview dimensions"
+        );
+        let preview = crate::Preview {
+            path: String::new(),
+            width: size[0] as usize,
+            height: size[1] as usize,
+            render_width: frame.info.width as usize,
+            render_height: frame.info.height as usize,
+        };
+        Ok((
+            image::DynamicImage::ImageRgba8(frame.image).into_rgb8(),
+            preview,
+        ))
+    }))
+}
+
+pub fn run(import: bool) -> Result<()> {
+    let threads = if import {
+        4
+    } else {
+        std::thread::available_parallelism()
+            .map_or(4, usize::from)
+            .min(8)
+    };
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(threads)
         .build()?;
@@ -399,6 +518,7 @@ pub fn run() -> Result<()> {
                 .as_ref()
                 .is_none_or(|(previous, _)| previous != &key)
             {
+                let _prepare = engine::timing::start("prepare");
                 let base = match transferred {
                     Some(base) => base,
                     None => engine::prepare(&request.source, request.bound)?,
@@ -407,6 +527,15 @@ pub fn run() -> Result<()> {
             }
             if request.prepare {
                 return Ok(None);
+            }
+            let _render = engine::timing::start("develop");
+            if import {
+                return engine::render(
+                    resident.as_ref().unwrap().1.working(),
+                    &request.settings,
+                    &|| false,
+                )
+                .map(Some);
             }
             resident
                 .as_mut()
@@ -421,6 +550,7 @@ pub fn run() -> Result<()> {
                 serde_json::to_writer(
                     &mut output,
                     &Header {
+                        source_size: [0, 0],
                         base: Some(base.info.clone()),
                         info: None,
                         error: None,
@@ -437,6 +567,10 @@ pub fn run() -> Result<()> {
             }
             Ok(Some(frame)) => (
                 Header {
+                    source_size: {
+                        let base = &resident.as_ref().unwrap().1.working().info;
+                        [base.source_width, base.source_height]
+                    },
                     base: None,
                     bytes: frame.image.as_raw().len(),
                     info: Some(frame.info),
@@ -446,6 +580,7 @@ pub fn run() -> Result<()> {
             ),
             Err(error) => (
                 Header {
+                    source_size: [0, 0],
                     base: None,
                     bytes: 0,
                     info: None,
@@ -454,6 +589,7 @@ pub fn run() -> Result<()> {
                 Vec::new(),
             ),
         };
+        let _write = engine::timing::start("pipe-write");
         serde_json::to_writer(&mut output, &header)?;
         output.write_all(b"\n")?;
         output.write_all(&bytes)?;
@@ -542,6 +678,33 @@ mod tests {
         assert!(read_base(&mut bytes.as_slice(), huge, 16).is_err());
     }
     #[test]
+    #[ignore = "requires a staged AE_TEST_EXECUTABLE, AE_PREVIEW_PHOTO and AE_SECOND_PREVIEW_PHOTO"]
+    fn import_worker_recovers_and_matches_a_fresh_decoder() {
+        let source = PathBuf::from(std::env::var_os("AE_PREVIEW_PHOTO").unwrap());
+        begin_batch();
+        let pixels = || library(&source, &Settings::default(), &|| false).unwrap();
+        let (expected, _) = pixels().unwrap();
+        IMPORT.with_borrow_mut(|slot| {
+            let child = &mut slot.as_mut().unwrap().child;
+            child.kill().unwrap();
+            child.wait().unwrap();
+        });
+        assert!(pixels().is_err());
+        let next = PathBuf::from(std::env::var_os("AE_SECOND_PREVIEW_PHOTO").unwrap());
+        assert!(std::fs::read(&next).unwrap() != std::fs::read(&source).unwrap(), "Expected two distinct RAWs");
+        let (recovered, _) = library(&next, &Settings::default(), &|| false).unwrap().unwrap();
+        let fresh = engine::render(&engine::prepare(&next, 1600).unwrap(), &Settings::default(), &|| false).unwrap();
+        assert_eq!(recovered, image::DynamicImage::ImageRgba8(fresh.image).into_rgb8());
+        assert_eq!(pixels().unwrap().0, expected);
+        assert!(
+            library(&source, &Settings::default(), &|| true)
+                .unwrap()
+                .is_err()
+        );
+        assert_eq!(pixels().unwrap().0, expected);
+    }
+
+    #[test]
     fn framed_reader_rejects_missing_mismatched_and_oversized_frames() {
         for bytes in [
             b"".as_slice(),
@@ -559,6 +722,7 @@ mod tests {
             elapsed_ms: 0.,
         };
         let mut bytes = serde_json::to_vec(&Header {
+            source_size: [1, 1],
             base: None,
             info: Some(info),
             error: None,
@@ -566,7 +730,7 @@ mod tests {
         })
         .unwrap();
         bytes.extend_from_slice(b"\n12345678");
-        let Response::Rendered(frame) = read_frame(&mut std::io::Cursor::new(bytes)).unwrap()
+        let Response::Rendered(frame, _) = read_frame(&mut std::io::Cursor::new(bytes)).unwrap()
         else {
             panic!("Expected rendered frame");
         };
