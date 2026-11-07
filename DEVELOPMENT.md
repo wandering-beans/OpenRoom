@@ -2,6 +2,8 @@
 
 [利用ガイドに戻る](README.md)
 
+READMEと操作ガイドには、利用者がインストールや操作、データの保存に必要な情報を載せます。実装の経緯や検証手順は開発ガイドに記載します。
+
 ## ビルドと起動
 Rust stable、Node.js 22.12以上と対象OSのビルド環境が必要です。デスクトップはTauri 2＋React＋TypeScript＋Viteです。ライブラリの未編集プレビューはmacOSでSwiftとImageIO/Core Imageを使用します。macOSとWindows x64の現像はrtengineとRustの組み合わせで、RAWには同じコミットとパッチで固定したrtengineを使います。Linuxと`--no-default-features`では従来のRAW現像を使います。rawlerは埋め込みプレビューやメタデータの読み込みにも必要なため残しています。HEIF/AVIFは全OSでlibheifを使います。
 
@@ -150,3 +152,27 @@ Tauriの更新用署名と、WindowsのAuthenticode署名、macOSのDeveloper ID
 更新機能に限定したテストは、フロントのビルド後に`node scripts/test-desktop-ui.cjs --updates`、Rustは`cargo test --manifest-path desktop/Cargo.toml updates::tests --locked`で実行できます。後者は一時的なローカルサーバーと使い捨ての署名鍵で、OSの選択・改ざん拒否・版番号とファイル名の照合を確認します。一時アプリの置き換えテストはmacOSで実行します。Windows用の署名作成と配布先の分離は`python scripts/test-package-update.py`で検証できます。
 
 配布ファイル自体を検証する場合は、`OPENROOM_UPDATE_PACKAGE`にパッケージ作成先を指定し、`cargo test --manifest-path desktop/Cargo.toml updates::tests::packaged_release --locked -- --ignored`を実行します。本番公開鍵で署名を確認して一時フォルダへインストールし、アプリのmacOS署名・バージョン・カタログ保持を確認します。
+
+## MCPクライアントの実装
+
+接続手順は[AI連携の設定](MCP.md)を参照してください。
+
+| 用途 | ツール |
+| --- | --- |
+| 状態・画面 | `get_app_state`、`select_photos`、`set_view` |
+| 検索・詳細 | `list_roots`、`list_folders`、`search_photos`、`count_photos`、`get_photo`、`get_metadata`、`get_metadata_facets` |
+| 取り込み | `add_root`、`start_scan`、`start_metadata_index` |
+| 整理 | `update_photo_attributes`、`update_annotations` |
+| 現像 | `get_develop_settings`、`preview_photo`、`update_develop_settings` |
+| プリセット・履歴 | `list_presets`、`save_preset`、`apply_preset`、`list_develop_history`、`restore_develop_history` |
+| 書き出し・進捗 | `start_export`、`get_job`、`cancel_job` |
+
+入力スキーマと説明は`tools/list`で取得できます。検索は1ページ最大200枚で、続きは同じ`query`と返された`next`を`cursor`として渡します。`select_photos`は最大200個のIDを受け取り、読み込み済みページの外にある写真も「AI選択」として表示します。先頭のIDが主選択です。画面の「絞り込みを解除」で通常の一覧へ戻せます。`set_view`は`grid`・`loupe`・`compare`・`survey`・`develop`に対応します。
+
+たとえば、`search_photos`で探し、`preview_photo`の画像を確認してから、`select_photos`、`update_annotations`、`update_develop_settings`、`start_export`の順に操作できます。現像更新では、直前の`get_develop_settings`から得た`revision`を`expected_revision`に指定し、`patch`へ変更する項目だけを渡します。競合時は保存しません。プリセット適用と履歴復元にも現在のrevisionが必要で、どちらも新しい履歴を残します。
+
+読み取りは保存済みデータが対象です。現像の`patch`と評価・タグ・メモの更新では、省略した項目を保持します。配列はフィールド全体の置換です。`preview_photo`に渡す一時的な`patch`は保存せず、JPEGをMCPの画像コンテンツとして返します。`get_app_state`では選択・表示・検索条件と未保存状態も取得できます。
+
+変更と画面操作は直列に処理し、実行前に現像の自動保存を完了させます。未保存のタグ・メモ、保存失敗、モーダル表示中は内容を保持してエラーを返します。画面要求は30秒以内に実行を開始しなければ失効します。変更の保存後に画面更新だけが失敗した場合は、結果に`ui_updated: false`と`ui_error`を返します。応答を失った場合は保存済み状態を確認し、同じ変更を無条件に再送しないでください。
+
+走査・メタデータ索引・一括書き出しはジョブIDを返します。`get_job`で完了まで確認し、結果の写真ごとのエラーも確認してください。索引作成は`query`のルート・フォルダ範囲が対象で、他の絞り込み条件は使いません。書き出しは開始時に対象と現像設定を固定し、指定した既存の絶対パスのディレクトリへ`<元の名前>-<ID>-edited.<拡張子>`で保存します。同名ファイルがあれば、その写真は失敗として返します。中止までに保存した編集や出力は残ります。ジョブの記録は起動中に最大100件保持します。
