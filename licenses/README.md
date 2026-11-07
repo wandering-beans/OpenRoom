@@ -12,7 +12,7 @@
 
 `libintl`のLGPL-2.1本文、OpenMPコンポーネントのApache-2.0＋LLVM例外の本文、Homebrewの本文とGLibのビルド用パッチを追加しました。`libomp`は元のHomebrew定義にMITと書かれていますが、上流の本文に従いApache-2.0 WITH LLVM-exceptionとして記録しています。
 
-macOS版で使用する依存ソース609件の取得元とハッシュは[source-archives.json](source-archives.json)に記録しています。[v0.7.12のリリース](https://github.com/wandering-beans/OpenRoom/releases/tag/v0.7.12)から対応するソース一式を取得できます。
+macOS版で使用する依存ソース609件の取得元とハッシュは[source-archives.json](source-archives.json)に記録しています。[v0.7.13のリリース](https://github.com/wandering-beans/OpenRoom/releases/tag/v0.7.13)から対応するソース一式を取得できます。
 
 `simd_helpers 0.1.0`のMITライセンス本文を収録しています。上流の[ライセンス追加コミット](https://github.com/lu-zero/simd_helpers/commit/82040194cd05affb060bf94d6f19f82a771d07fb)は、パッケージの固定コミットの直後に本文だけを追加しており、コードに変更がないことを確認しました。
 

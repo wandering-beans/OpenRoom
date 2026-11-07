@@ -34,6 +34,8 @@ export interface McpStatus {
 }
 
 export interface Commands {
+  start_workspace: { args: undefined; result: boolean };
+  accept_terms: { args: undefined; result: void };
   get_auto_update: { args: undefined; result: boolean };
   set_auto_update: { args: { enabled: boolean }; result: void };
   take_startup_update_check: { args: undefined; result: boolean };

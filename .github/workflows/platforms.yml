@@ -17,6 +17,8 @@ jobs:
       - name: Install UI test browser
         working-directory: desktop
         run: npx playwright install chromium
+      - name: Check first-launch consent
+        run: node scripts/test-desktop-ui.cjs --terms
       - name: Check public source for local paths and secrets
         run: |
           python scripts/test-privacy-check.py

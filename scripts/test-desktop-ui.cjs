@@ -125,6 +125,11 @@ async function run() {
           invoke: async (command, args = {}) => {
             const call = { command, args, start: performance.now() };
             window.calls.push(call);
+            if (command === 'start_workspace') return !location.search.includes('terms=first') || localStorage.getItem('test-terms') === 'yes';
+            if (command === 'accept_terms') {
+              if (window.failTermsSave) throw Error('Could not save acceptance');
+              localStorage.setItem('test-terms', 'yes'); return;
+            }
             if (command === 'get_auto_update') return localStorage.getItem('test-auto-update') !== 'false';
             if (command === 'set_auto_update') {
               if (window.failAutoUpdateSave) throw Error('Injected preference save failure');
@@ -402,6 +407,26 @@ async function run() {
         event: { listen: async (name, callback) => { window.listeners[name] = callback; return () => {}; } },
       };
     }, {usePhoto:photoSize, developEndpoint:process.env.AE_DEVELOP_ENDPOINT, saveBenchmark: Boolean(process.env.AE_SAVE_BENCH)});
+    if (process.argv.includes('--terms')) {
+      await page.goto(`http://127.0.0.1:${server.address().port}?terms=first&startup=new`);
+      await page.locator('#terms-screen').waitFor();
+      assert.equal(await page.locator('#app-shell').count(), 0);
+      assert.deepEqual(await page.evaluate(() => [...new Set(calls.map(call => call.command))].sort()), ['get_language', 'start_workspace']);
+      await page.locator('#terms-decline').click();
+      assert.equal(await page.evaluate(() => calls.at(-1).command), 'close_window');
+      await page.reload();
+      await page.evaluate(() => { window.failTermsSave = true; });
+      await page.locator('#terms-accept').click();
+      await page.getByRole('alert').waitFor();
+      assert.equal(await page.locator('#app-shell').count(), 0);
+      await page.evaluate(() => { window.failTermsSave = false; });
+      await page.locator('#terms-accept').click();
+      await page.locator('#catalog-setup').waitFor({state:'visible'});
+      await page.reload();
+      await page.locator('#catalog-setup').waitFor({state:'visible'});
+      assert.equal(await page.locator('#terms-screen').count(), 0);
+      assert.deepEqual(failures, []); return;
+    }
     if (process.argv.includes('--updates')) {
       await require('./test-updates-ui.cjs')(page, `http://127.0.0.1:${server.address().port}`);
       assert.deepEqual(failures, []); return;

@@ -15,7 +15,7 @@ pub enum Language {
     En,
 }
 
-fn directory(app: &tauri::AppHandle) -> tauri::Result<PathBuf> {
+pub(crate) fn directory(app: &tauri::AppHandle) -> tauri::Result<PathBuf> {
     Ok(std::env::var_os("AE_DATA_DIR")
         .map(PathBuf::from)
         .unwrap_or(app.path().app_data_dir()?))
@@ -34,6 +34,26 @@ fn save(data: &Path, filename: &str, value: &impl Serialize) -> anyhow::Result<(
     file.persist(data.join(filename))?;
     Ok(())
 }
+// Keep the accepted wording independent of app versions, catalogs and platform line endings.
+fn current_terms() -> [String; 2] {
+    [include_str!("../../TERMS.md"), include_str!("../../DISCLAIMER.md")]
+        .map(|text| text.replace("\r\n", "\n"))
+}
+
+pub(crate) fn terms_accepted(data: &Path) -> anyhow::Result<bool> {
+    match std::fs::read(data.join("accepted-terms.json")) {
+        Ok(bytes) => Ok(serde_json::from_slice::<[String; 2]>(&bytes).ok() == Some(current_terms())),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(error.into()),
+    }
+}
+
+#[tauri::command]
+pub fn accept_terms(app: tauri::AppHandle) -> Reply<()> {
+    let data = directory(&app).map_err(|error| error.to_string())?;
+    save(&data, "accepted-terms.json", &current_terms()).map_err(|error| error.to_string())
+}
+
 pub fn text<'a>(app: &tauri::AppHandle, japanese: &'a str, english: &'a str) -> &'a str {
     if directory(app)
         .map(|path| read(&path) == Language::En)
@@ -105,6 +125,18 @@ pub fn set_auto_update(app: tauri::AppHandle, enabled: bool) -> Reply<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn consent_requires_the_current_wording_and_survives_restart() {
+        let dir = tempfile::tempdir().unwrap();
+        let data = dir.path();
+        assert!(!terms_accepted(data).unwrap());
+        save(data, "accepted-terms.json", &current_terms()).unwrap();
+        assert!(terms_accepted(data).unwrap());
+        save(data, "accepted-terms.json", &["older terms", "older disclaimer"]).unwrap();
+        assert!(!terms_accepted(data).unwrap());
+        std::fs::write(data.join("accepted-terms.json"), b"{").unwrap();
+        assert!(!terms_accepted(data).unwrap());
+    }
     #[test]
     fn automatic_updates_default_on_persist_and_fail_closed_on_invalid_settings() {
         let dir = tempfile::tempdir().unwrap();

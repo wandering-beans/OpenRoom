@@ -4,3 +4,9 @@
 
 /* Mounting points do not add boxes to the existing panel layout. */
 #develop-tools-layout, #develop-left-panels { display: contents; }
+#terms-screen { box-sizing: border-box; width: min(100%, 52rem); height: 100vh; margin: 0 auto; padding: clamp(1rem, 4vw, 3rem); display: flex; flex-direction: column; gap: .9rem; }
+#terms-screen h1, #terms-screen p { margin: 0; }
+.terms-documents { min-height: 0; flex: 1; overflow: auto; padding: 1rem; border: 1px solid #777; border-radius: 6px; }
+.terms-documents pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.65; }
+#terms-screen footer { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: flex-end; }
+#terms-screen button { padding: .5rem 1rem; }

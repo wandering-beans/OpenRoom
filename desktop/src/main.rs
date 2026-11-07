@@ -41,7 +41,9 @@ fn arm_close_guard(guard: State<'_, CloseGuard>) {
 }
 #[tauri::command]
 async fn close_window(app: tauri::AppHandle, guard: State<'_, CloseGuard>) -> Reply<()> {
-    mcp::stop_for_exit(&app).await?;
+    if app.try_state::<mcp::McpState>().is_some() {
+        mcp::stop_for_exit(&app).await?;
+    }
     guard.0.store(false, Ordering::SeqCst);
     app.exit(0);
     Ok(())
@@ -525,6 +527,74 @@ async fn reveal(state: State<'_, AppState>, id: i64) -> Reply<()> {
     })
     .await
 }
+#[derive(Default)]
+struct WorkspaceStart(std::sync::Mutex<()>);
+
+#[tauri::command]
+fn start_workspace(app: tauri::AppHandle, start: State<'_, WorkspaceStart>) -> Reply<bool> {
+    let _lock = start.0.lock().map_err(|error| error.to_string())?;
+    let data = preferences::directory(&app).map_err(|error| error.to_string())?;
+    if !preferences::terms_accepted(&data).map_err(|error| error.to_string())? {
+        return Ok(false);
+    }
+    if app.try_state::<AppState>().is_none() {
+        initialize_workspace(&app, data).map_err(|error| error.to_string())?;
+    }
+    Ok(true)
+}
+
+fn initialize_workspace(app: &tauri::AppHandle, data: PathBuf) -> anyhow::Result<()> {
+    std::fs::create_dir_all(&data)?;
+    let db = match catalogs::startup_catalog(&data).and_then(|path| {
+        if let Some(path) = &path {
+            Catalog::open(path)?;
+        }
+        Ok(path)
+    }) {
+        Ok(path) => path,
+        Err(error) => {
+            let message = preferences::text(app, "選択したカタログを開けませんでした。別のカタログを選択するか、新規作成してください。", "Could not open the selected catalog. Select another catalog or create a new one.");
+            app.dialog().message(format!("{message}\n{error}")).show(|_| {});
+            let default = data.join("catalog.db");
+            default.is_file().then_some(default)
+        }
+    };
+    // Keep the existing command state temporary until the user names their first catalog.
+    let (db, temporary) = match db {
+        Some(path) => (path, None),
+        None => {
+            let directory = tempfile::tempdir()?;
+            (directory.path().join("setup.db"), Some(directory))
+        }
+    };
+    Catalog::open(&db)?;
+    let library = Arc::new(library_previews::Store::new(&db)?);
+    let cache = library.directory.join("working");
+    std::fs::create_dir_all(&cache)?;
+    let renderer = Renderer::new(&cache)?;
+    app.asset_protocol_scope().allow_directory(&library.directory,true)?;
+    prune(&cache);
+    let develop = develop::DevelopState::new()?;
+    app.manage(mcp::McpState::new(data.clone()));
+    app.manage(catalogs::CatalogSelection { data, temporary });
+    app.manage(develop);
+    app.manage(batch_export::ExportState::default());
+    app.manage(AppState {
+        db,
+        cache,
+        library,
+        renderer,
+        scanning: Arc::new(AtomicBool::new(false)),
+        cancel: Arc::new(AtomicBool::new(false)),
+        thumbs: Arc::new(tokio::sync::Semaphore::new(3)),
+        previews: Arc::new(tokio::sync::Semaphore::new(1)),
+        preview_version: Arc::new(AtomicUsize::new(0)),
+        metadata_jobs: Arc::new(tokio::sync::Semaphore::new(1)),
+        metadata_version: Arc::new(AtomicUsize::new(0)),
+    });
+    Ok(())
+}
+
 fn main() {
     if develop::run_worker() {
         return;
@@ -622,61 +692,10 @@ fn main() {
                 let _ = window.emit("close-requested", ());
             }
         })
-        .setup(|app| {
-            let data = std::env::var_os("AE_DATA_DIR")
-                .map(PathBuf::from)
-                .unwrap_or(app.path().app_data_dir()?);
-            std::fs::create_dir_all(&data)?;
-            let db = match catalogs::startup_catalog(&data).and_then(|path| {
-                if let Some(path) = &path {
-                    Catalog::open(path)?;
-                }
-                Ok(path)
-            }) {
-                Ok(path) => path,
-                Err(error) => {
-                    let message = preferences::text(app.handle(), "選択したカタログを開けませんでした。別のカタログを選択するか、新規作成してください。", "Could not open the selected catalog. Select another catalog or create a new one.");
-                    app.dialog().message(format!("{message}\n{error}")).show(|_| {});
-                    let default = data.join("catalog.db");
-                    default.is_file().then_some(default)
-                }
-            };
-            // Keep the existing command state temporary until the user names their first catalog.
-            let (db, temporary) = match db {
-                Some(path) => (path, None),
-                None => {
-                    let directory = tempfile::tempdir()?;
-                    (directory.path().join("setup.db"), Some(directory))
-                }
-            };
-            app.manage(mcp::McpState::new(data.clone()));
-            app.manage(catalogs::CatalogSelection { data, temporary });
-            Catalog::open(&db)?;
-            let library = Arc::new(library_previews::Store::new(&db)?);
-            let cache = library.directory.join("working");
-            std::fs::create_dir_all(&cache)?;
-            let renderer = Renderer::new(&cache)?;
-            app.asset_protocol_scope().allow_directory(&library.directory,true)?;
-            prune(&cache);
-            app.manage(develop::DevelopState::new()?);
-            app.manage(batch_export::ExportState::default());
-            app.manage(AppState {
-                db,
-                cache,
-                library,
-                renderer,
-                scanning: Arc::new(AtomicBool::new(false)),
-                cancel: Arc::new(AtomicBool::new(false)),
-                thumbs: Arc::new(tokio::sync::Semaphore::new(3)),
-                previews: Arc::new(tokio::sync::Semaphore::new(1)),
-                preview_version: Arc::new(AtomicUsize::new(0)),
-                metadata_jobs: Arc::new(tokio::sync::Semaphore::new(1)),
-                metadata_version: Arc::new(AtomicUsize::new(0)),
-            });
-            Ok(())
-        })
+        .manage(WorkspaceStart::default())
         .manage(library::IndexState::default())
         .invoke_handler(tauri::generate_handler![
+            start_workspace, preferences::accept_terms,
             mcp::mcp_ready, mcp::mcp_status, mcp::mcp_configure, mcp::mcp_token, mcp::mcp_rotate,
             mcp::mcp_claim, mcp::mcp_execute, mcp::mcp_complete,
             library::set_photo_attributes, library::metadata_facets, library::index_metadata_batch, library::cancel_metadata_index,
@@ -728,8 +747,8 @@ fn main() {
         .expect("desktop app failed")
         .run(|app, event| {
             if matches!(event, tauri::RunEvent::Exit) {
-                app.state::<mcp::McpState>().shutdown();
-                app.state::<develop::DevelopState>().shutdown();
+                if let Some(state) = app.try_state::<mcp::McpState>() { state.shutdown(); }
+                if let Some(state) = app.try_state::<develop::DevelopState>() { state.shutdown(); }
             }
             if let tauri::RunEvent::ExitRequested { api, .. } = event
                 && app.state::<CloseGuard>().0.load(Ordering::SeqCst)
