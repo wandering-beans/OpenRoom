@@ -1,6 +1,11 @@
 name: macOS release build
 on:
   workflow_dispatch:
+    inputs:
+      audit_dependencies:
+        description: Collect dependency evidence without building
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -16,11 +21,22 @@ jobs:
           cache-dependency-path: desktop/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
       - run: brew install libheif pkgconf cmake ninja gtkmm3 fftw libiptcdata lensfun exiv2 little-cms2 libomp librsvg fmt libraw
+      - run: python3 scripts/audit-macos-dependencies.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dependency-audit
+          path: dist/macos-dependency-audit
+          if-no-files-found: error
       - run: npm ci --prefix desktop
+        if: ${{ !inputs.audit_dependencies }}
       - run: python3 scripts/test-privacy-check.py
+        if: ${{ !inputs.audit_dependencies }}
       - run: python3 scripts/privacy-check.py --tracked
+        if: ${{ !inputs.audit_dependencies }}
       - run: sh scripts/build-desktop.sh dist/OpenRoom.app
+        if: ${{ !inputs.audit_dependencies }}
       - name: Verify notices and scan the complete app
+        if: ${{ !inputs.audit_dependencies }}
         run: |
           for file in LICENSE COPYRIGHT.md DISCLAIMER.md TERMS.md; do
             cmp "$file" "dist/OpenRoom.app/Contents/Resources/licenses/$file"
@@ -29,11 +45,13 @@ jobs:
           codesign --verify --deep --strict dist/OpenRoom.app
           test "$(lipo -archs dist/OpenRoom.app/Contents/MacOS/OpenRoom)" = arm64
       - name: Package manual download
+        if: ${{ !inputs.audit_dependencies }}
         run: |
           version=$(node -p "require('./desktop/package.json').version")
           ditto -c -k --sequesterRsrc --keepParent dist/OpenRoom.app "dist/OpenRoom-$version-macos-arm64.zip"
           shasum -a 256 "dist/OpenRoom-$version-macos-arm64.zip" > dist/MACOS-SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.audit_dependencies }}
         with:
           name: macos-release
           path: |
