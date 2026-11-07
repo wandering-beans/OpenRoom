@@ -199,17 +199,21 @@ async function run() {
             }
             if (command === 'mcp_complete') { mcpReplies.get(args.id)({value:args.value,error:args.error}); return; }
             if (command === 'roots') return [{ id: 1, path: '/photo-library' }, ...(window.addedRoots || [])].filter(root => !window.removedRootIds?.includes(root.id));
-            if (command === 'remove_from_catalog') {
+            if (['remove_from_catalog','plan_disk_removal','trash_photos'].includes(command)) {
               if (window.failRemoval) throw Error('Injected catalog removal failure');
-              const selection = args.selection;
+              const selection = args.selection || {kind:'photos', ids:args.plan.ids};
               const matches = item => selection.kind === 'photos' ? selection.ids.includes(item.id) : item.root_id === selection.root_id && (!selection.path || item.path.startsWith(selection.path + '/'));
-              const removed = items.filter(matches);
+              const matching = items.filter(matches);
+              if (command === 'plan_disk_removal') return {ids:matching.map(i => i.id),generation:window.catalogGeneration};
+              const removed = matching.filter(item => command !== 'trash_photos' || item.id !== window.failTrashId);
               for (const item of removed) {
                 items.splice(items.indexOf(item), 1);
                 recipes.delete(item.id); histories.delete(item.id); annotations.delete(item.id); libraryRevisions.delete(item.id);
               }
               if (selection.kind === 'folder' && !selection.path) (window.removedRootIds ||= []).push(selection.root_id);
               window.catalogGeneration++;
+              if (command === 'trash_photos') return {removed:removed.length,failed:matching.length-removed.length,
+                errors:matching.length === removed.length ? [] : ['Recycle bin unavailable']};
               return removed.length;
             }
             if (command === 'choose_folder') {

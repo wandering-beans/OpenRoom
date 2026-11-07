@@ -49,8 +49,11 @@ dependencies = [
  "anyhow",
  "axum",
  "base64 0.22.1",
+ "dunce",
+ "gio",
  "image",
  "keyring",
+ "objc2-foundation",
  "rand 0.9.5",
  "rayon",
  "reqwest",
@@ -66,6 +69,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-util",
+ "windows 0.61.3",
 ]
 
 [[package]]

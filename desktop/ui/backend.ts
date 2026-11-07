@@ -1,5 +1,6 @@
 import type { Photo, Root, Folder, Query, Page, Cursor, Detail, Preview, PhotoMetadata, Settings, SettingsPatch, Recipe, DevelopedPreview, HistoryRow, ImportReport, PreviewProgress, IndexProgress, Facet, WorkflowRequest, WorkflowResult, SavedRecipe, McpRequest, McpResult } from './models';
 export type Language = 'ja' | 'en';
+export interface TrashPlan { ids: number[]; generation: number }
 export interface AvailableUpdate { version: string; notes: string }
 export type ExportFormat = 'jpeg' | 'png' | 'tiff';
 export type CatalogRemoval = { kind: 'photos'; ids: number[] } | { kind: 'folder'; root_id: number; path: string };
@@ -45,6 +46,8 @@ export interface Commands {
   roots: { args: undefined; result: Root[] };
   folders: { args: undefined; result: Folder[] };
   relink_folder: { args: { rootId: number; folder: string }; result: { linked: number; not_found: number; conflicts: number; unreadable: number; first_id: number | null } | null };
+  plan_disk_removal: { args: { selection: CatalogRemoval }; result: TrashPlan };
+  trash_photos: { args: { plan: TrashPlan }; result: { removed: number; failed: number; errors: string[] } };
   remove_from_catalog: { args: { selection: CatalogRemoval }; result: number };
   search: { args: { query: Query; cursor: Cursor | null }; result: Page };
   count: { args: { query: Query }; result: number };

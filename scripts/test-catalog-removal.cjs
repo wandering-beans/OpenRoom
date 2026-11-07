@@ -6,6 +6,33 @@ module.exports = async function testCatalogRemoval(page) {
   const second = page.locator('.film-tile[title="photo-0001.jpeg"]');
   await first.waitFor();
   await first.click({button:'right'});
+  await page.click('#disk-remove');
+  await page.locator('#discard-dialog[open]').waitFor();
+  assert.match(await page.locator('#discard-message').textContent(), /photo-0000.jpg.*ゴミ箱/);
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(() => calls.filter(c => c.command === 'trash_photos').length), 0);
+
+  await first.click(); await second.click({modifiers:['Shift']});
+  await first.click({button:'right'}); await page.click('#disk-remove');
+  await page.locator('#discard-dialog[open]').waitFor();
+  assert.match(await page.locator('#discard-message').textContent(), /2枚の写真/);
+  await page.evaluate(() => window.failTrashId = 2);
+  await page.click('#discard-dialog button[value="discard"]');
+  await page.waitForFunction(() => document.querySelector('#status').textContent.includes('移動できなかった写真：1枚'));
+  assert.equal(await first.count(), 0);
+  assert.equal(await second.count(), 1);
+  assert.equal(await page.locator('#error').isVisible(), true);
+  assert.match(await page.locator('#error').textContent(), /Recycle bin unavailable/);
+
+  const rootLabel = page.locator('.folder-row[data-folder=""] .folder-label');
+  await rootLabel.click({button:'right'}); await page.click('#disk-remove');
+  await page.locator('#discard-dialog[open]').waitFor();
+  assert.match(await page.locator('#discard-message').textContent(), /登録写真1999枚/);
+  await page.click('#discard-dialog button[value="cancel"]');
+  assert.equal(await page.evaluate(() => calls.filter(c => c.command === 'trash_photos').length), 1);
+
+  await page.reload(); await first.waitFor();
+  await first.click({button:'right'});
   await page.click('#catalog-remove');
   await page.locator('#discard-dialog[open]').waitFor();
   assert.match(await page.locator('#discard-message').textContent(), /原本ファイルは削除しません/);

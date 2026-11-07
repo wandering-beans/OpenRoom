@@ -1,4 +1,4 @@
-//! Remove catalog-owned data without opening or changing originals.
+//! Catalog-only removal and explicitly confirmed recycling of originals.
 use crate::Catalog;
 use anyhow::{Result, ensure};
 use rusqlite::{Transaction, TransactionBehavior, params};
@@ -10,6 +10,170 @@ use std::path::{Component, Path};
 pub enum Removal {
     Photos { ids: Vec<i64> },
     Folder { root_id: i64, path: String },
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct TrashPlan {
+    pub ids: Vec<i64>,
+    pub generation: i64,
+}
+
+#[derive(Default, Serialize)]
+pub struct TrashReport {
+    pub removed: usize,
+    pub failed: usize,
+    pub errors: Vec<String>,
+}
+
+impl Catalog {
+    pub fn plan_trash(&self, selection: &Removal) -> Result<TrashPlan> {
+        let tx = Transaction::new_unchecked(&self.conn, TransactionBehavior::Deferred)?;
+        let generation = tx.query_row("SELECT generation FROM state", [], |r| r.get(0))?;
+        let mut ids = match selection {
+            Removal::Photos { ids } => ids.clone(),
+            Removal::Folder { root_id, path } => {
+                ensure!(
+                    Path::new(path)
+                        .components()
+                        .all(|c| matches!(c, Component::Normal(_))),
+                    "Invalid folder path"
+                );
+                let prefix = format!("{path}{}", std::path::MAIN_SEPARATOR);
+                let mut query = tx.prepare(
+                    "SELECT id FROM items WHERE root_id=? AND (?='' OR substr(path,1,length(?))=?) ORDER BY id",
+                )?;
+                query
+                    .query_map(params![root_id, path, prefix, prefix], |r| r.get(0))?
+                    .collect::<rusqlite::Result<Vec<_>>>()?
+            }
+        };
+        ids.sort_unstable();
+        ids.dedup();
+        tx.commit()?;
+        Ok(TrashPlan { ids, generation })
+    }
+
+    fn original_for_trash(&self, id: i64) -> Result<std::path::PathBuf> {
+        use anyhow::Context;
+        let (root, relative, extension, size, modified, identity, missing) = self.conn.query_row(
+            "SELECT r.id,r.path,i.path,i.extension,i.size,i.modified,i.identity,i.missing
+             FROM items i JOIN roots r ON r.id=i.root_id WHERE i.id=?",
+            [id],
+            |r| {
+                Ok((
+                    crate::Root {
+                        id: r.get(0)?,
+                        path: r.get(1)?,
+                    },
+                    r.get::<_, String>(2)?,
+                    r.get::<_, String>(3)?,
+                    r.get::<_, i64>(4)?,
+                    r.get::<_, i64>(5)?,
+                    r.get::<_, String>(6)?,
+                    r.get::<_, bool>(7)?,
+                ))
+            },
+        )?;
+        let relative = Path::new(&relative);
+        ensure!(
+            relative
+                .components()
+                .all(|c| matches!(c, Component::Normal(_)))
+                && crate::supported(&extension)
+                && relative
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .is_some_and(|e| e.eq_ignore_ascii_case(&extension)),
+            "Invalid catalog photo path"
+        );
+        let path = Path::new(&root.path).join(relative);
+        (|| -> Result<()> {
+            ensure!(
+                !missing
+                    && std::fs::symlink_metadata(&path)?.is_file()
+                    && path.canonicalize()? == path,
+                "Original unavailable or path redirected"
+            );
+            let current = crate::file_record(&root, &path, extension)?;
+            ensure!(
+                (size, modified, identity) == (current.size, current.modified, current.identity),
+                "The original has changed since import; rescan before deleting"
+            );
+            Ok(())
+        })()
+        .with_context(|| relative.display().to_string())?;
+        Ok(path)
+    }
+
+    pub fn trash_photos(
+        &self,
+        plan: &TrashPlan,
+        mut recycle: impl FnMut(&Path) -> Result<()>,
+    ) -> Result<TrashReport> {
+        use anyhow::Context;
+        self.conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS pending_trash_cleanup(id INTEGER PRIMARY KEY CHECK(id=1))",
+        )?;
+        let mut report = TrashReport::default();
+        for &id in &plan.ids {
+            // Commit each successful move before starting another irreversible catalog change.
+            let tx = Transaction::new_unchecked(&self.conn, TransactionBehavior::Immediate)?;
+            let generation: i64 = tx.query_row("SELECT generation FROM state", [], |r| r.get(0))?;
+            if generation != plan.generation + report.removed as i64 {
+                report
+                    .errors
+                    .push("カタログが変更されました。対象を確認してやり直してください。".into());
+                break;
+            }
+            let path = match self.original_for_trash(id) {
+                Ok(path) => path,
+                Err(error) => {
+                    if report.errors.len() < 3 {
+                        report.errors.push(format!("#{id}: {error:#}"));
+                    }
+                    continue;
+                }
+            };
+            ensure!(
+                tx.execute("DELETE FROM items WHERE id=?", [id])? == 1,
+                "Photo not found"
+            );
+            tx.execute("UPDATE state SET generation=generation+1", [])?;
+            // Commit the cleanup request with the row deletion so an interrupted sweep is retried.
+            tx.execute("INSERT OR IGNORE INTO pending_trash_cleanup VALUES(1)", [])?;
+            let moved = recycle(&path).and_then(|()| {
+                ensure!(!path.try_exists()?, "The original is still on disk");
+                Ok(())
+            });
+            if let Err(error) = moved {
+                if report.errors.len() < 3 {
+                    report.errors.push(format!("{}: {error:#}", path.display()));
+                }
+                continue;
+            }
+            tx.commit()
+                .context("原本をゴミ箱に移動しましたが、カタログの更新に失敗しました。")?;
+            report.removed += 1;
+        }
+        report.failed = plan.ids.len() - report.removed;
+        Ok(report)
+    }
+
+    pub fn finish_trash_cleanup(&self, cleanup: impl FnOnce(&Self) -> Result<()>) -> Result<()> {
+        let exists: bool = self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM sqlite_schema WHERE name='pending_trash_cleanup')",
+            [],
+            |r| r.get(0),
+        )?;
+        if exists {
+            let tx = Transaction::new_unchecked(&self.conn, TransactionBehavior::Immediate)?;
+            if tx.execute("DELETE FROM pending_trash_cleanup WHERE id=1", [])? != 0 {
+                cleanup(self)?;
+            }
+            tx.commit()?;
+        }
+        Ok(())
+    }
 }
 
 impl Catalog {
@@ -76,6 +240,73 @@ mod tests {
     use super::*;
     use crate::{Annotation, Query, library::MetadataCandidate};
     use std::sync::atomic::AtomicBool;
+
+    #[test]
+    fn disk_removal_targets_only_registered_unchanged_files_in_the_selected_subtree() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("photos");
+        for folder in ["trip", "trip/nested", "trip-other"] {
+            std::fs::create_dir_all(root.join(folder)).unwrap();
+            std::fs::write(root.join(folder).join("photo.jpg"), b"original").unwrap();
+        }
+        let mut catalog = Catalog::open(dir.path().join("catalog.db")).unwrap();
+        let root_id = catalog.add_root(&root).unwrap().id;
+        catalog.scan(&AtomicBool::new(false), |_| {}).unwrap();
+        std::fs::write(root.join("trip/not-imported.jpg"), b"unregistered").unwrap();
+        std::fs::write(root.join("trip/photo.jpg"), b"replacement original").unwrap();
+        let plan = catalog
+            .plan_trash(&Removal::Folder {
+                root_id,
+                path: "trip".into(),
+            })
+            .unwrap();
+        assert_eq!(plan.ids.len(), 2);
+        let skipped = catalog.trash_photos(&plan, |_| Ok(())).unwrap();
+        assert_eq!((skipped.removed, skipped.failed), (0, 2));
+        let report = catalog
+            .trash_photos(&plan, |path| {
+                assert_eq!(path, root.join("trip/nested/photo.jpg").canonicalize()?);
+                Ok(std::fs::rename(path, dir.path().join("recycled"))?)
+            })
+            .unwrap();
+        assert_eq!((report.removed, report.failed), (1, 1));
+        assert!(root.join("trip/nested").is_dir());
+        assert!(
+            root.join("trip-other/photo.jpg").is_file()
+                && root.join("trip/not-imported.jpg").is_file()
+        );
+        assert_eq!(
+            std::fs::read(root.join("trip/photo.jpg")).unwrap(),
+            b"replacement original"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn disk_removal_rejects_redirected_originals_even_inside_the_root() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("photos");
+        std::fs::create_dir(&root).unwrap();
+        let original = root.join("photo.jpg");
+        std::fs::write(&original, b"photo").unwrap();
+        let mut catalog = Catalog::open(dir.path().join("catalog.db")).unwrap();
+        let root_id = catalog.add_root(&root).unwrap().id;
+        catalog.scan(&AtomicBool::new(false), |_| {}).unwrap();
+        let target = root.join("other.jpg");
+        std::fs::rename(&original, &target).unwrap();
+        std::os::unix::fs::symlink(&target, &original).unwrap();
+        let plan = catalog
+            .plan_trash(&Removal::Folder {
+                root_id,
+                path: String::new(),
+            })
+            .unwrap();
+        let report = catalog
+            .trash_photos(&plan, |_| panic!("followed symlink"))
+            .unwrap();
+        assert_eq!((report.removed, report.failed), (0, 1));
+        assert!(target.exists() && original.is_symlink());
+    }
 
     #[test]
     fn removal_cascades_only_selected_data_and_preserves_originals() {

@@ -10,6 +10,7 @@ mod mcp;
 mod media;
 mod preferences;
 mod updates;
+mod trash;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 mod rtengine_worker;
 mod workflow;
@@ -699,7 +700,7 @@ fn main() {
             mcp::mcp_ready, mcp::mcp_status, mcp::mcp_configure, mcp::mcp_token, mcp::mcp_rotate,
             mcp::mcp_claim, mcp::mcp_execute, mcp::mcp_complete,
             library::set_photo_attributes, library::metadata_facets, library::index_metadata_batch, library::cancel_metadata_index,
-            library::remove_from_catalog,
+            library::remove_from_catalog, library::plan_disk_removal, library::trash_photos,
             library::relink_folder,
             preferences::get_language, preferences::set_language,
             preferences::get_auto_update, preferences::set_auto_update, updates::take_startup_update_check,

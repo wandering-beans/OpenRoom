@@ -54,6 +54,43 @@ pub async fn remove_from_catalog(
     develop: State<'_, crate::develop::DevelopState>,
     selection: advanced_explorer::removal::Removal,
 ) -> Reply<usize> {
+    remove_with_guards(&state, &develop, move |s| {
+        s.library.remove_catalog_items(s, &selection)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn plan_disk_removal(
+    state: State<'_, AppState>,
+    selection: advanced_explorer::removal::Removal,
+) -> Reply<advanced_explorer::removal::TrashPlan> {
+    let db = state.db.clone();
+    work(move || Catalog::open(db)?.plan_trash(&selection)).await
+}
+
+#[tauri::command]
+pub async fn trash_photos(
+    state: State<'_, AppState>,
+    exports: State<'_, crate::batch_export::ExportState>,
+    mcp: State<'_, crate::mcp::McpState>,
+    develop: State<'_, crate::develop::DevelopState>,
+    plan: advanced_explorer::removal::TrashPlan,
+) -> Reply<advanced_explorer::removal::TrashReport> {
+    if exports.is_busy() || mcp.has_running_jobs() {
+        return Err("書き出し・AIの処理が終わってから削除してください。".into());
+    }
+    remove_with_guards(&state, &develop, move |s| {
+        s.library.trash_photos(s, &plan, crate::trash::recycle)
+    })
+    .await
+}
+
+async fn remove_with_guards<T: Send + 'static>(
+    state: &AppState,
+    develop: &crate::develop::DevelopState,
+    remove: impl FnOnce(&AppState) -> anyhow::Result<T> + Send + 'static,
+) -> Reply<T> {
     if state.scanning.swap(true, Ordering::SeqCst) {
         return Err("読み込みを中止するか、完了してからカタログから削除してください。".into());
     }
@@ -62,10 +99,15 @@ pub async fn remove_from_catalog(
     state.preview_version.fetch_add(1, Ordering::SeqCst);
     state.metadata_version.fetch_add(1, Ordering::SeqCst);
     develop.discard_previews().await;
-    let _metadata = state.metadata_jobs.acquire().await.map_err(|error| error.to_string())?;
-    let copied = (*state).clone();
-    work(move || copied.library.remove_catalog_items(&copied, &selection)).await
+    let _metadata = state
+        .metadata_jobs
+        .acquire()
+        .await
+        .map_err(|error| error.to_string())?;
+    let copied = state.clone();
+    work(move || remove(&copied)).await
 }
+
 #[tauri::command]
 pub async fn relink_folder(
     app: tauri::AppHandle,

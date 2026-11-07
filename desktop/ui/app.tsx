@@ -1,7 +1,7 @@
 import { createView } from './components/view';
 import { PhotoTile, FolderTree, Properties, type FolderNode, type ThumbnailLoader } from './components/Library';
 import type { ReactNode, CSSProperties } from 'react';
-import type { CatalogRemoval, Commands } from './backend';
+import type { CatalogRemoval, Commands, TrashPlan } from './backend';
 import type { Detail, Photo, Root, Folder, Cursor, Preview, PhotoMetadata, ViewMode, Module, Focus, Query, UiState, PreviewProgress, ScanProgress, Recipe } from './models';
 interface Anchor extends Focus { clientX: number; clientY: number }
 interface ThumbnailJob { item: Photo; key: string; token: number; alive(): boolean; complete(result: Preview): void; failed(error: unknown): void; repair: boolean }
@@ -156,7 +156,7 @@ async function rotatePhoto(turns: number) {
     for (const button of $('photo-rotation').querySelectorAll('button')) button.disabled = false;
   }
 }
-const photoExport = createPhotoExport({ prepare: allowChange, error: showError, remove: removeFromCatalog, relink: relinkFolder });
+const photoExport = createPhotoExport({ prepare: allowChange, error: showError, remove: removeLibraryItems, relink: relinkFolder });
 const review = createReview({
   preview: largeJob, src: convertFileSrc, key: itemKey,
   activate: id => selectPhoto(items.findIndex(item => item.id === id), { reviewFocus: true }),
@@ -213,24 +213,41 @@ async function relinkFolder(sourceRoot: number, path: string) {
   $('status').textContent = t('再接続 {0}枚・見つからない原本 {1}枚・候補の競合 {2}枚', report.linked, report.not_found, report.conflicts);
   if (report.unreadable) $('status').textContent += t('・読み取り不可 {0}件', report.unreadable);
 }
-async function removeFromCatalog(selection: CatalogRemoval) {
+async function removeLibraryItems(selection: CatalogRemoval, mode: 'catalog' | 'disk') {
   if (!await allowChange()) return;
   const target = selection.kind === 'photos' ? t('{0}枚の写真', selection.ids.length) : t('フォルダー「{0}」内のすべての写真（サブフォルダーを含む）', selection.path || roots.find(root => root.id === selection.root_id)?.path || '');
+  let plan: TrashPlan | undefined;
   confirmingChange = true;
   try {
-    if (!await confirmDiscard(t('{0}をカタログから削除します。原本ファイルは削除しません。プレビュー、現像設定、編集履歴、評価などの登録情報は削除され、元に戻せません。', target), t('カタログから削除'), t('カタログから削除'))) return;
+    if (mode === 'disk') {
+      plan = await invoke('plan_disk_removal', { selection });
+      if (!plan.ids.length) { $('status').textContent = t('削除する登録写真がありません。'); return; }
+      const [firstId] = plan.ids;
+      const selected = selection.kind === 'folder'
+        ? t('フォルダー「{0}」内の登録写真{1}枚（サブフォルダーを含む）', selection.path || roots.find(root => root.id === selection.root_id)?.path || '', plan.ids.length)
+        : plan.ids.length === 1 ? items.find(item => item.id === firstId)?.name || target : target;
+      if (!await confirmDiscard(t('{0}の原本をゴミ箱に移動します。プレビュー、現像設定、編集履歴、評価もカタログから削除します。原本をゴミ箱から戻しても、これらの登録情報は戻りません。', selected), t('ディスクから削除'), t('ゴミ箱に移動'))) return;
+    } else if (!await confirmDiscard(t('{0}をカタログから削除します。原本ファイルは削除しません。プレビュー、現像設定、編集履歴、評価などの登録情報は削除され、元に戻せません。', target), t('カタログから削除'), t('カタログから削除'))) return;
   } finally { confirmingChange = false; }
   document.body.dataset.catalogBusy = 'true';
   $('app-shell').inert = true;
   ++epoch; ++selectionEpoch; ++viewEpoch; ++qualityEpoch;
   clearTimeout(searchTimer);
   thumbnailJobs.length = 0;
-  let failure: unknown, count: number | undefined;
+  let failure: unknown, status = '', problems = '';
   try {
     await developSelectionTask;
     await develop.select(null);
     await invoke('set_develop_prefetch', { ids: [] });
-    count = await invoke('remove_from_catalog', { selection });
+    if (plan) {
+      $('status').textContent = t('ゴミ箱に移動しています…');
+      const report = await invoke('trash_photos', { plan });
+      status = t('ゴミ箱に移動した写真：{0}枚、移動できなかった写真：{1}枚', report.removed, report.failed);
+      problems = report.errors.map(errorText).join('\n');
+    } else {
+      const count = await invoke('remove_from_catalog', { selection });
+      status = t('{0}枚をカタログから削除しました。原本は残しています。', count);
+    }
     if (selection.kind === 'folder') {
       allFoldersSelected = false;
       rootId = null; folderPath = null;
@@ -246,7 +263,8 @@ async function removeFromCatalog(selection: CatalogRemoval) {
   await loadFolders();
   await refresh(null, true);
   if (failure) throw failure;
-  $('status').textContent = t('{0}枚をカタログから削除しました。原本は残しています。', count ?? 0);
+  $('status').textContent = status;
+  if (problems) showError(problems);
 }
 async function setModule(name: Module) {
   const isDevelop = name === 'develop';

@@ -8,7 +8,7 @@ interface ExportActions {
   prepare(): Promise<boolean>;
   error(failure: unknown): void;
   relink(rootId: number, path: string): Promise<void>;
-  remove(selection: CatalogRemoval): Promise<void>;
+  remove(selection: CatalogRemoval, mode: 'catalog' | 'disk'): Promise<void>;
 }
 interface PhotoExportHandle {
   readonly busy: boolean;
@@ -175,7 +175,8 @@ function PhotoExport({ prepare, error, remove, relink, ref }: ExportActions & { 
         closeMenu();
         void relink(selection.root_id, selection.path).catch(error).finally(focusPhoto);
       }}>{t('見つからない原本を検索…')}</button>}
-      <button id="catalog-remove" role="menuitem" onClick={() => { closeMenu(); void remove(selection).catch(error).finally(focusPhoto); }}>{t('カタログから削除…')}</button>
+      <button id="catalog-remove" role="menuitem" onClick={() => { closeMenu(); void remove(selection, 'catalog').catch(error).finally(focusPhoto); }}>{t('カタログから削除…')}</button>
+      <button id="disk-remove" role="menuitem" onClick={() => { closeMenu(); void remove(selection, 'disk').catch(error).finally(focusPhoto); }}>{t('ディスクから削除…')}</button>
     </div>
     <dialog id="export-dialog" ref={dialog} aria-labelledby="export-title" onClose={focusPhoto}
       onCancel={event => { if (phaseRef.current !== 'idle') event.preventDefault(); }}>

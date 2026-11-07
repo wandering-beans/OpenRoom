@@ -357,7 +357,7 @@ mod tests {
 
     #[test]
     fn copied_tree_reconnects_after_cancellation_and_survives_reopening() -> Result<()> {
-        use std::fs::File;
+        use crate::removal::Removal;
         let temp = tempfile::tempdir()?;
         let old = temp.path().join("old");
         let search = temp.path().join("disk");
@@ -371,8 +371,12 @@ mod tests {
         let root = catalog.add_root(&old)?;
         catalog.scan(&AtomicBool::new(false), |_| {})?;
         let id = catalog.page(&Query::default(), 1, None)?.items[0].id;
+        let selection = Removal::Photos { ids: vec![id] };
+        let old_plan = catalog.plan_trash(&selection)?;
         fs::copy(old.join(relative), moved.join(relative))?;
-        File::open(moved.join(relative))?
+        fs::OpenOptions::new()
+            .write(true)
+            .open(moved.join(relative))?
             .set_modified(fs::metadata(old.join(relative))?.modified()?)?;
         fs::remove_dir_all(&old)?;
         assert!(
@@ -393,6 +397,16 @@ mod tests {
             catalog.source_path(id)?,
             moved.join(relative).canonicalize()?
         );
+        let stale = catalog.trash_photos(&old_plan, |_| {
+            panic!("deleted a relinked photo without confirming its new location")
+        })?;
+        assert_eq!(stale.removed, 0);
+        let confirmed = catalog.plan_trash(&selection)?;
+        let report = catalog.trash_photos(&confirmed, |path| {
+            assert_eq!(path, moved.join(relative).canonicalize()?);
+            Ok(fs::rename(path, temp.path().join("recycled"))?)
+        })?;
+        assert_eq!((report.removed, report.failed), (1, 0));
         Ok(())
     }
 

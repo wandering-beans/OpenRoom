@@ -114,10 +114,11 @@ fn allocated(path: &Path) -> Result<u64> {
 }
 
 fn files(directory: &Path, output: &mut Vec<PathBuf>) -> Result<()> {
-    if !directory.exists() {
-        return Ok(());
-    }
-    let metadata = std::fs::symlink_metadata(directory)?;
+    let metadata = match std::fs::symlink_metadata(directory) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error.into()),
+    };
     ensure!(
         metadata.is_dir() && !metadata.file_type().is_symlink(),
         "プレビューの保存領域にシンボリックリンクは使えません。"
@@ -255,11 +256,11 @@ impl Store {
         let working = directory.join("working");
         if working.exists() {
             ensure!(
-                !std::fs::symlink_metadata(working)?.file_type().is_symlink(),
+                !std::fs::symlink_metadata(&working)?.file_type().is_symlink(),
                 "作業領域にシンボリックリンクは使えません。"
             );
         }
-        Ok(Self {
+        let store = Self {
             directory,
             ready: Default::default(),
             usage: Mutex::new(usage),
@@ -270,7 +271,14 @@ impl Store {
             avif: AtomicBool::new(encoder_available),
             encoder_available,
             protected: Mutex::new(None),
-        })
+        };
+        if db.is_file() {
+            let catalog = Catalog::open(db)?;
+            if let Err(err) = store.finish_trash_cleanup(&catalog, &working) {
+                eprintln!("Pending trash preview cleanup: {err:#}");
+            }
+        }
+        Ok(store)
     }
 
     pub fn set_avif_supported(&self, supported: bool) {
@@ -518,33 +526,79 @@ impl Store {
         )
     }
 
-    pub fn remove_catalog_items(&self, state: &AppState, selection: &advanced_explorer::removal::Removal) -> Result<usize> {
+    pub fn remove_catalog_items(
+        &self,
+        state: &AppState,
+        selection: &advanced_explorer::removal::Removal,
+    ) -> Result<usize> {
         let _workspace = self.workspace.write().unwrap();
         let mut usage = self.usage.lock().unwrap();
         Catalog::open(&state.db)?.remove_catalog_items(selection, |catalog| {
-            let mut retained = std::collections::HashSet::new();
-            for record in catalog.library_preview_records()? {
-                if let Some(data) = record.data {
-                    let images: Images = serde_json::from_str(&data)?;
-                    ensure!(["avif", "jpg"].contains(&images.extension.as_str()), "Invalid preview format");
-                    for bound in [384, 1600] {
-                        retained.insert(self.path(&record.stamp, &images.extension, bound, &images.render_version));
-                    }
+            self.clean_removed_previews(&state.cache, catalog, &mut usage)
+        })
+    }
+
+    pub fn trash_photos(
+        &self,
+        state: &AppState,
+        plan: &advanced_explorer::removal::TrashPlan,
+        recycle: impl FnMut(&Path) -> Result<()>,
+    ) -> Result<advanced_explorer::removal::TrashReport> {
+        let _workspace = self.workspace.write().unwrap();
+        let catalog = Catalog::open(&state.db)?;
+        let result = catalog.trash_photos(plan, recycle);
+        let cleanup = self.finish_trash_cleanup(&catalog, &state.cache);
+        let mut report = result?;
+        if let Err(error) = cleanup {
+            report.errors.push(error.to_string());
+        }
+        Ok(report)
+    }
+
+    fn finish_trash_cleanup(&self, catalog: &Catalog, cache: &Path) -> Result<()> {
+        catalog.finish_trash_cleanup(|catalog| {
+            self.clean_removed_previews(cache, catalog, &mut self.usage.lock().unwrap())
+        }).map_err(|err| anyhow::anyhow!("プレビューを削除できませんでした。次回このカタログを開くときに再試行します。{err:#}"))
+    }
+
+    fn clean_removed_previews(
+        &self,
+        cache: &Path,
+        catalog: &Catalog,
+        usage: &mut Usage,
+    ) -> Result<()> {
+        ensure!(!std::fs::symlink_metadata(&self.directory)?.file_type().is_symlink(),
+            "プレビュー保存先にシンボリックリンクは使えません。");
+        let mut retained = std::collections::HashSet::new();
+        for record in catalog.library_preview_records()? {
+            if let Some(data) = record.data {
+                let images: Images = serde_json::from_str(&data)?;
+                ensure!(
+                    ["avif", "jpg"].contains(&images.extension.as_str()),
+                    "Invalid preview format"
+                );
+                for bound in [384, 1600] {
+                    retained.insert(self.path(
+                        &record.stamp,
+                        &images.extension,
+                        bound,
+                        &images.render_version,
+                    ));
                 }
             }
-            let mut paths = Vec::new();
-            for folder in ["thumbnails", "large"] {
-                files(&self.directory.join(folder), &mut paths)?;
-            }
-            // Legacy working files have no photo ownership index; clear this disposable cache too.
-            files(&state.cache, &mut paths)?;
-            for path in paths.into_iter().filter(|path| !retained.contains(path)) {
-                Self::remove(&mut usage, &path)?;
-            }
-            self.early.lock().unwrap().clear();
-            *self.protected.lock().unwrap() = None;
-            Ok(())
-        })
+        }
+        let mut paths = Vec::new();
+        for folder in ["thumbnails", "large"] {
+            files(&self.directory.join(folder), &mut paths)?;
+        }
+        // Legacy working files have no photo ownership index; clear this disposable cache too.
+        files(cache, &mut paths)?;
+        for path in paths.into_iter().filter(|path| !retained.contains(path)) {
+            Self::remove(usage, &path)?;
+        }
+        self.early.lock().unwrap().clear();
+        *self.protected.lock().unwrap() = None;
+        Ok(())
     }
 
     fn retains_thumbnail_only(&self, catalog: &Catalog, id: i64) -> Result<bool> {
@@ -1331,6 +1385,109 @@ mod tests {
         files(&state.library.directory, &mut paths).unwrap();
         assert!(paths.is_empty());
         assert_eq!(state.library.usage.lock().unwrap().bytes, 0);
+    }
+
+    #[test]
+    fn disk_removal_cleans_only_recycled_photos_even_with_a_partial_failure() {
+        use advanced_explorer::removal::Removal;
+        let (dir, state, _root) = fixture();
+        prepare_import(&state, None, |_| {}).unwrap();
+        let mut catalog = Catalog::open(&state.db).unwrap();
+        let ids = catalog.preview_items(None, 0).unwrap();
+        let paths: Vec<_> = ids
+            .iter()
+            .map(|&id| {
+                [384, 1600].map(|bound| {
+                    state
+                        .library
+                        .lookup(&catalog, id, bound)
+                        .unwrap()
+                        .unwrap()
+                        .path
+                })
+            })
+            .collect();
+        let originals: Vec<_> = ids
+            .iter()
+            .map(|&id| catalog.source_path(id).unwrap())
+            .collect();
+        for &id in &ids {
+            catalog
+                .save_develop_recipe(id, r#"{"version":1,"exposure":1}"#, 0)
+                .unwrap();
+        }
+        let plan = catalog
+            .plan_trash(&Removal::Folder {
+                root_id: catalog.roots().unwrap()[0].id,
+                path: String::new(),
+            })
+            .unwrap();
+        let report = state
+            .library
+            .trash_photos(&state, &plan, |path| {
+                if path == originals[1] {
+                    anyhow::bail!("Recycle bin unavailable");
+                }
+                Ok(std::fs::rename(path, dir.path().join("recycled-photo"))?)
+            })
+            .unwrap();
+        assert_eq!((report.removed, report.failed), (1, 1));
+        assert!(report.errors[0].contains("Recycle bin unavailable"));
+        assert!(!originals[0].exists() && originals[1].is_file());
+        assert!(
+            catalog.detail(ids[0]).is_err() && catalog.library_preview(ids[0]).unwrap().is_none()
+        );
+        assert_eq!(catalog.develop_recipe(ids[1]).unwrap().1, 1);
+        assert!(paths[0].iter().all(|p| !Path::new(p).exists()));
+        assert!(paths[1].iter().all(|p| Path::new(p).is_file()));
+        assert!(catalog.library_preview(ids[1]).unwrap().is_some());
+        assert_eq!(catalog.roots().unwrap().len(), 1);
+        let stale = state
+            .library
+            .trash_photos(&state, &plan, |_| panic!("stale plan recycled an original"))
+            .unwrap();
+        assert_eq!(stale.removed, 0);
+    }
+
+    #[test]
+    fn disk_removal_retries_an_interrupted_preview_cleanup_on_reopen() {
+        use advanced_explorer::removal::Removal;
+        let (dir, state, _) = fixture();
+        prepare_import(&state, None, |_| {}).unwrap();
+        let catalog = Catalog::open(&state.db).unwrap();
+        let id = catalog.preview_items(None, 0).unwrap()[0];
+        let preview = PathBuf::from(
+            state
+                .library
+                .lookup(&catalog, id, 384)
+                .unwrap()
+                .unwrap()
+                .path,
+        );
+        let plan = catalog
+            .plan_trash(&Removal::Photos { ids: vec![id] })
+            .unwrap();
+        assert_eq!(
+            catalog
+                .trash_photos(&plan, |p| Ok(std::fs::rename(
+                    p,
+                    dir.path().join("recycled")
+                )?))
+                .unwrap()
+                .removed,
+            1
+        );
+        assert!(
+            catalog
+                .finish_trash_cleanup(|_| anyhow::bail!("injected failure"))
+                .is_err()
+        );
+        assert!(preview.exists());
+        Store::new(&state.db).unwrap();
+        assert!(!preview.exists());
+        catalog
+            .finish_trash_cleanup(|_| panic!("cleanup repeated after success"))
+            .unwrap();
     }
 
     #[cfg(unix)]
