@@ -1,0 +1,6674 @@
+{
+  "baseline": "0998eca8557e0a11cc342b19754f8e3cd260d7d6",
+  "candidate": "680b0712bd22631b94d917983ea81f797541e541",
+  "goal": {
+    "distinctRaw": 1000,
+    "timeBudgetSeconds": 900,
+    "libraryBounds": [
+      384,
+      1600
+    ],
+    "prefetchedControlBudgetMs": 300,
+    "preparedInputBudgetMs": 100,
+    "verified1000": false
+  },
+  "dateJST": "2026-11-08",
+  "device": {
+    "cpu": "AMD Ryzen 7 8845HS w/ Radeon 780M Graphics",
+    "logicalCPUs": 16,
+    "memoryBytes": 33600122880,
+    "gpu": [
+      "NVIDIA RTX 4060 Laptop 32.0.16.2101",
+      "AMD Radeon 780M 32.0.11038.5002"
+    ],
+    "windows": "11 Home 10.0.26300",
+    "storage": "C: MTFDKBA1T0QFM-1BD1AABGB NVMe SSD"
+  },
+  "inputs": [
+    {
+      "name": "0-Canon - EOS 350D - RAW (3_2).CR2",
+      "sha256": "8cbb84e04d93b005fe082da9c954122a612b5281af00aa088d767850f343fd38",
+      "bytes": 10586467,
+      "dimensions": [
+        3466,
+        2306
+      ]
+    },
+    {
+      "name": "1-Canon - EOS D30 - RAW (3_2).CRW",
+      "sha256": "4ee482f2b6f9f1a8d370703ea04e9f2abaa49356973a7f56b229af93a78e8a2e",
+      "bytes": 2993260,
+      "dimensions": [
+        2168,
+        1440
+      ]
+    },
+    {
+      "name": "2-Canon - EOS M50 - CRAW (3_2).CR3",
+      "sha256": "15384b775867ec4c42b11882837f1e368cedc0561832ffab271221e6bb80be4c",
+      "bytes": 20948692,
+      "dimensions": [
+        6016,
+        4012
+      ]
+    },
+    {
+      "name": "3-Fujifilm - X-T2 - 14bit 14bit compressed (3_2).RAF",
+      "sha256": "f756ad5be551a8b3e1b503a8a6f7e8e637fba519c0b0f8c79dd58e94b0287602",
+      "bytes": 23346352,
+      "dimensions": [
+        6018,
+        4012
+      ]
+    },
+    {
+      "name": "4-Hasselblad - H3D - 16bit (4_3).3FR",
+      "sha256": "34fdb93cb215e4f419ae0f7252c57b881fa381003124b4f9c143d27741f211b3",
+      "bytes": 53594112,
+      "dimensions": [
+        7239,
+        5436
+      ]
+    },
+    {
+      "name": "5-Hasselblad - H4D-40 - 16bit (4_3).fff",
+      "sha256": "1bfe64fa6fc07453ae74ed50c2f817d77a12a310b34a7f9893d32dd03f8c2ad0",
+      "bytes": 73144108,
+      "dimensions": [
+        7319,
+        5494
+      ]
+    },
+    {
+      "name": "6-Leica - D-LUX 5 - 16_9.RWL",
+      "sha256": "4665b97c0ac978d65d5d48ae506d26b835c91b473996e040f30fa7abb010df79",
+      "bytes": 11066368,
+      "dimensions": [
+        3976,
+        2242
+      ]
+    },
+    {
+      "name": "7-Nikon - COOLPIX P1000 - 12bit 12bit uncompressed (4_3).NRW",
+      "sha256": "1d9470ee083f914e51aa0be782161b432f27f87dbef551a59ec435f5dbc289dd",
+      "bytes": 26472704,
+      "dimensions": [
+        4616,
+        3462
+      ]
+    },
+    {
+      "name": "8-Nikon - D2H - 12bit 12bit compressed (Lossy (type 1)) (3_2).NEF",
+      "sha256": "155edb938f884ea7372ce98d4ff5f965c3e413b43b95bc9923da6e92082cf914",
+      "bytes": 3236017,
+      "dimensions": [
+        2474,
+        1640
+      ]
+    },
+    {
+      "name": "9-Olympus - E-3 - 16bit (4_3).ORF",
+      "sha256": "ba4605bbd9fe9b77971da444bcdb1698904c0ad4ebdf9dd42dd45ab255f3f6d4",
+      "bytes": 9664842,
+      "dimensions": [
+        3712,
+        2792
+      ]
+    },
+    {
+      "name": "10-Panasonic - DMC-FZ28 - 16_9.RW2",
+      "sha256": "b58564eb3cd148e6282aeba0b104506fa021ce905a3040f15b6ef1cbd6142fff",
+      "bytes": 9274368,
+      "dimensions": [
+        3656,
+        2066
+      ]
+    },
+    {
+      "name": "11-Pentax - K10D - 12bit 12bit compressed (3_2).PEF",
+      "sha256": "e35ae4154a468be3154f5f462e884ba5941f010d3e8f23d347fbec14809f44d3",
+      "bytes": 9561139,
+      "dimensions": [
+        3888,
+        2608
+      ]
+    },
+    {
+      "name": "12-Phase One - P65+ - IIQ S (4_3).IIQ",
+      "sha256": "69fc81e92360a45920158f7d6238eed0cd6260cd32aa4a0beec2ac79273add80",
+      "bytes": 11591029,
+      "dimensions": [
+        4482,
+        3356
+      ]
+    },
+    {
+      "name": "13-Samsung - NX500 - 12bit 12bit normal compression (3_2).SRW",
+      "sha256": "156e43118811bcecb6fcc600b5f41ee1773c4f00b6a5b2dd72e177e35f6596ab",
+      "bytes": 20750652,
+      "dimensions": [
+        6488,
+        4328
+      ]
+    },
+    {
+      "name": "14-Sony - DSC-F828 - 4_3.SRF",
+      "sha256": "07739f94bcab0c7e198d418ac65172d0dce04bb84a7683ecffd0bfe4b32f6d79",
+      "bytes": 17393344,
+      "dimensions": [
+        3279,
+        2452
+      ]
+    },
+    {
+      "name": "15-Sony - DSC-R1 - 14bit 14bit uncompressed (3_2).SR2",
+      "sha256": "921c5f2513dd1671a9089e73fc778fc3573bc4cb70a3a555d0414661d0e62274",
+      "bytes": 21035488,
+      "dimensions": [
+        3916,
+        2600
+      ]
+    },
+    {
+      "name": "16-Sony - NEX-6 - 12bit 12bit compressed (3_2).ARW",
+      "sha256": "bf4c6d21136aa4fd626212fe72b962b6404e3fca45cdc3b6afbed8e73fee2cf8",
+      "bytes": 16646144,
+      "dimensions": [
+        4912,
+        3268
+      ]
+    },
+    {
+      "name": "17-01.NEF",
+      "sha256": "986fbdd73da547b23da8a5d9a086f2a09719a73c540498c8c3ce4435f10aff52",
+      "bytes": 32497291,
+      "dimensions": [
+        6056,
+        4032
+      ]
+    },
+    {
+      "name": "18-02.NEF",
+      "sha256": "897320acd08004149939330fe26baa7507a23570dec81398ac370b6c1e59848f",
+      "bytes": 34121193,
+      "dimensions": [
+        6056,
+        4032
+      ]
+    },
+    {
+      "name": "19-03.NEF",
+      "sha256": "db8543821cf9b5336c2436620df227e5f5b5ef9f3c9ba91b1d101355aef8e97c",
+      "bytes": 35399381,
+      "dimensions": [
+        6056,
+        4032
+      ]
+    },
+    {
+      "name": "20-04.NEF",
+      "sha256": "6011b6a56f2fb61a69cd64b940d4f5d15c68123a449cbaa5a1bac85cb7394a66",
+      "bytes": 32291685,
+      "dimensions": [
+        6056,
+        4032
+      ]
+    },
+    {
+      "name": "21-05.NEF",
+      "sha256": "ed26e6402247c7471b2e91ba6f4ebfaf003b63513cfbef1e36eb83883f595437",
+      "bytes": 33638188,
+      "dimensions": [
+        6056,
+        4032
+      ]
+    },
+    {
+      "name": "22-06.NEF",
+      "sha256": "362448d8551ad054f3339e4ee7f032c5c468f7e014d34c09de81e70b1fc1efaa",
+      "bytes": 33944605,
+      "dimensions": [
+        6056,
+        4032
+      ]
+    }
+  ],
+  "cases": {
+    "before-results": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 38968.4827,
+          "firstGridMs": 1680.300000000745,
+          "importEndBytes": 4423888,
+          "peakBytes": 40372835,
+          "peakAppWorkerRss": 2067263488,
+          "finalBytes": 4423888,
+          "warmMs": 13.440600000001723,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422605,
+          "decoded": null
+        },
+        {
+          "index": 1,
+          "avif": false,
+          "ms": 31448.242800000007,
+          "firstGridMs": 1232.4000000003725,
+          "importEndBytes": 9572432,
+          "peakBytes": 43224585,
+          "peakAppWorkerRss": 2112024576,
+          "finalBytes": 9572432,
+          "warmMs": 13.815199999982724,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 9,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571149,
+          "decoded": null
+        },
+        {
+          "index": 2,
+          "avif": false,
+          "ms": 31433.8413,
+          "firstGridMs": 1220.9000000003725,
+          "importEndBytes": 9572428,
+          "peakBytes": 42806501,
+          "peakAppWorkerRss": 2111643648,
+          "finalBytes": 9572428,
+          "warmMs": 12.67359999998007,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 9,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571145,
+          "decoded": null
+        },
+        {
+          "index": 3,
+          "avif": true,
+          "ms": 38160.57019999999,
+          "firstGridMs": 1568.9000000003725,
+          "importEndBytes": 4423885,
+          "peakBytes": 38359120,
+          "peakAppWorkerRss": 2115964928,
+          "finalBytes": 4423885,
+          "warmMs": 14.807300000014948,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 9,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422602,
+          "decoded": null
+        }
+      ],
+      "navigation": [],
+      "trials": []
+    },
+    "final-import": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 28065.1066,
+          "firstGridMs": 1506.5,
+          "importEndBytes": 35542509,
+          "peakBytes": 40323529,
+          "peakAppWorkerRss": 2393513984,
+          "finalBytes": 35542509,
+          "warmMs": 22.74829999999929,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422619,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": false,
+          "ms": 21158.826699999998,
+          "firstGridMs": 1301.9000000003725,
+          "importEndBytes": 40691035,
+          "peakBytes": 44782700,
+          "peakAppWorkerRss": 2739560448,
+          "finalBytes": 40691035,
+          "warmMs": 20.634899999997288,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 9,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571145,
+          "decoded": 46
+        },
+        {
+          "index": 2,
+          "avif": false,
+          "ms": 21076.298799999997,
+          "firstGridMs": 1239.2999999988824,
+          "importEndBytes": 40691038,
+          "peakBytes": 43241776,
+          "peakAppWorkerRss": 2477633536,
+          "finalBytes": 40691038,
+          "warmMs": 21.377800000002026,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 9,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571148,
+          "decoded": 46
+        },
+        {
+          "index": 3,
+          "avif": true,
+          "ms": 27932.353199999998,
+          "firstGridMs": 1532.4000000003725,
+          "importEndBytes": 35542537,
+          "peakBytes": 39342237,
+          "peakAppWorkerRss": 2676203520,
+          "finalBytes": 35542537,
+          "warmMs": 20.590400000000955,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 9,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422647,
+          "decoded": 46
+        }
+      ],
+      "navigation": [],
+      "trials": []
+    },
+    "ship-import": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 27665.179,
+          "firstGridMs": 1534.4000000003725,
+          "importEndBytes": 4422605,
+          "samples": 252,
+          "skippedSamples": 0,
+          "peakBytes": 40323515,
+          "peakAppWorkerRss": 2632052736,
+          "finalBytes": 35542495,
+          "warmMs": 18.497300000002724,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422605,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": false,
+          "ms": 19951.3779,
+          "firstGridMs": 1239.7000000011176,
+          "importEndBytes": 9571132,
+          "samples": 182,
+          "skippedSamples": 0,
+          "peakBytes": 43241760,
+          "peakAppWorkerRss": 2728812544,
+          "finalBytes": 40691022,
+          "warmMs": 20.802300000003015,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 10,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571132,
+          "decoded": 46
+        },
+        {
+          "index": 2,
+          "avif": false,
+          "ms": 20493.585700000003,
+          "firstGridMs": 1208.6000000014901,
+          "importEndBytes": 9571157,
+          "samples": 188,
+          "skippedSamples": 0,
+          "peakBytes": 44216564,
+          "peakAppWorkerRss": 2572931072,
+          "finalBytes": 40691047,
+          "warmMs": 22.835800000000745,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571157,
+          "decoded": 46
+        },
+        {
+          "index": 3,
+          "avif": true,
+          "ms": 27573.251000000004,
+          "firstGridMs": 1517.2000000011176,
+          "importEndBytes": 4422636,
+          "samples": 251,
+          "skippedSamples": 1,
+          "peakBytes": 40323546,
+          "peakAppWorkerRss": 2696364032,
+          "finalBytes": 35542526,
+          "warmMs": 23.983600000006845,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422636,
+          "decoded": 46
+        }
+      ],
+      "navigation": [],
+      "trials": []
+    },
+    "auto-import": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14846.852400000002,
+          "firstGridMs": 1575.800000000745,
+          "importEndBytes": 4422602,
+          "freeBytesBeforeLaunch": 16866246656,
+          "samples": 137,
+          "skippedSamples": 0,
+          "peakBytes": 35392170,
+          "peakAppWorkerRss": 4076609536,
+          "finalBytes": 35542492,
+          "warmMs": 23.248100000000704,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 23,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422602,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": false,
+          "ms": 10482.7974,
+          "firstGridMs": 1298.699999999255,
+          "importEndBytes": 9571147,
+          "freeBytesBeforeLaunch": 17314349056,
+          "samples": 97,
+          "skippedSamples": 0,
+          "peakBytes": 35903229,
+          "peakAppWorkerRss": 3671924736,
+          "finalBytes": 36434393,
+          "warmMs": 22.031300000002375,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 23,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571147,
+          "decoded": 46
+        },
+        {
+          "index": 2,
+          "avif": false,
+          "ms": 10983.9752,
+          "firstGridMs": 1317.6000000014901,
+          "importEndBytes": 9571121,
+          "freeBytesBeforeLaunch": 17364967424,
+          "samples": 102,
+          "skippedSamples": 0,
+          "peakBytes": 35890324,
+          "peakAppWorkerRss": 3669159936,
+          "finalBytes": 36434367,
+          "warmMs": 21.597600000000966,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 18
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571121,
+          "decoded": 46
+        },
+        {
+          "index": 3,
+          "avif": true,
+          "ms": 13909.217500000006,
+          "firstGridMs": 1572.3999999985099,
+          "importEndBytes": 4422651,
+          "freeBytesBeforeLaunch": 17409486848,
+          "samples": 127,
+          "skippedSamples": 0,
+          "peakBytes": 35392219,
+          "peakAppWorkerRss": 3848417280,
+          "finalBytes": 35542541,
+          "warmMs": 18.958499999993364,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 23,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422651,
+          "decoded": 46
+        }
+      ],
+      "navigation": [],
+      "trials": []
+    },
+    "release-import": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14145.6629,
+          "firstGridMs": 1559.1000000014901,
+          "importEndBytes": 4422634,
+          "freeBytesBeforeLaunch": 16946724864,
+          "samples": 130,
+          "skippedSamples": 0,
+          "peakBytes": 35542524,
+          "peakAppWorkerRss": 3873812480,
+          "finalBytes": 35542524,
+          "warmMs": 23.16269999999713,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 23,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422634,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": false,
+          "ms": 10971.910600000003,
+          "firstGridMs": 1584.9000000003725,
+          "importEndBytes": 9571191,
+          "freeBytesBeforeLaunch": 17415356416,
+          "samples": 101,
+          "skippedSamples": 0,
+          "peakBytes": 39868801,
+          "peakAppWorkerRss": 3830870016,
+          "finalBytes": 9572474,
+          "warmMs": 13.257799999999406,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571191,
+          "decoded": 46
+        },
+        {
+          "index": 2,
+          "avif": false,
+          "ms": 11035.187599999997,
+          "firstGridMs": 1324.4000000003725,
+          "importEndBytes": 9571152,
+          "freeBytesBeforeLaunch": 17473191936,
+          "samples": 100,
+          "skippedSamples": 1,
+          "peakBytes": 36111922,
+          "peakAppWorkerRss": 3996471296,
+          "finalBytes": 36434398,
+          "warmMs": 18.874199999998382,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571152,
+          "decoded": 46
+        },
+        {
+          "index": 3,
+          "avif": true,
+          "ms": 13816.665200000003,
+          "firstGridMs": 1543.0999999996275,
+          "importEndBytes": 4422593,
+          "freeBytesBeforeLaunch": 17555161088,
+          "samples": 127,
+          "skippedSamples": 0,
+          "peakBytes": 35392161,
+          "peakAppWorkerRss": 3855167488,
+          "finalBytes": 35542483,
+          "warmMs": 19.062799999999697,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 23,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422593,
+          "decoded": 46
+        }
+      ],
+      "navigation": [],
+      "trials": []
+    },
+    "release-recover": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 13894.5334,
+          "firstGridMs": 1581.0999999996275,
+          "importEndBytes": 4422568,
+          "freeBytesBeforeLaunch": 16897482752,
+          "samples": 128,
+          "skippedSamples": 0,
+          "peakBytes": 35392136,
+          "peakAppWorkerRss": 3790417920,
+          "finalBytes": 35542458,
+          "warmMs": 20.745199999997567,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 23,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422568,
+          "decoded": 46
+        }
+      ],
+      "navigation": [],
+      "trials": [],
+      "recovery": {
+        "recovery": "cancel, resume, forced exit, restart, offline decode and history",
+        "photos": 46,
+        "workingBytes": 28224728,
+        "remaining": [
+          "develop-prefetch-rFe2gz"
+        ]
+      }
+    },
+    "release-first": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14413.833,
+          "firstGridMs": 1548.4000000003725,
+          "importEndBytes": 4422664,
+          "freeBytesBeforeLaunch": 17002127360,
+          "samples": 133,
+          "skippedSamples": 0,
+          "peakBytes": 35542554,
+          "peakAppWorkerRss": 3926179840,
+          "finalBytes": 35542554,
+          "warmMs": 25.519400000001042,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 23,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422664,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 27.466666666790843,
+            "p95": 29.40000000037253
+          },
+          "controls": {
+            "mean": 63.13333333345751,
+            "p95": 96.60000000149012
+          },
+          "input": {
+            "mean": 51.06666666703919,
+            "p95": 67.20000000111759
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 25.833333333954215,
+            "p95": 29.200000001117587
+          },
+          "controls": {
+            "mean": 38.96666666679084,
+            "p95": 40.09999999962747
+          },
+          "input": {
+            "mean": 1572.5666666670393,
+            "p95": 1590.2000000011176
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 29.600000000248354,
+            "p95": 32.59999999962747
+          },
+          "controls": {
+            "mean": 47.19999999987582,
+            "p95": 47.40000000037253
+          },
+          "input": {
+            "mean": 1882.4666666667908,
+            "p95": 1937.5
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 20792,
+          "image": 25.90000000037253,
+          "controls": 96.60000000149012,
+          "bulkAtInput": false,
+          "input": 30.700000001117587,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 28415.700000001118,
+          "image": 29.40000000037253,
+          "controls": 40.59999999962747,
+          "bulkAtInput": false,
+          "input": 55.29999999888241,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 35720.300000000745,
+          "image": 27.09999999962747,
+          "controls": 52.19999999925494,
+          "bulkAtInput": false,
+          "input": 67.20000000111759,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 39409.800000000745,
+          "image": 20.199999999254942,
+          "controls": 39.09999999962747,
+          "bulkAtInput": false,
+          "input": 1543.199999999255,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 44403.90000000037,
+          "image": 29.200000001117587,
+          "controls": 40.09999999962747,
+          "bulkAtInput": false,
+          "input": 1584.300000000745,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 49566.5,
+          "image": 28.100000001490116,
+          "controls": 37.70000000111759,
+          "bulkAtInput": false,
+          "input": 1590.2000000011176,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 55216.5,
+          "image": 24.90000000037253,
+          "controls": 47.40000000037253,
+          "bulkAtInput": true,
+          "input": 1815.300000000745,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 74391.10000000149,
+          "image": 32.59999999962747,
+          "controls": 47.29999999888241,
+          "bulkAtInput": true,
+          "input": 1894.5999999996275,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 94251.40000000037,
+          "image": 31.300000000745058,
+          "controls": 46.90000000037253,
+          "bulkAtInput": true,
+          "input": 1937.5,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "release-ui": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14395.3593,
+          "firstGridMs": 1560.699999999255,
+          "importEndBytes": 4422583,
+          "freeBytesBeforeLaunch": 16881029120,
+          "samples": 131,
+          "skippedSamples": 1,
+          "peakBytes": 35151399,
+          "peakAppWorkerRss": 4058521600,
+          "finalBytes": 35542473,
+          "warmMs": 20.059699999997974,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422583,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 48.79999999950329,
+            "p95": 92.69999999925494
+          },
+          "controls": {
+            "mean": 60.19999999925494,
+            "p95": 92.69999999925494
+          },
+          "input": {
+            "mean": 30.133333332836628,
+            "p95": 31
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 19.566666667039197,
+            "p95": 19.90000000037253
+          },
+          "controls": {
+            "mean": 38.5,
+            "p95": 38.69999999925494
+          },
+          "input": {
+            "mean": 31.433333332960803,
+            "p95": 31.59999999962747
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 32.29999999950329,
+            "p95": 37
+          },
+          "controls": {
+            "mean": 50.83333333209157,
+            "p95": 53.399999998509884
+          },
+          "input": {
+            "mean": 49.166666666666664,
+            "p95": 59.19999999925494
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 20630.599999999627,
+          "image": 92.69999999925494,
+          "controls": 92.69999999925494,
+          "bulkAtInput": false,
+          "input": 29.09999999962747,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 32296.199999999255,
+          "image": 27.90000000037253,
+          "controls": 52.69999999925494,
+          "bulkAtInput": false,
+          "input": 31,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 43969.59999999963,
+          "image": 25.799999998882413,
+          "controls": 35.19999999925494,
+          "bulkAtInput": false,
+          "input": 30.299999998882413,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 52028.699999999255,
+          "image": 19.90000000037253,
+          "controls": 38.69999999925494,
+          "bulkAtInput": false,
+          "input": 31.299999998882413,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 61453.09999999963,
+          "image": 19.199999999254942,
+          "controls": 38.40000000037253,
+          "bulkAtInput": false,
+          "input": 31.40000000037253,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 71192.39999999851,
+          "image": 19.600000001490116,
+          "controls": 38.40000000037253,
+          "bulkAtInput": false,
+          "input": 31.59999999962747,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 81117.5,
+          "image": 37,
+          "controls": 51.399999998509884,
+          "bulkAtInput": true,
+          "input": 30.40000000037253,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 100507.5,
+          "image": 36.79999999888241,
+          "controls": 53.399999998509884,
+          "bulkAtInput": true,
+          "input": 57.90000000037253,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 120030,
+          "image": 23.09999999962747,
+          "controls": 47.69999999925494,
+          "bulkAtInput": true,
+          "input": 59.19999999925494,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "release-stages": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14784.0814,
+          "firstGridMs": 1603.9000000022352,
+          "importEndBytes": 4422668,
+          "observedCpuMs": 109422,
+          "freeBytesBeforeLaunch": 16929632256,
+          "samples": 136,
+          "skippedSamples": 0,
+          "peakBytes": 35542558,
+          "peakAppWorkerRss": 3737509888,
+          "finalBytes": 35542558,
+          "warmMs": 21.256499999999505,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422668,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 29.96666666616996,
+            "p95": 35.5
+          },
+          "controls": {
+            "mean": 71.39999999975164,
+            "p95": 109.5
+          },
+          "input": {
+            "mean": 53.000000001241766,
+            "p95": 58.600000001490116
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 17765.800000000745,
+          "image": 28.300000000745058,
+          "controls": 109.5,
+          "bulkAtInput": true,
+          "input": 47.100000001490116,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 37609,
+          "image": 35.5,
+          "controls": 50.400000002235174,
+          "bulkAtInput": true,
+          "input": 53.30000000074506,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 57549.70000000298,
+          "image": 26.099999997764826,
+          "controls": 54.29999999701977,
+          "bulkAtInput": true,
+          "input": 58.600000001490116,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "submitted-import": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14233.585,
+          "firstGridMs": 1563.5,
+          "importEndBytes": 4422610,
+          "freeBytesBeforeLaunch": 17152782336,
+          "samples": 131,
+          "skippedSamples": 0,
+          "peakBytes": 35542500,
+          "peakAppWorkerRss": 3885404160,
+          "finalBytes": 35542500,
+          "warmMs": 21.964600000002974,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 23,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422610,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": false,
+          "ms": 10743.752600000007,
+          "firstGridMs": 1222,
+          "importEndBytes": 9571147,
+          "freeBytesBeforeLaunch": 17488863232,
+          "samples": 98,
+          "skippedSamples": 1,
+          "peakBytes": 40482350,
+          "peakAppWorkerRss": 3902808064,
+          "finalBytes": 40691037,
+          "warmMs": 20.57819999998901,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 18
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571147,
+          "decoded": 46
+        },
+        {
+          "index": 2,
+          "avif": false,
+          "ms": 10864.834399999992,
+          "firstGridMs": 1311.5999999977648,
+          "importEndBytes": 9571141,
+          "freeBytesBeforeLaunch": 17623318528,
+          "samples": 100,
+          "skippedSamples": 0,
+          "peakBytes": 36212820,
+          "peakAppWorkerRss": 3771949056,
+          "finalBytes": 36434387,
+          "warmMs": 22.578799999988405,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 18
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571141,
+          "decoded": 46
+        },
+        {
+          "index": 3,
+          "avif": true,
+          "ms": 14375.09030000001,
+          "firstGridMs": 1810.8999999985099,
+          "importEndBytes": 4422588,
+          "freeBytesBeforeLaunch": 17727799296,
+          "samples": 132,
+          "skippedSamples": 0,
+          "peakBytes": 31285834,
+          "peakAppWorkerRss": 3894571008,
+          "finalBytes": 31285834,
+          "warmMs": 18.993699999991804,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422588,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 25.333333333333332,
+            "p95": 28.099999997764826
+          },
+          "controls": {
+            "mean": 62.20000000049671,
+            "p95": 98.5
+          },
+          "input": {
+            "mean": 30.566666666418314,
+            "p95": 32.69999999925494
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 20.199999999254942,
+            "p95": 21
+          },
+          "controls": {
+            "mean": 39.133333334078394,
+            "p95": 42.30000000074506
+          },
+          "input": {
+            "mean": 32.433333333581686,
+            "p95": 34.599999997764826
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 24.200000000496704,
+            "p95": 25.800000000745058
+          },
+          "controls": {
+            "mean": 47.90000000099341,
+            "p95": 49
+          },
+          "input": {
+            "mean": 35.80000000074506,
+            "p95": 38
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 20536.300000000745,
+          "image": 28.099999997764826,
+          "controls": 98.5,
+          "bulkAtInput": false,
+          "input": 29.600000001490116,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 32203,
+          "image": 26.800000000745058,
+          "controls": 50.19999999925494,
+          "bulkAtInput": false,
+          "input": 32.69999999925494,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 43917.199999999255,
+          "image": 21.100000001490116,
+          "controls": 37.900000002235174,
+          "bulkAtInput": false,
+          "input": 29.399999998509884,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 51996.800000000745,
+          "image": 20.199999999254942,
+          "controls": 42.30000000074506,
+          "bulkAtInput": false,
+          "input": 34.599999997764826,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 61292.5,
+          "image": 19.399999998509884,
+          "controls": 36.600000001490116,
+          "bulkAtInput": false,
+          "input": 29.800000000745058,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 71092.60000000149,
+          "image": 21,
+          "controls": 38.5,
+          "bulkAtInput": false,
+          "input": 32.900000002235174,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 81007.69999999925,
+          "image": 24.5,
+          "controls": 48.30000000074506,
+          "bulkAtInput": true,
+          "input": 34.19999999925494,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 100284.69999999925,
+          "image": 22.300000000745058,
+          "controls": 46.400000002235174,
+          "bulkAtInput": true,
+          "input": 35.20000000298023,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 120264,
+          "image": 25.800000000745058,
+          "controls": 49,
+          "bulkAtInput": true,
+          "input": 38,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "submitted-first": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14603.7927,
+          "firstGridMs": 1692.800000000745,
+          "importEndBytes": 4422589,
+          "freeBytesBeforeLaunch": 17149861888,
+          "samples": 134,
+          "skippedSamples": 0,
+          "peakBytes": 35301727,
+          "peakAppWorkerRss": 3752480768,
+          "finalBytes": 35542479,
+          "warmMs": 23.183899999999994,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422589,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 50.43333333482345,
+            "p95": 94.5
+          },
+          "controls": {
+            "mean": 62.56666666766008,
+            "p95": 94.5
+          },
+          "input": {
+            "mean": 52.433333333581686,
+            "p95": 66.30000000074506
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 23.200000000496704,
+            "p95": 29.399999998509884
+          },
+          "controls": {
+            "mean": 42.89999999975165,
+            "p95": 46.900000002235174
+          },
+          "input": {
+            "mean": 1583.4666666674118,
+            "p95": 1611.2000000029802
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 31.399999999751646,
+            "p95": 42.30000000074506
+          },
+          "controls": {
+            "mean": 51.03333333258828,
+            "p95": 59.899999998509884
+          },
+          "input": {
+            "mean": 1901.8333333333333,
+            "p95": 1965.199999999255
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 20760.400000002235,
+          "image": 94.5,
+          "controls": 94.5,
+          "bulkAtInput": false,
+          "input": 29.100000001490116,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 28299.699999999255,
+          "image": 29.900000002235174,
+          "controls": 51.70000000298023,
+          "bulkAtInput": false,
+          "input": 61.899999998509884,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 35667,
+          "image": 26.900000002235174,
+          "controls": 41.5,
+          "bulkAtInput": false,
+          "input": 66.30000000074506,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 39383.199999999255,
+          "image": 19.700000002980232,
+          "controls": 46.900000002235174,
+          "bulkAtInput": false,
+          "input": 1557.8999999985099,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 44370.800000000745,
+          "image": 20.5,
+          "controls": 39.899999998509884,
+          "bulkAtInput": false,
+          "input": 1581.300000000745,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 49420.300000000745,
+          "image": 29.399999998509884,
+          "controls": 41.899999998509884,
+          "bulkAtInput": false,
+          "input": 1611.2000000029802,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 54979.10000000149,
+          "image": 27.099999997764826,
+          "controls": 42.69999999925494,
+          "bulkAtInput": true,
+          "input": 1826.4000000022352,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 73933,
+          "image": 24.800000000745058,
+          "controls": 50.5,
+          "bulkAtInput": true,
+          "input": 1913.8999999985099,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 93200.30000000075,
+          "image": 42.30000000074506,
+          "controls": 59.899999998509884,
+          "bulkAtInput": true,
+          "input": 1965.199999999255,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "submitted-recover": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14596.6927,
+          "firstGridMs": 1596.0999999977648,
+          "importEndBytes": 4422642,
+          "freeBytesBeforeLaunch": 17139851264,
+          "samples": 134,
+          "skippedSamples": 0,
+          "peakBytes": 35301780,
+          "peakAppWorkerRss": 3709964288,
+          "finalBytes": 35542532,
+          "warmMs": 22.100500000000466,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422642,
+          "decoded": 46
+        }
+      ],
+      "navigation": [],
+      "trials": [],
+      "recovery": {
+        "recovery": "cancel, resume, forced exit, restart, offline decode and history",
+        "photos": 46,
+        "workingBytes": 28224728,
+        "remaining": [
+          "develop-prefetch-aNOZnW"
+        ]
+      }
+    },
+    "submitted-stages": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14737.159300000001,
+          "firstGridMs": 1790.0999999977648,
+          "importEndBytes": 4422624,
+          "observedCpuMs": 110126,
+          "freeBytesBeforeLaunch": 17100779520,
+          "samples": 136,
+          "skippedSamples": 0,
+          "peakBytes": 36117248,
+          "peakAppWorkerRss": 4273319936,
+          "finalBytes": 35542514,
+          "warmMs": 22.423299999998562,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422624,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 55.39999999975165,
+            "p95": 109.19999999925494
+          },
+          "controls": {
+            "mean": 73.83333333333333,
+            "p95": 109.19999999925494
+          },
+          "input": {
+            "mean": 54.30000000074506,
+            "p95": 54.900000002235174
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 17631.699999999255,
+          "image": 109.19999999925494,
+          "controls": 109.19999999925494,
+          "bulkAtInput": true,
+          "input": 54.900000002235174,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 37517.300000000745,
+          "image": 30.699999999254942,
+          "controls": 58.69999999925494,
+          "bulkAtInput": true,
+          "input": 54.5,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 57263.199999999255,
+          "image": 26.300000000745058,
+          "controls": 53.600000001490116,
+          "bulkAtInput": true,
+          "input": 53.5,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "submitted-zr": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 8024.339,
+          "firstGridMs": 3083.5,
+          "importEndBytes": 1441266,
+          "freeBytesBeforeLaunch": 17436631040,
+          "samples": 73,
+          "skippedSamples": 0,
+          "peakBytes": 32084984,
+          "peakAppWorkerRss": 4284719104,
+          "finalBytes": 1442549,
+          "warmMs": 12.132799999999406,
+          "progress": {
+            "total": 6,
+            "ready": 6,
+            "generated": 6,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 3
+          },
+          "cached": {
+            "total": 6,
+            "ready": 6,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 6,
+          "total": 6,
+          "durableBytes": 1441266,
+          "decoded": 12
+        },
+        {
+          "index": 1,
+          "avif": true,
+          "ms": 7934.946099999999,
+          "firstGridMs": 3056.099999997765,
+          "importEndBytes": 1441266,
+          "freeBytesBeforeLaunch": 17556037632,
+          "samples": 73,
+          "skippedSamples": 0,
+          "peakBytes": 32333462,
+          "peakAppWorkerRss": 4889620480,
+          "finalBytes": 1442549,
+          "warmMs": 9.380800000002637,
+          "progress": {
+            "total": 6,
+            "ready": 6,
+            "generated": 5,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 1
+          },
+          "cached": {
+            "total": 6,
+            "ready": 6,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 6,
+          "total": 6,
+          "durableBytes": 1441266,
+          "decoded": 12
+        }
+      ],
+      "navigation": [],
+      "trials": []
+    },
+    "jpeg-front": {
+      "import": [
+        {
+          "index": 0,
+          "avif": false,
+          "ms": 10966.945600000001,
+          "firstGridMs": 1599.7999999970198,
+          "importEndBytes": 9571158,
+          "freeBytesBeforeLaunch": 17033691136,
+          "samples": 101,
+          "skippedSamples": 0,
+          "peakBytes": 40434916,
+          "peakAppWorkerRss": 3694022656,
+          "finalBytes": 9572441,
+          "warmMs": 12.06800000000112,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571158,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 53.76666666691502,
+            "p95": 106.19999999925494
+          },
+          "controls": {
+            "mean": 67.83333333333333,
+            "p95": 106.19999999925494
+          },
+          "input": {
+            "mean": 67.10000000149012,
+            "p95": 73.30000000074506
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 13203.60000000149,
+          "image": 106.19999999925494,
+          "controls": 106.19999999925494,
+          "bulkAtInput": true,
+          "input": 60.70000000298023,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 29689,
+          "image": 23,
+          "controls": 49,
+          "bulkAtInput": true,
+          "input": 73.30000000074506,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 47022.300000000745,
+          "image": 32.100000001490116,
+          "controls": 48.30000000074506,
+          "bulkAtInput": true,
+          "input": 67.30000000074506,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "auto-recover": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14458.303500000002,
+          "firstGridMs": 1754.199999999255,
+          "importEndBytes": 4422590,
+          "freeBytesBeforeLaunch": 16801292288,
+          "samples": 133,
+          "skippedSamples": 0,
+          "peakBytes": 31045084,
+          "peakAppWorkerRss": 3908694016,
+          "finalBytes": 31285836,
+          "warmMs": 21.609700000000885,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422590,
+          "decoded": 46
+        }
+      ],
+      "navigation": [],
+      "trials": [],
+      "recovery": {
+        "recovery": "cancel, resume, forced exit, restart, offline decode and history",
+        "photos": 46,
+        "workingBytes": 31003940,
+        "remaining": [
+          "develop-prefetch-ihttoa"
+        ]
+      }
+    },
+    "auto-first": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14407.700200000001,
+          "firstGridMs": 1561.0999999996275,
+          "importEndBytes": 4423880,
+          "freeBytesBeforeLaunch": 16789090304,
+          "samples": 133,
+          "skippedSamples": 0,
+          "peakBytes": 37376031,
+          "peakAppWorkerRss": 3715956736,
+          "finalBytes": 35542487,
+          "warmMs": 21.241500000000087,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 21,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422597,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 52.10000000024835,
+            "p95": 99.30000000074506
+          },
+          "controls": {
+            "mean": 64.0666666670392,
+            "p95": 99.30000000074506
+          },
+          "input": {
+            "mean": 51.20000000049671,
+            "p95": 70
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 19.36666666592161,
+            "p95": 20.299999998882413
+          },
+          "controls": {
+            "mean": 37.19999999987582,
+            "p95": 37.59999999962747
+          },
+          "input": {
+            "mean": 1570.8333333333333,
+            "p95": 1581.2999999988824
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 25.700000000496704,
+            "p95": 29.59999999962747
+          },
+          "controls": {
+            "mean": 48.80000000074506,
+            "p95": 52.20000000111759
+          },
+          "input": {
+            "mean": 1857.3333333327125,
+            "p95": 1921.3999999985099
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 20631.599999999627,
+          "image": 99.30000000074506,
+          "controls": 99.30000000074506,
+          "bulkAtInput": false,
+          "input": 28,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 28084.799999998882,
+          "image": 26.90000000037253,
+          "controls": 52.80000000074506,
+          "bulkAtInput": false,
+          "input": 55.600000001490116,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 35357,
+          "image": 30.09999999962747,
+          "controls": 40.09999999962747,
+          "bulkAtInput": false,
+          "input": 70,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 39113.5,
+          "image": 18.199999999254942,
+          "controls": 36.90000000037253,
+          "bulkAtInput": false,
+          "input": 1561,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 44065.5,
+          "image": 19.59999999962747,
+          "controls": 37.09999999962747,
+          "bulkAtInput": false,
+          "input": 1570.2000000011176,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 49235,
+          "image": 20.299999998882413,
+          "controls": 37.59999999962747,
+          "bulkAtInput": false,
+          "input": 1581.2999999988824,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 54636.199999999255,
+          "image": 24.200000001117587,
+          "controls": 46.5,
+          "bulkAtInput": true,
+          "input": 1755.4000000003725,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 73311.69999999925,
+          "image": 29.59999999962747,
+          "controls": 52.20000000111759,
+          "bulkAtInput": true,
+          "input": 1895.199999999255,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 92554.29999999888,
+          "image": 23.300000000745058,
+          "controls": 47.70000000111759,
+          "bulkAtInput": true,
+          "input": 1921.3999999985099,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "auto-ui": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14564.273099999999,
+          "firstGridMs": 1515,
+          "importEndBytes": 4422658,
+          "freeBytesBeforeLaunch": 16755720192,
+          "samples": 134,
+          "skippedSamples": 0,
+          "peakBytes": 37376048,
+          "peakAppWorkerRss": 3924119552,
+          "finalBytes": 35542548,
+          "warmMs": 25.548800000000483,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 21,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422658,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 26.899999999130767,
+            "p95": 27.899999998509884
+          },
+          "controls": {
+            "mean": 61.39999999975165,
+            "p95": 101
+          },
+          "input": {
+            "mean": 32.40000000037253,
+            "p95": 35.100000001490116
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 20.666666667287547,
+            "p95": 21.300000000745058
+          },
+          "controls": {
+            "mean": 42.26666666691502,
+            "p95": 48.5
+          },
+          "input": {
+            "mean": 31.066666666418314,
+            "p95": 32
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 29.96666666616996,
+            "p95": 35.59999999962747
+          },
+          "controls": {
+            "mean": 51.333333333954215,
+            "p95": 52.30000000074506
+          },
+          "input": {
+            "mean": 58.40000000037253,
+            "p95": 86
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 20891.300000000745,
+          "image": 27.899999998509884,
+          "controls": 101,
+          "bulkAtInput": false,
+          "input": 28.299999998882413,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 32447.699999999255,
+          "image": 27.40000000037253,
+          "controls": 40.30000000074506,
+          "bulkAtInput": false,
+          "input": 33.80000000074506,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 44077.300000000745,
+          "image": 25.399999998509884,
+          "controls": 42.899999998509884,
+          "bulkAtInput": false,
+          "input": 35.100000001490116,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 52223.699999999255,
+          "image": 20.200000001117587,
+          "controls": 39,
+          "bulkAtInput": false,
+          "input": 29.5,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 61490.5,
+          "image": 21.300000000745058,
+          "controls": 48.5,
+          "bulkAtInput": false,
+          "input": 32,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 71041.69999999925,
+          "image": 20.5,
+          "controls": 39.30000000074506,
+          "bulkAtInput": false,
+          "input": 31.699999999254942,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 80918,
+          "image": 28.09999999962747,
+          "controls": 52.30000000074506,
+          "bulkAtInput": true,
+          "input": 32.70000000111759,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 100429,
+          "image": 26.199999999254942,
+          "controls": 51.30000000074506,
+          "bulkAtInput": true,
+          "input": 56.5,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 119887.90000000037,
+          "image": 35.59999999962747,
+          "controls": 50.40000000037253,
+          "bulkAtInput": true,
+          "input": 86,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "auto-stages": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14402.351499999999,
+          "firstGridMs": 1560.2000000011176,
+          "importEndBytes": 4423852,
+          "freeBytesBeforeLaunch": 16857518080,
+          "samples": 132,
+          "skippedSamples": 0,
+          "peakBytes": 37825091,
+          "peakAppWorkerRss": 4076072960,
+          "finalBytes": 35542459,
+          "warmMs": 22.73269999999684,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422569,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 59.066666666418314,
+            "p95": 105.59999999962747
+          },
+          "controls": {
+            "mean": 70.59999999962747,
+            "p95": 105.59999999962747
+          },
+          "input": {
+            "mean": 46.833333333333336,
+            "p95": 58.30000000074506
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 17231,
+          "image": 105.59999999962747,
+          "controls": 105.59999999962747,
+          "bulkAtInput": true,
+          "input": 58.30000000074506,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 36891.59999999963,
+          "image": 39.09999999962747,
+          "controls": 55.59999999962747,
+          "bulkAtInput": true,
+          "input": 37.59999999962747,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 57103.5,
+          "image": 32.5,
+          "controls": 50.59999999962747,
+          "bulkAtInput": true,
+          "input": 44.59999999962747,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "png": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 36884.6019,
+          "firstGridMs": 1648.2000000011176,
+          "importEndBytes": 4422621,
+          "freeBytesBeforeLaunch": 16796110848,
+          "samples": 337,
+          "skippedSamples": 0,
+          "peakBytes": 37237898,
+          "peakAppWorkerRss": 2204508160,
+          "finalBytes": 35542511,
+          "warmMs": 20.817399999999907,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422621,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": true,
+          "ms": 37190.117,
+          "firstGridMs": 1542.699999999255,
+          "importEndBytes": 4422583,
+          "freeBytesBeforeLaunch": 17450098688,
+          "samples": 340,
+          "skippedSamples": 0,
+          "peakBytes": 38259606,
+          "peakAppWorkerRss": 2175160320,
+          "finalBytes": 35542473,
+          "warmMs": 22.407900000020163,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422583,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 24.333333333333332,
+            "p95": 26.40000000037253
+          },
+          "controls": {
+            "mean": 65.03333333258827,
+            "p95": 101.5
+          },
+          "input": {
+            "mean": 38.33333333271245,
+            "p95": 49.30000000074506
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 39726.40000000037,
+          "image": 26.40000000037253,
+          "controls": 101.5,
+          "bulkAtInput": true,
+          "input": 30.899999998509884,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 81537.30000000075,
+          "image": 23.90000000037253,
+          "controls": 49.19999999925494,
+          "bulkAtInput": true,
+          "input": 34.79999999888241,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 124270.70000000112,
+          "image": 22.699999999254942,
+          "controls": 44.399999998509884,
+          "bulkAtInput": true,
+          "input": 49.30000000074506,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "rgb": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 37374.632,
+          "firstGridMs": 1512.4000000003725,
+          "importEndBytes": 4422594,
+          "freeBytesBeforeLaunch": 16791740416,
+          "samples": 341,
+          "skippedSamples": 0,
+          "peakBytes": 40324787,
+          "peakAppWorkerRss": 2346434560,
+          "finalBytes": 35542484,
+          "warmMs": 22.05529999999999,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422594,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": true,
+          "ms": 36609.347099999984,
+          "firstGridMs": 1488.9000000003725,
+          "importEndBytes": 4422633,
+          "freeBytesBeforeLaunch": 17704955904,
+          "samples": 335,
+          "skippedSamples": 0,
+          "peakBytes": 40981262,
+          "peakAppWorkerRss": 2261766144,
+          "finalBytes": 35542523,
+          "warmMs": 23.861000000004424,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422633,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 20.233333334326744,
+            "p95": 31.300000000745058
+          },
+          "controls": {
+            "mean": 54.133333334078394,
+            "p95": 98.80000000074506
+          },
+          "input": {
+            "mean": 32.66666666728755,
+            "p95": 35.30000000074506
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 40231.5,
+          "image": 31.300000000745058,
+          "controls": 98.80000000074506,
+          "bulkAtInput": true,
+          "input": 30.800000000745058,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 81821.69999999925,
+          "image": 12.100000001490116,
+          "controls": 33.100000001490116,
+          "bulkAtInput": true,
+          "input": 35.30000000074506,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 124633.69999999925,
+          "image": 17.300000000745058,
+          "controls": 30.5,
+          "bulkAtInput": true,
+          "input": 31.90000000037253,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "comparison-before": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 39084.4822,
+          "firstGridMs": 1581.9000000003725,
+          "importEndBytes": 4422609,
+          "peakBytes": 38259632,
+          "peakAppWorkerRss": 2297122816,
+          "finalBytes": 35542499,
+          "warmMs": 22.24409999999625,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422609,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 195.2333333324641,
+            "p95": 203.59999999962747
+          },
+          "controls": {
+            "mean": 62.09999999962747,
+            "p95": 94.39999999850988
+          },
+          "input": {
+            "mean": 31.033333333209157,
+            "p95": 32.69999999925494
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 3368.733333333706,
+            "p95": 3456.9000000003725
+          },
+          "controls": {
+            "mean": 46.60000000024835,
+            "p95": 48
+          },
+          "input": {
+            "mean": 28.833333333333332,
+            "p95": 31.5
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 5738.03333333383,
+            "p95": 5806
+          },
+          "controls": {
+            "mean": 44.03333333258828,
+            "p95": 47.69999999925494
+          },
+          "input": {
+            "mean": 33.666666666666664,
+            "p95": 39.20000000111759
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 46124.20000000112,
+          "controls": 94.39999999850988,
+          "image": 195.89999999850988,
+          "bulkAtInput": false,
+          "input": 30.300000000745058,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 59494.300000000745,
+          "controls": 44.90000000037253,
+          "image": 186.19999999925494,
+          "bulkAtInput": false,
+          "input": 32.69999999925494,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 72795.90000000037,
+          "controls": 47,
+          "image": 203.59999999962747,
+          "bulkAtInput": false,
+          "input": 30.09999999962747,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 81801.40000000037,
+          "controls": 46.40000000037253,
+          "image": 3354.5999999996275,
+          "bulkAtInput": false,
+          "input": 27.5,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 93219.5,
+          "controls": 48,
+          "image": 3294.7000000011176,
+          "bulkAtInput": false,
+          "input": 27.5,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 104688.09999999963,
+          "controls": 45.40000000037253,
+          "image": 3456.9000000003725,
+          "bulkAtInput": false,
+          "input": 31.5,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 116741.09999999963,
+          "controls": 40.5,
+          "image": 5659.60000000149,
+          "bulkAtInput": true,
+          "input": 34.79999999888241,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 164382.70000000112,
+          "controls": 47.69999999925494,
+          "image": 5748.5,
+          "bulkAtInput": true,
+          "input": 39.20000000111759,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 212033.70000000112,
+          "controls": 43.899999998509884,
+          "image": 5806,
+          "bulkAtInput": true,
+          "input": 27,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "comparison-after": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 28164.4574,
+          "firstGridMs": 1568,
+          "importEndBytes": 4422635,
+          "peakBytes": 40338598,
+          "peakAppWorkerRss": 2681667584,
+          "finalBytes": 35542525,
+          "warmMs": 21.692900000001828,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 9,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422635,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 26.066666667039197,
+            "p95": 27.800000000745058
+          },
+          "controls": {
+            "mean": 59.13333333283663,
+            "p95": 97
+          },
+          "input": {
+            "mean": 31.966666666790843,
+            "p95": 33.69999999925494
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 20.03333333383004,
+            "p95": 20.59999999962747
+          },
+          "controls": {
+            "mean": 37.46666666679084,
+            "p95": 38.19999999925494
+          },
+          "input": {
+            "mean": 32.90000000037253,
+            "p95": 34.20000000111759
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 21.700000000496704,
+            "p95": 22.100000001490116
+          },
+          "controls": {
+            "mean": 43.833333333954215,
+            "p95": 44.80000000074506
+          },
+          "input": {
+            "mean": 38.30000000012418,
+            "p95": 43
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 34269.59999999963,
+          "image": 26.700000001117587,
+          "controls": 97,
+          "bulkAtInput": false,
+          "input": 32.5,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 45965,
+          "image": 27.800000000745058,
+          "controls": 40.59999999962747,
+          "bulkAtInput": false,
+          "input": 33.69999999925494,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 57571.300000000745,
+          "image": 23.699999999254942,
+          "controls": 39.79999999888241,
+          "bulkAtInput": false,
+          "input": 29.700000001117587,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 65669.19999999925,
+          "image": 20.100000001490116,
+          "controls": 37.30000000074506,
+          "bulkAtInput": false,
+          "input": 33.5,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 75080.09999999963,
+          "image": 19.40000000037253,
+          "controls": 36.90000000037253,
+          "bulkAtInput": false,
+          "input": 31,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 84504.30000000075,
+          "image": 20.59999999962747,
+          "controls": 38.19999999925494,
+          "bulkAtInput": false,
+          "input": 34.20000000111759,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 94383.59999999963,
+          "image": 21,
+          "controls": 42.30000000074506,
+          "bulkAtInput": true,
+          "input": 43,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 127640.19999999925,
+          "image": 22.100000001490116,
+          "controls": 44.80000000074506,
+          "bulkAtInput": true,
+          "input": 38.5,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 165833.5,
+          "image": 22,
+          "controls": 44.40000000037253,
+          "bulkAtInput": true,
+          "input": 33.40000000037253,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "ship-ui": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 27663.7881,
+          "firstGridMs": 1529.9000000003725,
+          "importEndBytes": 4422594,
+          "samples": 253,
+          "skippedSamples": 0,
+          "peakBytes": 39549494,
+          "peakAppWorkerRss": 2514567168,
+          "finalBytes": 35542484,
+          "warmMs": 22.591599999999744,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422594,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 49.80000000012418,
+            "p95": 94
+          },
+          "controls": {
+            "mean": 62.13333333345751,
+            "p95": 94
+          },
+          "input": {
+            "mean": 32.26666666691502,
+            "p95": 35.70000000111759
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 19.833333333333332,
+            "p95": 21.300000000745058
+          },
+          "controls": {
+            "mean": 37.46666666679084,
+            "p95": 39.5
+          },
+          "input": {
+            "mean": 32.09999999962747,
+            "p95": 33.69999999925494
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 31.133333332836628,
+            "p95": 34.19999999925494
+          },
+          "controls": {
+            "mean": 46.999999998758234,
+            "p95": 49.79999999888241
+          },
+          "input": {
+            "mean": 47.13333333283663,
+            "p95": 52.19999999925494
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 33885.59999999963,
+          "image": 94,
+          "controls": 94,
+          "bulkAtInput": false,
+          "input": 28.699999999254942,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 45448.89999999851,
+          "image": 29.700000001117587,
+          "controls": 42.40000000037253,
+          "bulkAtInput": false,
+          "input": 32.40000000037253,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 56980.5,
+          "image": 25.699999999254942,
+          "controls": 50,
+          "bulkAtInput": false,
+          "input": 35.70000000111759,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 65151.09999999963,
+          "image": 19.299999998882413,
+          "controls": 36.90000000037253,
+          "bulkAtInput": false,
+          "input": 33.69999999925494,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 74340.29999999888,
+          "image": 21.300000000745058,
+          "controls": 39.5,
+          "bulkAtInput": false,
+          "input": 31.699999999254942,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 83884.79999999888,
+          "image": 18.90000000037253,
+          "controls": 36,
+          "bulkAtInput": false,
+          "input": 30.90000000037253,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 93749,
+          "image": 32.79999999888241,
+          "controls": 44.79999999888241,
+          "bulkAtInput": true,
+          "input": 42.59999999962747,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 125078.09999999963,
+          "image": 26.40000000037253,
+          "controls": 49.79999999888241,
+          "bulkAtInput": true,
+          "input": 52.19999999925494,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 156576,
+          "image": 34.19999999925494,
+          "controls": 46.399999998509884,
+          "bulkAtInput": true,
+          "input": 46.59999999962747,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "ship-recover": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 27431.5118,
+          "firstGridMs": 1530.0999999996275,
+          "importEndBytes": 4422622,
+          "samples": 251,
+          "skippedSamples": 0,
+          "peakBytes": 40323532,
+          "peakAppWorkerRss": 2669408256,
+          "finalBytes": 35542512,
+          "warmMs": 21.098599999997532,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422622,
+          "decoded": 46
+        }
+      ],
+      "navigation": [],
+      "trials": [],
+      "recovery": {
+        "recovery": "cancel, resume, forced exit, restart, offline decode and history",
+        "photos": 46,
+        "workingBytes": 31003940,
+        "remaining": [
+          "develop-prefetch-MsBMF2"
+        ]
+      }
+    },
+    "stages": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 28475.8786,
+          "firstGridMs": 1667.5,
+          "importEndBytes": 4422616,
+          "samples": 261,
+          "skippedSamples": 0,
+          "peakBytes": 39360299,
+          "peakAppWorkerRss": 2892632064,
+          "finalBytes": 35542506,
+          "warmMs": 21.559900000000198,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 9,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422616,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 57.566666666418314,
+            "p95": 102.19999999925494
+          },
+          "controls": {
+            "mean": 66.96666666616996,
+            "p95": 102.19999999925494
+          },
+          "input": {
+            "mean": 39.89999999913076,
+            "p95": 43.29999999888241
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 31448.5,
+          "image": 102.19999999925494,
+          "controls": 102.19999999925494,
+          "bulkAtInput": true,
+          "input": 33.69999999925494,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 64052.199999999255,
+          "image": 36.90000000037253,
+          "controls": 52.09999999962747,
+          "bulkAtInput": true,
+          "input": 43.29999999888241,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 102052.29999999888,
+          "image": 33.59999999962747,
+          "controls": 46.59999999962747,
+          "bulkAtInput": true,
+          "input": 42.69999999925494,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "ship-stages": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 27785.2204,
+          "firstGridMs": 1726.1000000014901,
+          "importEndBytes": 4422641,
+          "samples": 254,
+          "skippedSamples": 0,
+          "peakBytes": 39078860,
+          "peakAppWorkerRss": 2666930176,
+          "finalBytes": 35542531,
+          "warmMs": 22.42029999999795,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422641,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 55.43333333296081,
+            "p95": 105.79999999888241
+          },
+          "controls": {
+            "mean": 70.16666666604578,
+            "p95": 105.79999999888241
+          },
+          "input": {
+            "mean": 44.60000000024835,
+            "p95": 51.5
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 30654.5,
+          "image": 105.79999999888241,
+          "controls": 105.79999999888241,
+          "bulkAtInput": true,
+          "input": 32.09999999962747,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 61746.699999999255,
+          "image": 35.80000000074506,
+          "controls": 52.30000000074506,
+          "bulkAtInput": true,
+          "input": 51.5,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 93436.90000000037,
+          "image": 24.699999999254942,
+          "controls": 52.399999998509884,
+          "bulkAtInput": true,
+          "input": 50.20000000111759,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "four": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 13614.3161,
+          "firstGridMs": 2034.699999999255,
+          "importEndBytes": 4422628,
+          "samples": 126,
+          "skippedSamples": 0,
+          "peakBytes": 37899322,
+          "peakAppWorkerRss": 4073574400,
+          "finalBytes": 35542518,
+          "warmMs": 22.40179999999964,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422628,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": true,
+          "ms": 13905.14379999999,
+          "firstGridMs": 2068.2000000011176,
+          "importEndBytes": 4422657,
+          "samples": 127,
+          "skippedSamples": 0,
+          "peakBytes": 37899351,
+          "peakAppWorkerRss": 4114374656,
+          "finalBytes": 35542547,
+          "warmMs": 24.87369999999646,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422657,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 54.63333333345751,
+            "p95": 106.19999999925494
+          },
+          "controls": {
+            "mean": 68.39999999975164,
+            "p95": 106.19999999925494
+          },
+          "input": {
+            "mean": 45.03333333320916,
+            "p95": 53.40000000037253
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 16566.599999999627,
+          "image": 106.19999999925494,
+          "controls": 106.19999999925494,
+          "bulkAtInput": true,
+          "input": 37.40000000037253,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 36351.39999999851,
+          "image": 34.70000000111759,
+          "controls": 50.20000000111759,
+          "bulkAtInput": true,
+          "input": 44.29999999888241,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 56163,
+          "image": 23,
+          "controls": 48.79999999888241,
+          "bulkAtInput": true,
+          "input": 53.40000000037253,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "files": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 37107.589900000006,
+          "firstGridMs": 1562,
+          "importEndBytes": 4423921,
+          "samples": 339,
+          "skippedSamples": 0,
+          "peakBytes": 41158203,
+          "peakAppWorkerRss": 2411552768,
+          "finalBytes": 35542528,
+          "warmMs": 28.50749999999971,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422638,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": true,
+          "ms": 36947.4197,
+          "firstGridMs": 1530.9000000003725,
+          "importEndBytes": 4422640,
+          "samples": 338,
+          "skippedSamples": 0,
+          "peakBytes": 40427367,
+          "peakAppWorkerRss": 2035593216,
+          "finalBytes": 35542530,
+          "warmMs": 21.280999999988126,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422640,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 30.76666666629414,
+            "p95": 33.59999999962747
+          },
+          "controls": {
+            "mean": 66.89999999975164,
+            "p95": 106.5
+          },
+          "input": {
+            "mean": 43.90000000037253,
+            "p95": 49.70000000111759
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 40041.10000000149,
+          "image": 27.699999999254942,
+          "controls": 106.5,
+          "bulkAtInput": true,
+          "input": 39.09999999962747,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 82610.20000000112,
+          "image": 33.59999999962747,
+          "controls": 49.19999999925494,
+          "bulkAtInput": true,
+          "input": 42.90000000037253,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 125012.70000000112,
+          "image": 31,
+          "controls": 45,
+          "bulkAtInput": true,
+          "input": 49.70000000111759,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "decoded": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 29704.7383,
+          "firstGridMs": 1567.4000000003725,
+          "importEndBytes": 4422636,
+          "samples": 272,
+          "skippedSamples": 0,
+          "peakBytes": 41158201,
+          "peakAppWorkerRss": 2189107200,
+          "finalBytes": 35542526,
+          "warmMs": 23.0428000000029,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422636,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": true,
+          "ms": 30064.807499999995,
+          "firstGridMs": 1559,
+          "importEndBytes": 4422636,
+          "samples": 275,
+          "skippedSamples": 0,
+          "peakBytes": 41158201,
+          "peakAppWorkerRss": 2239262720,
+          "finalBytes": 35542526,
+          "warmMs": 21.144499999994878,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422636,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "n": 3,
+          "image": {
+            "mean": 56.33333333271245,
+            "p95": 101.69999999925494
+          },
+          "controls": {
+            "mean": 65.60000000024836,
+            "p95": 101.69999999925494
+          },
+          "input": {
+            "mean": 43.766666666294135,
+            "p95": 52.30000000074506
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 32607.099999999627,
+          "image": 101.69999999925494,
+          "controls": 101.69999999925494,
+          "bulkAtInput": true,
+          "input": 38.19999999925494,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 66147.59999999963,
+          "image": 35.59999999962747,
+          "controls": 50.30000000074506,
+          "bulkAtInput": true,
+          "input": 40.79999999888241,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": false,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 100227.09999999963,
+          "image": 31.699999999254942,
+          "controls": 44.80000000074506,
+          "bulkAtInput": true,
+          "input": 52.30000000074506,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "first-input-before": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 38081.928199999995,
+          "firstGridMs": 1537.7000000011176,
+          "importEndBytes": 4422619,
+          "samples": 347,
+          "skippedSamples": 0,
+          "peakBytes": 39975399,
+          "peakAppWorkerRss": 2065391616,
+          "finalBytes": 35542509,
+          "warmMs": 29.294699999998556,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 9,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422619,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 1232.1333333334576,
+            "p95": 1836
+          },
+          "controls": {
+            "mean": 62.39999999975165,
+            "p95": 97.59999999962747
+          },
+          "input": {
+            "mean": 1461.6000000002484,
+            "p95": 1745.9000000003725
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 1717.8333333339542,
+            "p95": 1753.7000000011176
+          },
+          "controls": {
+            "mean": 38.80000000012418,
+            "p95": 43.09999999962747
+          },
+          "input": {
+            "mean": 1638.0333333338301,
+            "p95": 1670.300000000745
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 6518.999999999379,
+            "p95": 7129.199999999255
+          },
+          "controls": {
+            "mean": 45.96666666679084,
+            "p95": 51.30000000074506
+          },
+          "input": {
+            "mean": 6422.300000000745,
+            "p95": 7023.0999999996275
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 44995.59999999963,
+          "controls": 97.59999999962747,
+          "image": 189.7000000011176,
+          "bulkAtInput": false,
+          "input": 1063.1000000014901,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 55402.90000000037,
+          "controls": 51.90000000037253,
+          "bulkAtInput": false,
+          "image": 1670.699999999255,
+          "input": 1575.7999999988824,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 65837.80000000075,
+          "controls": 37.69999999925494,
+          "bulkAtInput": false,
+          "image": 1836,
+          "input": 1745.9000000003725,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 72225.5,
+          "controls": 43.09999999962747,
+          "bulkAtInput": false,
+          "image": 1664.5999999996275,
+          "input": 1586.5,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 80862.19999999925,
+          "controls": 37.40000000037253,
+          "bulkAtInput": false,
+          "image": 1753.7000000011176,
+          "input": 1670.300000000745,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 89735.09999999963,
+          "controls": 35.90000000037253,
+          "bulkAtInput": false,
+          "image": 1735.2000000011176,
+          "input": 1657.300000000745,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 99170.80000000075,
+          "controls": 46,
+          "bulkAtInput": true,
+          "image": 6142.299999998882,
+          "input": 6050.60000000149,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 148381.59999999963,
+          "controls": 40.59999999962747,
+          "bulkAtInput": true,
+          "image": 6285.5,
+          "input": 6193.200000001118,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 200003,
+          "controls": 51.30000000074506,
+          "bulkAtInput": true,
+          "image": 7129.199999999255,
+          "input": 7023.0999999996275,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "first-input-after": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 27918.4204,
+          "firstGridMs": 1527.0999999996275,
+          "importEndBytes": 4422606,
+          "samples": 256,
+          "skippedSamples": 0,
+          "peakBytes": 38980004,
+          "peakAppWorkerRss": 2567827456,
+          "finalBytes": 35542496,
+          "warmMs": 22.924999999999272,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422606,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 23.933333332960803,
+            "p95": 27.399999998509884
+          },
+          "controls": {
+            "mean": 66.86666666654249,
+            "p95": 96.59999999962747
+          },
+          "input": {
+            "mean": 1396.4000000003725,
+            "p95": 1582.0999999996275
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 25.833333333333332,
+            "p95": 29.59999999962747
+          },
+          "controls": {
+            "mean": 42.80000000012418,
+            "p95": 50.09999999962747
+          },
+          "input": {
+            "mean": 1598.9333333329607,
+            "p95": 1623.0999999996275
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 29.2333333324641,
+            "p95": 31.299999998882413
+          },
+          "controls": {
+            "mean": 45.93333333296081,
+            "p95": 48.09999999962747
+          },
+          "input": {
+            "mean": 3645.433333332961,
+            "p95": 3846
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 33984.40000000037,
+          "image": 27.399999998509884,
+          "controls": 96.59999999962747,
+          "bulkAtInput": false,
+          "input": 1054,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 42415,
+          "image": 23.59999999962747,
+          "controls": 54.79999999888241,
+          "bulkAtInput": false,
+          "input": 1553.1000000014901,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 51243.199999999255,
+          "image": 20.800000000745058,
+          "controls": 49.20000000111759,
+          "bulkAtInput": false,
+          "input": 1582.0999999996275,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 56619.199999999255,
+          "image": 20.5,
+          "controls": 50.09999999962747,
+          "bulkAtInput": false,
+          "input": 1623.0999999996275,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 63529.59999999963,
+          "image": 27.40000000037253,
+          "controls": 38.80000000074506,
+          "bulkAtInput": false,
+          "input": 1573.2999999988824,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 70505.5,
+          "image": 29.59999999962747,
+          "controls": 39.5,
+          "bulkAtInput": false,
+          "input": 1600.4000000003725,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 78279.40000000037,
+          "image": 31.299999998882413,
+          "controls": 45.19999999925494,
+          "bulkAtInput": true,
+          "input": 3561.2999999988824,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 112593.90000000037,
+          "image": 31.09999999962747,
+          "controls": 44.5,
+          "bulkAtInput": true,
+          "input": 3529,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 147131.40000000037,
+          "image": 25.299999998882413,
+          "controls": 48.09999999962747,
+          "bulkAtInput": true,
+          "input": 3846,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "ship-first": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 27630.401600000005,
+          "firstGridMs": 1626.5,
+          "importEndBytes": 4422662,
+          "samples": 253,
+          "skippedSamples": 0,
+          "peakBytes": 40323572,
+          "peakAppWorkerRss": 2574032896,
+          "finalBytes": 35542552,
+          "warmMs": 24.35840000000462,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 8,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 23
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422662,
+          "decoded": 46
+        }
+      ],
+      "navigation": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 49.033333333830036,
+            "p95": 97.30000000074506
+          },
+          "controls": {
+            "mean": 65.7666666675359,
+            "p95": 97.30000000074506
+          },
+          "input": {
+            "mean": 49.666666666666664,
+            "p95": 60.90000000037253
+          }
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 21.733333333084982,
+            "p95": 24.5
+          },
+          "controls": {
+            "mean": 36.333333333333336,
+            "p95": 36.90000000037253
+          },
+          "input": {
+            "mean": 1590.8333333327125,
+            "p95": 1615.699999999255
+          }
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "n": 3,
+          "image": {
+            "mean": 32.166666666666664,
+            "p95": 33.29999999888241
+          },
+          "controls": {
+            "mean": 44.59999999962747,
+            "p95": 46.69999999925494
+          },
+          "input": {
+            "mean": 1684.1000000002484,
+            "p95": 1797.0999999996275
+          }
+        }
+      ],
+      "trials": [
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 33830.39999999851,
+          "image": 97.30000000074506,
+          "controls": 97.30000000074506,
+          "bulkAtInput": false,
+          "input": 29.09999999962747,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 41303.29999999888,
+          "image": 23.09999999962747,
+          "controls": 53.20000000111759,
+          "bulkAtInput": false,
+          "input": 59,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "prefetched",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 48611.39999999851,
+          "image": 26.700000001117587,
+          "controls": 46.80000000074506,
+          "bulkAtInput": false,
+          "input": 60.90000000037253,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": false,
+          "start": 52295.39999999851,
+          "image": 24.5,
+          "controls": 36.90000000037253,
+          "bulkAtInput": false,
+          "input": 1577.7999999988824,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": false,
+          "start": 57205,
+          "image": 19.799999998882413,
+          "controls": 36.399999998509884,
+          "bulkAtInput": false,
+          "input": 1579,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "cold",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": false,
+          "start": 62356.29999999888,
+          "image": 20.90000000037253,
+          "controls": 35.70000000111759,
+          "bulkAtInput": false,
+          "input": 1615.699999999255,
+          "exposure": "-1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "17-01.NEF",
+          "bulkAtSwitch": true,
+          "start": 67860.09999999963,
+          "image": 31.40000000037253,
+          "controls": 43.59999999962747,
+          "bulkAtInput": true,
+          "input": 1797.0999999996275,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "18-02.NEF",
+          "bulkAtSwitch": true,
+          "start": 98404.79999999888,
+          "image": 31.800000000745058,
+          "controls": 43.5,
+          "bulkAtInput": true,
+          "input": 1586.800000000745,
+          "exposure": "1.3"
+        },
+        {
+          "condition": "importing",
+          "immediate": true,
+          "photo": "19-03.NEF",
+          "bulkAtSwitch": true,
+          "start": 129737.59999999963,
+          "image": 33.29999999888241,
+          "controls": 46.69999999925494,
+          "bulkAtInput": true,
+          "input": 1668.4000000003725,
+          "exposure": "1.3"
+        }
+      ]
+    },
+    "zr-before": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 18740.1898,
+          "firstGridMs": 4203.699999999255,
+          "importEndBytes": 1441266,
+          "freeBytesBeforeLaunch": 17275252736,
+          "samples": 171,
+          "skippedSamples": 0,
+          "peakBytes": 35292814,
+          "peakAppWorkerRss": 1461841920,
+          "finalBytes": 1442549,
+          "warmMs": 9.159299999999348,
+          "progress": {
+            "total": 6,
+            "ready": 6,
+            "generated": 3,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 3
+          },
+          "cached": {
+            "total": 6,
+            "ready": 6,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 6,
+          "total": 6,
+          "durableBytes": 1441266,
+          "decoded": 12
+        },
+        {
+          "index": 1,
+          "avif": true,
+          "ms": 18644.969100000002,
+          "firstGridMs": 4117.300000000745,
+          "importEndBytes": 1441266,
+          "freeBytesBeforeLaunch": 17556201472,
+          "samples": 170,
+          "skippedSamples": 0,
+          "peakBytes": 32179300,
+          "peakAppWorkerRss": 1440280576,
+          "finalBytes": 1442549,
+          "warmMs": 10.257000000005064,
+          "progress": {
+            "total": 6,
+            "ready": 6,
+            "generated": 3,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 3
+          },
+          "cached": {
+            "total": 6,
+            "ready": 6,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 6,
+          "total": 6,
+          "durableBytes": 1441266,
+          "decoded": 12
+        }
+      ],
+      "navigation": [],
+      "trials": []
+    },
+    "zr-after": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 8270.863,
+          "firstGridMs": 3173.900000002235,
+          "importEndBytes": 1441266,
+          "freeBytesBeforeLaunch": 17364578304,
+          "samples": 76,
+          "skippedSamples": 0,
+          "peakBytes": 31887799,
+          "peakAppWorkerRss": 4886790144,
+          "finalBytes": 1442549,
+          "warmMs": 11.464200000000346,
+          "progress": {
+            "total": 6,
+            "ready": 6,
+            "generated": 5,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 3
+          },
+          "cached": {
+            "total": 6,
+            "ready": 6,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 6,
+          "total": 6,
+          "durableBytes": 1441266,
+          "decoded": 12
+        },
+        {
+          "index": 1,
+          "avif": true,
+          "ms": 8002.1487,
+          "firstGridMs": 3070.89999999851,
+          "importEndBytes": 1441266,
+          "freeBytesBeforeLaunch": 17536212992,
+          "samples": 74,
+          "skippedSamples": 0,
+          "peakBytes": 34773536,
+          "peakAppWorkerRss": 4882468864,
+          "finalBytes": 1442549,
+          "warmMs": 9.631900000000314,
+          "progress": {
+            "total": 6,
+            "ready": 6,
+            "generated": 5,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 2
+          },
+          "cached": {
+            "total": 6,
+            "ready": 6,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 6,
+          "total": 6,
+          "durableBytes": 1441266,
+          "decoded": 12
+        }
+      ],
+      "navigation": [],
+      "trials": []
+    },
+    "codec-quality": {
+      "import": [
+        {
+          "index": 0,
+          "avif": true,
+          "ms": 14148.7297,
+          "firstGridMs": 1585.5,
+          "importEndBytes": 4422650,
+          "freeBytesBeforeLaunch": 17074995200,
+          "samples": 131,
+          "skippedSamples": 0,
+          "peakBytes": 37536207,
+          "peakAppWorkerRss": 4103217152,
+          "finalBytes": 35542540,
+          "warmMs": 20.536599999999453,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 22,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 19
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 4422650,
+          "decoded": 46
+        },
+        {
+          "index": 1,
+          "avif": false,
+          "ms": 10584.380900000004,
+          "firstGridMs": 1332.4000000003725,
+          "importEndBytes": 9571149,
+          "freeBytesBeforeLaunch": 17731784704,
+          "samples": 97,
+          "skippedSamples": 0,
+          "peakBytes": 40482352,
+          "peakAppWorkerRss": 3788693504,
+          "finalBytes": 40691039,
+          "warmMs": 19.7216999999946,
+          "progress": {
+            "total": 23,
+            "ready": 23,
+            "generated": 23,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": 18
+          },
+          "cached": {
+            "total": 23,
+            "ready": 23,
+            "generated": 0,
+            "retained": 0,
+            "failed": 0,
+            "cancelled": false,
+            "paused": false,
+            "error": null,
+            "last_ready_id": null
+          },
+          "available": 23,
+          "total": 23,
+          "durableBytes": 9571149,
+          "decoded": 46
+        }
+      ],
+      "navigation": [],
+      "trials": []
+    }
+  },
+  "nativeInteractions": {
+    "interactions": "photo/folder menus, pan, crop, mask, saved recipe and rapid B/A/B pixels",
+    "photo": "17-01.NEF"
+  },
+  "recovery": {
+    "recovery": "cancel, resume, forced exit, restart, offline decode and history",
+    "photos": 46,
+    "workingBytes": 28224728,
+    "remaining": [
+      "develop-prefetch-aNOZnW"
+    ]
+  },
+  "codecQuality": {
+    "avif": {
+      "n": 22,
+      "pooledPsnrDb": 34.29501636528124,
+      "images": [
+        {
+          "photo": "0-Canon - EOS 350D - RAW (3_2).CR2",
+          "squared": 89128713,
+          "samples": 5112000,
+          "psnr": 35.716535705712616
+        },
+        {
+          "photo": "1-Canon - EOS D30 - RAW (3_2).CRW",
+          "squared": 183389494,
+          "samples": 5102400,
+          "psnr": 32.57480410541397
+        },
+        {
+          "photo": "10-Panasonic - DMC-FZ28 - 16_9.RW2",
+          "squared": 220159110,
+          "samples": 4339200,
+          "psnr": 31.077533678087477
+        },
+        {
+          "photo": "11-Pentax - K10D - 12bit 12bit compressed (3_2).PEF",
+          "squared": 36158059,
+          "samples": 5150400,
+          "psnr": 39.66716211133296
+        },
+        {
+          "photo": "12-Phase One - P65+ - IIQ S (4_3).IIQ",
+          "squared": 258445895,
+          "samples": 5750400,
+          "psnr": 31.604087778120643
+        },
+        {
+          "photo": "13-Samsung - NX500 - 12bit 12bit normal compression (3_2).SRW",
+          "squared": 43789169,
+          "samples": 5121600,
+          "psnr": 38.811193141323585
+        },
+        {
+          "photo": "15-Sony - DSC-R1 - 14bit 14bit uncompressed (3_2).SR2",
+          "squared": 80380931,
+          "samples": 5097600,
+          "psnr": 36.1529308295352
+        },
+        {
+          "photo": "16-Sony - NEX-6 - 12bit 12bit compressed (3_2).ARW",
+          "squared": 25770904,
+          "samples": 5112000,
+          "psnr": 41.10541552879625
+        },
+        {
+          "photo": "17-01.NEF",
+          "squared": 141967897,
+          "samples": 5112000,
+          "psnr": 33.69481056930928
+        },
+        {
+          "photo": "18-02.NEF",
+          "squared": 135356132,
+          "samples": 5112000,
+          "psnr": 33.901932707477876
+        },
+        {
+          "photo": "19-03.NEF",
+          "squared": 228828463,
+          "samples": 5112000,
+          "psnr": 31.62161162492459
+        },
+        {
+          "photo": "2-Canon - EOS M50 - CRAW (3_2).CR3",
+          "squared": 121048632,
+          "samples": 5121600,
+          "psnr": 34.39526131929938
+        },
+        {
+          "photo": "20-04.NEF",
+          "squared": 96594966,
+          "samples": 5112000,
+          "psnr": 35.36716712060196
+        },
+        {
+          "photo": "21-05.NEF",
+          "squared": 267235200,
+          "samples": 5112000,
+          "psnr": 30.94777543536182
+        },
+        {
+          "photo": "22-06.NEF",
+          "squared": 94116483,
+          "samples": 5112000,
+          "psnr": 35.48005516182259
+        },
+        {
+          "photo": "3-Fujifilm - X-T2 - 14bit 14bit compressed (3_2).RAF",
+          "squared": 88880012,
+          "samples": 5121600,
+          "psnr": 35.736819130995414
+        },
+        {
+          "photo": "4-Hasselblad - H3D - 16bit (4_3).3FR",
+          "squared": 37660557,
+          "samples": 5764800,
+          "psnr": 39.97977866698696
+        },
+        {
+          "photo": "5-Hasselblad - H4D-40 - 16bit (4_3).fff",
+          "squared": 160321929,
+          "samples": 5764800,
+          "psnr": 33.68871675978865
+        },
+        {
+          "photo": "6-Leica - D-LUX 5 - 16_9.RWL",
+          "squared": 280657529,
+          "samples": 4329600,
+          "psnr": 30.013514385641663
+        },
+        {
+          "photo": "7-Nikon - COOLPIX P1000 - 12bit 12bit uncompressed (4_3).NRW",
+          "squared": 66443338,
+          "samples": 5760000,
+          "psnr": 37.510514017494934
+        },
+        {
+          "photo": "8-Nikon - D2H - 12bit 12bit compressed (Lossy (type 1)) (3_2).NEF",
+          "squared": 39937342,
+          "samples": 5092800,
+          "psnr": 39.18657824793571
+        },
+        {
+          "photo": "9-Olympus - E-3 - 16bit (4_3).ORF",
+          "squared": 65554191,
+          "samples": 5774400,
+          "psnr": 37.57986763424663
+        }
+      ]
+    },
+    "jpeg": {
+      "n": 22,
+      "pooledPsnrDb": 35.379265858232706,
+      "images": [
+        {
+          "photo": "0-Canon - EOS 350D - RAW (3_2).CR2",
+          "squared": 63906552,
+          "samples": 5112000,
+          "psnr": 37.161258196662146
+        },
+        {
+          "photo": "1-Canon - EOS D30 - RAW (3_2).CRW",
+          "squared": 136175067,
+          "samples": 5102400,
+          "psnr": 33.867572651427324
+        },
+        {
+          "photo": "10-Panasonic - DMC-FZ28 - 16_9.RW2",
+          "squared": 152028390,
+          "samples": 4339200,
+          "psnr": 32.68565332425114
+        },
+        {
+          "photo": "11-Pentax - K10D - 12bit 12bit compressed (3_2).PEF",
+          "squared": 29892095,
+          "samples": 5150400,
+          "psnr": 40.49364966392807
+        },
+        {
+          "photo": "12-Phase One - P65+ - IIQ S (4_3).IIQ",
+          "squared": 202197487,
+          "samples": 5750400,
+          "psnr": 32.670026626126045
+        },
+        {
+          "photo": "13-Samsung - NX500 - 12bit 12bit normal compression (3_2).SRW",
+          "squared": 38017119,
+          "samples": 5121600,
+          "psnr": 39.42506815443915
+        },
+        {
+          "photo": "15-Sony - DSC-R1 - 14bit 14bit uncompressed (3_2).SR2",
+          "squared": 52630811,
+          "samples": 5097600,
+          "psnr": 37.99206052778793
+        },
+        {
+          "photo": "16-Sony - NEX-6 - 12bit 12bit compressed (3_2).ARW",
+          "squared": 20331671,
+          "samples": 5112000,
+          "psnr": 42.134981325323736
+        },
+        {
+          "photo": "17-01.NEF",
+          "squared": 121497790,
+          "samples": 5112000,
+          "psnr": 34.37102827668566
+        },
+        {
+          "photo": "18-02.NEF",
+          "squared": 111596005,
+          "samples": 5112000,
+          "psnr": 34.74022558347791
+        },
+        {
+          "photo": "19-03.NEF",
+          "squared": 181801618,
+          "samples": 5112000,
+          "psnr": 32.62073461976394
+        },
+        {
+          "photo": "2-Canon - EOS M50 - CRAW (3_2).CR3",
+          "squared": 100618507,
+          "samples": 5121600,
+          "psnr": 35.19808148789468
+        },
+        {
+          "photo": "20-04.NEF",
+          "squared": 93296558,
+          "samples": 5112000,
+          "psnr": 35.51805584449472
+        },
+        {
+          "photo": "21-05.NEF",
+          "squared": 187065524,
+          "samples": 5112000,
+          "psnr": 32.496774512077366
+        },
+        {
+          "photo": "22-06.NEF",
+          "squared": 91554789,
+          "samples": 5112000,
+          "psnr": 35.59990139937858
+        },
+        {
+          "photo": "3-Fujifilm - X-T2 - 14bit 14bit compressed (3_2).RAF",
+          "squared": 67393541,
+          "samples": 5121600,
+          "psnr": 36.93867741940884
+        },
+        {
+          "photo": "4-Hasselblad - H3D - 16bit (4_3).3FR",
+          "squared": 30823559,
+          "samples": 5764800,
+          "psnr": 40.849818231516004
+        },
+        {
+          "photo": "5-Hasselblad - H4D-40 - 16bit (4_3).fff",
+          "squared": 127670428,
+          "samples": 5764800,
+          "psnr": 34.67774291340669
+        },
+        {
+          "photo": "6-Leica - D-LUX 5 - 16_9.RWL",
+          "squared": 205033432,
+          "samples": 4329600,
+          "psnr": 31.377034544890993
+        },
+        {
+          "photo": "7-Nikon - COOLPIX P1000 - 12bit 12bit uncompressed (4_3).NRW",
+          "squared": 57065405,
+          "samples": 5760000,
+          "psnr": 38.171299404382566
+        },
+        {
+          "photo": "8-Nikon - D2H - 12bit 12bit compressed (Lossy (type 1)) (3_2).NEF",
+          "squared": 25101276,
+          "samples": 5092800,
+          "psnr": 41.20341183146925
+        },
+        {
+          "photo": "9-Olympus - E-3 - 16bit (4_3).ORF",
+          "squared": 55950250,
+          "samples": 5774400,
+          "psnr": 38.26785194176026
+        }
+      ]
+    }
+  },
+  "priorPhaseMs": {
+    "camera-match": {
+      "n": 107,
+      "mean": 1021.4402242990654,
+      "p95": 2159.708,
+      "max": 2579.65
+    },
+    "catalog-update": {
+      "n": 285,
+      "mean": 2.2561543859649125,
+      "p95": 4.74,
+      "max": 17.563
+    },
+    "compress-1600": {
+      "n": 95,
+      "mean": 586.6100631578947,
+      "p95": 980.043,
+      "max": 1106.318
+    },
+    "compress-384": {
+      "n": 95,
+      "mean": 52.9008,
+      "p95": 77.657,
+      "max": 89.464
+    },
+    "develop": {
+      "n": 107,
+      "mean": 216.39994392523366,
+      "p95": 699.41,
+      "max": 797.433
+    },
+    "foreground-workspace-lock": {
+      "n": 12,
+      "mean": 1098.92925,
+      "p95": 2202.526,
+      "max": 2202.526
+    },
+    "import-pipe-round-trip": {
+      "n": 78,
+      "mean": 1550.1690128205128,
+      "p95": 3311.441,
+      "max": 3535.043
+    },
+    "native-open": {
+      "n": 197,
+      "mean": 229.87342639593908,
+      "p95": 754.624,
+      "max": 1181.39
+    },
+    "pipe-write": {
+      "n": 90,
+      "mean": 1.3565666666666667,
+      "p95": 2.293,
+      "max": 4.165
+    },
+    "pixel-read": {
+      "n": 17,
+      "mean": 1.7758823529411765,
+      "p95": 2.185,
+      "max": 2.185
+    },
+    "pixel-write": {
+      "n": 17,
+      "mean": 3.7731176470588235,
+      "p95": 6.059,
+      "max": 6.059
+    },
+    "prepare": {
+      "n": 101,
+      "mean": 1406.7397623762376,
+      "p95": 3066.872,
+      "max": 3426.859
+    },
+    "publish": {
+      "n": 190,
+      "mean": 4.269231578947369,
+      "p95": 9.382,
+      "max": 39.55
+    },
+    "queue": {
+      "n": 101,
+      "mean": 1080.9464257425743,
+      "p95": 5223.885,
+      "max": 20256.835
+    },
+    "worker-round-trip": {
+      "n": 17,
+      "mean": 2059.4531176470587,
+      "p95": 3042.565,
+      "max": 3042.565
+    },
+    "worker-start": {
+      "n": 10,
+      "mean": 6.0331,
+      "p95": 8.145,
+      "max": 8.145
+    },
+    "workspace-lock": {
+      "n": 101,
+      "mean": 177.4239603960396,
+      "p95": 2136.831,
+      "max": 3328.75
+    }
+  },
+  "twoWorkerPhaseMs": {
+    "camera-match": {
+      "n": 108,
+      "mean": 1011.8118518518519,
+      "p95": 2078.498,
+      "max": 2652.825
+    },
+    "catalog-update": {
+      "n": 285,
+      "mean": 2.051659649122807,
+      "p95": 4.575,
+      "max": 5.091
+    },
+    "compress-1600": {
+      "n": 95,
+      "mean": 599.3704210526316,
+      "p95": 906.155,
+      "max": 1195.487
+    },
+    "compress-384": {
+      "n": 95,
+      "mean": 53.53091578947368,
+      "p95": 79.982,
+      "max": 88.751
+    },
+    "develop": {
+      "n": 108,
+      "mean": 228.40507407407407,
+      "p95": 764.911,
+      "max": 841.648
+    },
+    "foreground-workspace-lock": {
+      "n": 12,
+      "mean": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "import-pipe-round-trip": {
+      "n": 77,
+      "mean": 1571.8476623376623,
+      "p95": 3246.95,
+      "max": 3447.494
+    },
+    "native-open": {
+      "n": 198,
+      "mean": 227.86458585858585,
+      "p95": 761.509,
+      "max": 1306.023
+    },
+    "pipe-write": {
+      "n": 90,
+      "mean": 1.3566666666666667,
+      "p95": 2.606,
+      "max": 5.69
+    },
+    "pixel-read": {
+      "n": 18,
+      "mean": 1.7738888888888888,
+      "p95": 2.918,
+      "max": 2.918
+    },
+    "pixel-write": {
+      "n": 18,
+      "mean": 3.650388888888889,
+      "p95": 4.649,
+      "max": 4.649
+    },
+    "prepare": {
+      "n": 102,
+      "mean": 1402.3695294117647,
+      "p95": 2875.601,
+      "max": 3291.855
+    },
+    "publish": {
+      "n": 190,
+      "mean": 3.865463157894737,
+      "p95": 6.272,
+      "max": 6.922
+    },
+    "publish-lock": {
+      "n": 3,
+      "mean": 0.0023333333333333335,
+      "p95": 0.007,
+      "max": 0.007
+    },
+    "queue": {
+      "n": 100,
+      "mean": 831.43378,
+      "p95": 2866.041,
+      "max": 20604.128
+    },
+    "worker-round-trip": {
+      "n": 18,
+      "mean": 2055.505666666667,
+      "p95": 3034.548,
+      "max": 3034.548
+    },
+    "worker-start": {
+      "n": 13,
+      "mean": 7.677846153846154,
+      "p95": 17.448,
+      "max": 17.448
+    },
+    "workspace-lock": {
+      "n": 100,
+      "mean": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    }
+  },
+  "phaseMs": {
+    "camera-match": {
+      "n": 108,
+      "mean": 1137.7109629629629,
+      "p95": 2407.45,
+      "max": 2676.526
+    },
+    "catalog-update": {
+      "n": 285,
+      "mean": 2.6128280701754387,
+      "p95": 4.733,
+      "max": 123.456
+    },
+    "compress-1600": {
+      "n": 95,
+      "mean": 660.6489894736842,
+      "p95": 980.87,
+      "max": 1322.906
+    },
+    "compress-384": {
+      "n": 95,
+      "mean": 58.94054736842105,
+      "p95": 84.475,
+      "max": 102.186
+    },
+    "develop": {
+      "n": 108,
+      "mean": 250.02202777777777,
+      "p95": 1056.737,
+      "max": 1106.04
+    },
+    "foreground-workspace-lock": {
+      "n": 12,
+      "mean": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "import-pipe-round-trip": {
+      "n": 91,
+      "mean": 1839.6735164835166,
+      "p95": 3393.303,
+      "max": 3963.955
+    },
+    "native-open": {
+      "n": 198,
+      "mean": 251.4523383838384,
+      "p95": 823.09,
+      "max": 1214.564
+    },
+    "pipe-write": {
+      "n": 104,
+      "mean": 1.4092692307692307,
+      "p95": 2.451,
+      "max": 3.409
+    },
+    "pixel-read": {
+      "n": 4,
+      "mean": 16.72825,
+      "p95": 20.018,
+      "max": 20.018
+    },
+    "pixel-write": {
+      "n": 4,
+      "mean": 13.91775,
+      "p95": 14.646,
+      "max": 14.646
+    },
+    "prepare": {
+      "n": 102,
+      "mean": 1582.933705882353,
+      "p95": 3274.359,
+      "max": 3860.072
+    },
+    "publish": {
+      "n": 190,
+      "mean": 4.495642105263157,
+      "p95": 6.451,
+      "max": 124.584
+    },
+    "publish-lock": {
+      "n": 3,
+      "mean": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    },
+    "queue": {
+      "n": 108,
+      "mean": 675.6941944444444,
+      "p95": 2962.064,
+      "max": 3861.597
+    },
+    "worker-round-trip": {
+      "n": 4,
+      "mean": 2503.44125,
+      "p95": 2926.442,
+      "max": 2926.442
+    },
+    "worker-start": {
+      "n": 21,
+      "mean": 9.934095238095239,
+      "p95": 22.492,
+      "max": 25.105
+    },
+    "workspace-lock": {
+      "n": 108,
+      "mean": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+    }
+  },
+  "workerCycles": [
+    {
+      "cycle": 0,
+      "n": 6,
+      "lastPrivate": 774926336,
+      "lastRss": 734060544,
+      "peakRss": 887750656
+    },
+    {
+      "cycle": 1,
+      "n": 6,
+      "lastPrivate": 775163904,
+      "lastRss": 731983872,
+      "peakRss": 889307136
+    },
+    {
+      "cycle": 2,
+      "n": 6,
+      "lastPrivate": 777846784,
+      "lastRss": 731287552,
+      "peakRss": 889307136
+    },
+    {
+      "cycle": 3,
+      "n": 6,
+      "lastPrivate": 777498624,
+      "lastRss": 731340800,
+      "peakRss": 889307136
+    },
+    {
+      "cycle": 4,
+      "n": 6,
+      "lastPrivate": 777551872,
+      "lastRss": 733298688,
+      "peakRss": 889307136
+    },
+    {
+      "cycle": 5,
+      "n": 6,
+      "lastPrivate": 778510336,
+      "lastRss": 735703040,
+      "peakRss": 889307136
+    }
+  ],
+  "pixels": {
+    "Canon - EOS 350D - RAW (3_2).CR2": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Canon - EOS D30 - RAW (3_2).CRW": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Canon - EOS M50 - CRAW (3_2).CR3": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Fujifilm - X-T2 - 14bit 14bit compressed (3_2).RAF": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Hasselblad - H3D - 16bit (4_3).3FR": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Hasselblad - H4D-40 - 16bit (4_3).fff": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Leica - D-LUX 5 - 16_9.RWL": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Nikon - COOLPIX P1000 - 12bit 12bit uncompressed (4_3).NRW": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Nikon - D2H - 12bit 12bit compressed (Lossy (type 1)) (3_2).NEF": [
+      [
+        1600,
+        false,
+        true
+      ],
+      [
+        384,
+        true,
+        true
+      ],
+      [
+        1600,
+        true,
+        true
+      ]
+    ],
+    "Olympus - E-3 - 16bit (4_3).ORF": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Panasonic - DMC-FZ28 - 16_9.RW2": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Pentax - K10D - 12bit 12bit compressed (3_2).PEF": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Phase One - P65+ - IIQ S (4_3).IIQ": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Samsung - NX500 - 12bit 12bit normal compression (3_2).SRW": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Sony - DSC-F828 - 4_3.SRF": [
+      [
+        1600,
+        false,
+        false
+      ]
+    ],
+    "Sony - DSC-R1 - 14bit 14bit uncompressed (3_2).SR2": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "Sony - NEX-6 - 12bit 12bit compressed (3_2).ARW": [
+      [
+        1600,
+        false,
+        true
+      ]
+    ],
+    "01.NEF": [
+      [
+        1600,
+        false,
+        true
+      ],
+      [
+        384,
+        true,
+        true
+      ],
+      [
+        1600,
+        true,
+        true
+      ]
+    ],
+    "02.NEF": [
+      [
+        1600,
+        false,
+        true
+      ],
+      [
+        384,
+        true,
+        true
+      ],
+      [
+        1600,
+        true,
+        true
+      ]
+    ],
+    "03.NEF": [
+      [
+        1600,
+        false,
+        true
+      ],
+      [
+        384,
+        true,
+        true
+      ],
+      [
+        1600,
+        true,
+        true
+      ]
+    ],
+    "04.NEF": [
+      [
+        1600,
+        false,
+        true
+      ],
+      [
+        384,
+        true,
+        true
+      ],
+      [
+        1600,
+        true,
+        true
+      ]
+    ],
+    "05.NEF": [
+      [
+        1600,
+        false,
+        true
+      ],
+      [
+        384,
+        true,
+        true
+      ],
+      [
+        1600,
+        true,
+        true
+      ]
+    ],
+    "06.NEF": [
+      [
+        1600,
+        false,
+        true
+      ],
+      [
+        384,
+        true,
+        true
+      ],
+      [
+        1600,
+        true,
+        true
+      ]
+    ]
+  },
+  "displayMismatches": [
+    "14-Sony - DSC-F828 - 4_3.SRF@384",
+    "14-Sony - DSC-F828 - 4_3.SRF@1600"
+  ],
+  "serialSrfCheck": [
+    [
+      "before",
+      "f189cab9ef4926f225804c8de64e8985d18d41cd1005cfe47b0f790a92cc3f07"
+    ],
+    [
+      "before",
+      "f189cab9ef4926f225804c8de64e8985d18d41cd1005cfe47b0f790a92cc3f07"
+    ],
+    [
+      "after",
+      "f189cab9ef4926f225804c8de64e8985d18d41cd1005cfe47b0f790a92cc3f07"
+    ],
+    [
+      "after",
+      "f189cab9ef4926f225804c8de64e8985d18d41cd1005cfe47b0f790a92cc3f07"
+    ]
+  ],
+  "experimentConditions": {
+    "before-results": "Reference build; real scan; primary AVIF/JPEG/JPEG/AVIF.",
+    "release-import": "Adaptive build before the metadata copy shortcut adjustment.",
+    "submitted-import": "Final build; standard adaptive Windows admission; primary AVIF/JPEG/JPEG/AVIF and settled input.",
+    "submitted-first": "Final build, immediate input after controls become enabled.",
+    "submitted-recover": "Final build, native interaction/rapid navigation and abnormal exit/resume/offline checks.",
+    "submitted-stages": "Final build with opt-in timing and sampled CPU time.",
+    "release-ui": "Earlier adaptive build with settled input.",
+    "release-first": "Earlier adaptive build with input immediately after enablement.",
+    "png": "2 workers, fresh RAW input, separate workers, PNG handoff.",
+    "rgb": "2 workers, fresh RAW input, separate workers, raw RGB file handoff.",
+    "decoded": "2 workers, shared decoded input, separate workers, raw RGB file handoff.",
+    "ship-import": "2 workers, shared decoded input, reusable workers and raw RGB file handoff for non-batch requests.",
+    "four": "4 workers from the first job, shared decoded input, reusable workers and raw RGB file handoff for non-batch requests.",
+    "auto-import": "Intermediate adaptive 2 to 4 build, raw RGB file handoff for non-batch requests.",
+    "stages": "Intermediate workspace lock profile.",
+    "ship-stages": "Job-owned scratch profile at fixed 2 workers.",
+    "release-stages": "Adaptive admission profile before the metadata copy shortcut adjustment.",
+    "first-input-after": "Intermediate immediate-input run before warming the selected interactive worker.",
+    "ship-first": "Immediate-input run after interactive warmup with fixed 2 workers.",
+    "codec-quality": "Pooled PSNR against baseline uncompressed pixels; exclude the nondeterministic SRF.",
+    "zr-before": "Six Nikon ZR NEFs only.",
+    "zr-after": "Earlier adaptive build, same six Nikon ZR NEFs only.",
+    "submitted-zr": "Final build, same six Nikon ZR NEFs only."
+  },
+  "stagedExecutableSha256": {
+    "before": "a3e9d9e98aea2c3780f72cdfa02c924b9c0444b8a82dd7d2d66225e742abff42",
+    "after": "d961f4e8aa2b3ccb6db23d294a3297058dd5c53e29fd7ad654636bb841c8bfc9"
+  },
+  "controlledPixels": [
+    {
+      "file": "Canon - EOS 350D - RAW (3_2).CR2",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Canon - EOS D30 - RAW (3_2).CRW",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Canon - EOS M50 - CRAW (3_2).CR3",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Fujifilm - X-T2 - 14bit 14bit compressed (3_2).RAF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Hasselblad - H3D - 16bit (4_3).3FR",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Hasselblad - H4D-40 - 16bit (4_3).fff",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Leica - D-LUX 5 - 16_9.RWL",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Nikon - COOLPIX P1000 - 12bit 12bit uncompressed (4_3).NRW",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Nikon - D2H - 12bit 12bit compressed (Lossy (type 1)) (3_2).NEF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Nikon - D2H - 12bit 12bit compressed (Lossy (type 1)) (3_2).NEF",
+      "bound": 384,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "Nikon - D2H - 12bit 12bit compressed (Lossy (type 1)) (3_2).NEF",
+      "bound": 1600,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "Olympus - E-3 - 16bit (4_3).ORF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Panasonic - DMC-FZ28 - 16_9.RW2",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Pentax - K10D - 12bit 12bit compressed (3_2).PEF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Phase One - P65+ - IIQ S (4_3).IIQ",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Samsung - NX500 - 12bit 12bit normal compression (3_2).SRW",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Sony - DSC-F828 - 4_3.SRF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Sony - DSC-R1 - 14bit 14bit uncompressed (3_2).SR2",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "Sony - NEX-6 - 12bit 12bit compressed (3_2).ARW",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "01.NEF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "01.NEF",
+      "bound": 384,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "01.NEF",
+      "bound": 1600,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "02.NEF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "02.NEF",
+      "bound": 384,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "02.NEF",
+      "bound": 1600,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "03.NEF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "03.NEF",
+      "bound": 384,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "03.NEF",
+      "bound": 1600,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "04.NEF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "04.NEF",
+      "bound": 384,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "04.NEF",
+      "bound": 1600,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "05.NEF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "05.NEF",
+      "bound": 384,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "05.NEF",
+      "bound": 1600,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "06.NEF",
+      "bound": 1600,
+      "edited": false,
+      "same": true
+    },
+    {
+      "file": "06.NEF",
+      "bound": 384,
+      "edited": true,
+      "same": true
+    },
+    {
+      "file": "06.NEF",
+      "bound": 1600,
+      "edited": true,
+      "same": true
+    }
+  ],
+  "validation": {
+    "desktopRegular": 69,
+    "developCoreRegular": 75,
+    "rtengineRegular": 3,
+    "soakRenders": 200,
+    "concurrentSoakRequests": 20,
+    "platform": "Windows 11",
+    "ui": "TypeScript, Vite, unit, browser UI, terms, folder menus and native WebView2 interactions"
+  },
+  "experimentsNote": "Controlled candidates use the same Windows Release profile and input hashes. Intermediate candidates are identified separately from the final source revision."
+}
