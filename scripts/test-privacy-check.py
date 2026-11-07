@@ -29,7 +29,7 @@ with tempfile.TemporaryDirectory() as temp:
         output.mkdir(parents=True)
         (output/'vendor-example').write_bytes(home)
     (root/'.env').write_text('local-only')
-    files = {str(p.relative_to(root)) for p in privacy.source_files(root)}
+    files = {p.relative_to(root).as_posix() for p in privacy.source_files(root)}
     assert files == {'src/main.rs', '.env'}  # Ignoring .env in Git must not bypass the check.
 print('Privacy regression checks passed')
 

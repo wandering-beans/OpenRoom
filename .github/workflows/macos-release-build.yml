@@ -1,0 +1,42 @@
+name: macOS release build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - run: brew install libheif pkgconf cmake ninja gtkmm3 fftw libiptcdata lensfun exiv2 little-cms2 libomp librsvg fmt libraw
+      - run: npm ci --prefix desktop
+      - run: python3 scripts/test-privacy-check.py
+      - run: python3 scripts/privacy-check.py --tracked
+      - run: sh scripts/build-desktop.sh dist/OpenRoom.app
+      - name: Verify notices and scan the complete app
+        run: |
+          for file in LICENSE COPYRIGHT.md DISCLAIMER.md TERMS.md; do
+            cmp "$file" "dist/OpenRoom.app/Contents/Resources/licenses/$file"
+          done
+          python3 scripts/privacy-check.py dist/OpenRoom.app
+          codesign --verify --deep --strict dist/OpenRoom.app
+          test "$(lipo -archs dist/OpenRoom.app/Contents/MacOS/OpenRoom)" = arm64
+      - name: Package manual download
+        run: |
+          version=$(node -p "require('./desktop/package.json').version")
+          ditto -c -k --sequesterRsrc --keepParent dist/OpenRoom.app "dist/OpenRoom-$version-macos-arm64.zip"
+          shasum -a 256 "dist/OpenRoom-$version-macos-arm64.zip" > dist/MACOS-SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: |
+            dist/OpenRoom-*-macos-arm64.zip
+            dist/MACOS-SHA256SUMS.txt
+          if-no-files-found: error

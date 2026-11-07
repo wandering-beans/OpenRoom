@@ -32,7 +32,7 @@ def main():
     if profiles['source_commit'] != engine['commit']:
         raise ValueError('Profile license inventory does not match the pinned engine')
     for name, expected in manifest['inputs'].items():
-        if hashlib.sha256((root / name).read_bytes()).hexdigest() != expected:
+        if hashlib.sha256((root / name).read_bytes().replace(b'\r\n', b'\n')).hexdigest() != expected:
             raise ValueError(f'License inventory is stale: {name}; update licenses/manifest.json and notices')
 
     libraries = {}
