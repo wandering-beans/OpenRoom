@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "scope": "Source-package inventory for macOS arm64 OpenRoom 0.7.9. Hashes confirm downloaded bytes; they do not certify license clearance or a successful offline rebuild. Archives accompany the v0.7.9 development release.",
+  "scope": "Source-package inventory for macOS arm64 OpenRoom 0.7.12. Hashes identify the release dependency source archives; they do not certify license clearance or a successful offline rebuild.",
   "records": [
     {
       "ecosystem": "cargo",
@@ -1507,6 +1507,15 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "hyper-tls",
+      "version": "0.6.0",
+      "status": "verified",
+      "file": "cargo/hyper-tls-0.6.0.crate",
+      "sha256": "70206fc6890eaca9fde8a0bf71caa2ddfc9fe045ac9e5c70df101a7dbde866e0",
+      "url": "https://static.crates.io/crates/hyper-tls/hyper-tls-0.6.0.crate"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "hyper-util",
       "version": "0.1.21",
       "status": "verified",
@@ -2161,6 +2170,15 @@
       "file": "cargo/nalgebra-0.35.0.crate",
       "sha256": "adc43a60c217b0c6ff46e47f26911015ad8d2e5a8be1af668c67e370d99a4346",
       "url": "https://static.crates.io/crates/nalgebra/nalgebra-0.35.0.crate"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "native-tls",
+      "version": "0.2.18",
+      "status": "verified",
+      "file": "cargo/native-tls-0.2.18.crate",
+      "sha256": "465500e14ea162429d264d44189adc38b199b62b1c21eea9f69e4b73cb03bbf2",
+      "url": "https://static.crates.io/crates/native-tls/native-tls-0.2.18.crate"
     },
     {
       "ecosystem": "cargo",
@@ -3703,6 +3721,15 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "tokio-native-tls",
+      "version": "0.3.1",
+      "status": "verified",
+      "file": "cargo/tokio-native-tls-0.3.1.crate",
+      "sha256": "bbae76ab933c85776efabc971569dd6119c580d8f5d448769dec1764bf796ef2",
+      "url": "https://static.crates.io/crates/tokio-native-tls/tokio-native-tls-0.3.1.crate"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "tokio-stream",
       "version": "0.1.19",
       "status": "verified",
@@ -4458,14 +4485,14 @@
     {
       "ecosystem": "native",
       "name": "aom",
-      "version": "3.15.2",
-      "revision": "af3dc9aadc793c1b00edc003e3fc19a44fdeb574",
-      "url": "https://aomedia.googlesource.com/aom/+archive/af3dc9aadc793c1b00edc003e3fc19a44fdeb574.tar.gz",
+      "version": "3.15.3",
+      "revision": "b141d9c45db236335351c8a4b2a14b3ade27c937",
+      "url": "https://aomedia.googlesource.com/aom/+archive/b141d9c45db236335351c8a4b2a14b3ade27c937.tar.gz",
       "verification": "Gitiles archive of pinned revision",
       "status": "verified",
-      "file": "native/aom-3.15.2.tar.gz",
-      "sha256": "c9755e2ed378d2794a32b5890ec69345a7a61cae3be95948f588e1c9fa7c32b7",
-      "size": 6699352
+      "file": "native/aom-3.15.3.tar.gz",
+      "sha256": "ae538bfe814910c88e5a21f5afc5e63ce50e537d1bef211694abd9725806c913",
+      "size": 6702109
     },
     {
       "ecosystem": "native",
@@ -4515,7 +4542,7 @@
       "ecosystem": "native",
       "name": "gettext",
       "version": "1.0",
-      "url": "https://ftpmirror.gnu.org/gnu/gettext/gettext-1.0.tar.gz",
+      "url": "https://ftpmirror.gnu.org/gettext/gettext-1.0.tar.gz",
       "verification": "Homebrew formula SHA-256",
       "status": "verified",
       "file": "native/gettext-1.0.tar.gz",
@@ -4547,24 +4574,24 @@
     {
       "ecosystem": "native",
       "name": "inih",
-      "version": "62",
-      "url": "https://github.com/benhoyt/inih/archive/refs/tags/r62.tar.gz",
+      "version": "63",
+      "url": "https://github.com/benhoyt/inih/archive/refs/tags/r63.tar.gz",
       "verification": "Homebrew formula SHA-256",
       "status": "verified",
-      "file": "native/inih-62.tar.gz",
-      "sha256": "9c15fa751bb8093d042dae1b9f125eb45198c32c6704cd5481ccde460d4f8151",
-      "size": 22145
+      "file": "native/inih-63.tar.gz",
+      "sha256": "5d7967de62c5bfdc4f9f5ab06ce44c9e498bae021c7dac5792c0696e76aa9963",
+      "size": 23021
     },
     {
       "ecosystem": "native",
       "name": "jpeg-turbo",
-      "version": "3.2.0",
-      "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0.tar.gz",
+      "version": "3.2.1",
+      "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.1/libjpeg-turbo-3.2.1.tar.gz",
       "verification": "Homebrew formula SHA-256",
       "status": "verified",
-      "file": "native/jpeg-turbo-3.2.0.tar.gz",
-      "sha256": "6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e",
-      "size": 2537858
+      "file": "native/jpeg-turbo-3.2.1.tar.gz",
+      "sha256": "c27ad72a68da151177929aa969ae773a2da5ac2af9ce946079314fdac8cece7f",
+      "size": 2549854
     },
     {
       "ecosystem": "native",
@@ -4591,13 +4618,13 @@
     {
       "ecosystem": "native",
       "name": "libheif",
-      "version": "1.23.6",
-      "url": "https://github.com/strukturag/libheif/releases/download/v1.23.6/libheif-1.23.6.tar.gz",
+      "version": "1.23.7",
+      "url": "https://github.com/strukturag/libheif/releases/download/v1.23.7/libheif-1.23.7.tar.gz",
       "verification": "Homebrew formula SHA-256",
       "status": "verified",
-      "file": "native/libheif-1.23.6.tar.gz",
-      "sha256": "4484346dc5995319dbc11e3a1c35d0a2ec46511ce370900869337fd2c7033125",
-      "size": 2373898
+      "file": "native/libheif-1.23.7.tar.gz",
+      "sha256": "f7483e818503ea6224c8863e4a56ac02c7089021a98472c811c12aa19faf2475",
+      "size": 2439383
     },
     {
       "ecosystem": "native",
@@ -4624,13 +4651,13 @@
     {
       "ecosystem": "native",
       "name": "libraw",
-      "version": "0.22.2",
-      "url": "https://www.libraw.org/data/LibRaw-0.22.2.tar.gz",
+      "version": "0.22.3",
+      "url": "https://www.libraw.org/data/LibRaw-0.22.3.tar.gz",
       "verification": "Homebrew formula SHA-256",
       "status": "verified",
-      "file": "native/libraw-0.22.2.tar.gz",
-      "sha256": "de86b035655accff8d4010f1a221fdf50d353cb7b1422ba26f14a0db92612cfa",
-      "size": 1682962
+      "file": "native/libraw-0.22.3.tar.gz",
+      "sha256": "789f3c33466210a1a0907f747a97c715d21bbf4af712f257fcbbd90111b227e4",
+      "size": 1689119
     },
     {
       "ecosystem": "native",
@@ -5863,16 +5890,16 @@
       "verification": "Archive from gitHead declared by the exact npm package version metadata; upstream tree includes original source."
     }
   ],
-  "app_version": "0.7.9",
-  "app_source_commit": "db4ec6a38672106f314cea529f1ab01031e4753d",
+  "app_version": "0.7.12",
   "inputs": {
     "Cargo.lock": "9f9a120ff83833f1cd5604669f7e81a4ac001cc903ce336cbb3d6b8bd8d14deb",
-    "desktop/Cargo.lock": "6b90144539b92f1aefc01631d25a7597f12ac1e268dffc7dbe801162a50b18d8",
-    "crates/develop-core/Cargo.lock": "f4df429cef1951a28151e081a02a792a0fc0b528c8e66baa186f3acccff10e70",
+    "desktop/Cargo.lock": "2f6712f001e871d4b725ea3cf51dffe2ed559a11319cb7a658775a170103386b",
+    "crates/develop-core/Cargo.lock": "b5e7193a525845466ac7dda114fb2c4a563939ad422eb41a5d28a48e43166747",
     "crates/media-core/Cargo.lock": "536ea4946bec1b50d1c18028ac52cd7fe077b82035bbef480e2f6c15fca33f96",
     "crates/rtengine/Cargo.lock": "12c10b2e60cb4987383831e8978d9849ed22ca6531e59a9f08eab7b3d79786d0",
-    "desktop/package-lock.json": "f958c785fe4ed30b93d355526f0b9601084fe909792c558aecf9ffe601142a30",
+    "desktop/package-lock.json": "d860e0a9d7a9f79fc368d06a845a939d890155eb8f788cf057b6d935133555a9",
     "native/rtengine/source.json": "8af41792cbf40a3099af47cfc625413dcac609320332b063f497ee350b1e0c07"
   },
-  "archive_directory": "archives"
+  "archive_directory": "archives",
+  "app_source_tag": "v0.7.12"
 }

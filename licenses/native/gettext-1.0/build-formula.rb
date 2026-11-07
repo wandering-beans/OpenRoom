@@ -1,9 +1,8 @@
 class Gettext < Formula
   desc "GNU internationalization (i18n) and localization (l10n) library"
   homepage "https://www.gnu.org/software/gettext/"
-  url "https://ftpmirror.gnu.org/gnu/gettext/gettext-1.0.tar.gz"
+  url "https://ftpmirror.gnu.org/gettext/gettext-1.0.tar.gz"
   mirror "https://ftp.gnu.org/gnu/gettext/gettext-1.0.tar.gz"
-  mirror "http://ftp.gnu.org/gnu/gettext/gettext-1.0.tar.gz"
   sha256 "85d99b79c981a404874c02e0342176cf75c7698e2b51fe41031cf6526d974f1a"
   license all_of: [
     "GPL-3.0-or-later",
@@ -21,6 +20,8 @@ class Gettext < Formula
   on_linux do
     depends_on "acl"
   end
+
+  deny_network_access!
 
   def install
     # Workaround for newer Clang

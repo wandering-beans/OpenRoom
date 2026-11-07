@@ -1991,6 +1991,18 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "hyper-tls",
+      "version": "0.6.0",
+      "license": "MIT/Apache-2.0",
+      "repository": "https://github.com/hyperium/hyper-tls",
+      "notices": [
+        "rust/hyper-tls-0.6.0/LICENSE-APACHE",
+        "rust/hyper-tls-0.6.0/LICENSE-MIT"
+      ],
+      "revision": "0265e166a8886f01253050516316a95900315b81"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "hyper-util",
       "version": "0.1.21",
       "license": "MIT",
@@ -2850,6 +2862,18 @@
         "rust/nalgebra-0.35.0/LICENSE"
       ],
       "revision": "5f927f6c821d0ced07a0e086e5f37251cab2a8c3"
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "native-tls",
+      "version": "0.2.18",
+      "license": "MIT OR Apache-2.0",
+      "repository": "https://github.com/rust-native-tls/rust-native-tls",
+      "notices": [
+        "rust/native-tls-0.2.18/LICENSE-APACHE",
+        "rust/native-tls-0.2.18/LICENSE-MIT"
+      ],
+      "revision": "3cf1877ee86814168255db6d73fbefc127211c1c"
     },
     {
       "ecosystem": "cargo",
@@ -4924,6 +4948,17 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "tokio-native-tls",
+      "version": "0.3.1",
+      "license": "MIT",
+      "repository": "https://github.com/tokio-rs/tls",
+      "notices": [
+        "rust/tokio-native-tls-0.3.1/LICENSE"
+      ],
+      "revision": "775b6d69f42f76227c5a3c5ac5058da9ff095ca0"
+    },
+    {
+      "ecosystem": "cargo",
       "name": "tokio-stream",
       "version": "0.1.19",
       "license": "MIT",
@@ -5698,23 +5733,23 @@
     {
       "ecosystem": "native",
       "name": "aom",
-      "version": "3.15.2",
+      "version": "3.15.3",
       "license_declaration": "\"BSD-2-Clause\"",
       "source_url": "https://aomedia.googlesource.com/aom.git",
-      "source_pin": "revision: \"af3dc9aadc793c1b00edc003e3fc19a44fdeb574\"",
+      "source_pin": "revision: \"b141d9c45db236335351c8a4b2a14b3ade27c937\"",
       "notices": [
-        "native/aom-3.15.2/LICENSE",
-        "native/aom-3.15.2/build-formula.rb",
-        "native/aom-3.15.2/PATENTS"
+        "native/aom-3.15.3/LICENSE",
+        "native/aom-3.15.3/build-formula.rb",
+        "native/aom-3.15.3/PATENTS"
       ],
       "libraries": [
         {
           "name": "libaom.3.dylib",
-          "uuid": "1C446D3E-893B-34A3-A5DE-5C9BAF526CD1"
+          "uuid": "7AAC9538-484F-3FD9-9E9F-08147AAF65AC"
         }
       ],
       "notice_sources": [
-        "https://aomedia.googlesource.com/aom/+/af3dc9aadc793c1b00edc003e3fc19a44fdeb574/PATENTS?format=TEXT"
+        "https://aomedia.googlesource.com/aom/+/b141d9c45db236335351c8a4b2a14b3ade27c937/PATENTS?format=TEXT"
       ]
     },
     {
@@ -5731,11 +5766,11 @@
       "libraries": [
         {
           "name": "libbrotlicommon.1.dylib",
-          "uuid": "F055F233-8F52-3485-8D00-0A51B6EBB2C1"
+          "uuid": "590F161A-25B0-328F-9688-D054320FA38B"
         },
         {
           "name": "libbrotlidec.1.dylib",
-          "uuid": "F335EF0F-0AEE-3443-B346-CACAC596AF2B"
+          "uuid": "E564C703-D2F2-3382-B8CF-D810955185E8"
         }
       ]
     },
@@ -5754,7 +5789,7 @@
       "libraries": [
         {
           "name": "libexiv2.28.dylib",
-          "uuid": "5A487523-33AC-35FA-8B8D-6B2099D54DD1"
+          "uuid": "C3299AC2-43D6-376F-96A1-5122FE922404"
         }
       ]
     },
@@ -5773,11 +5808,11 @@
       "libraries": [
         {
           "name": "libfftw3f.3.dylib",
-          "uuid": "465FDCB4-FE23-37C5-B3C7-CD495D36B53E"
+          "uuid": "AF4D1E44-9599-3242-BFD7-EDDD49247E47"
         },
         {
           "name": "libfftw3f_omp.3.dylib",
-          "uuid": "886B9864-6C69-3FB9-94B6-F34D0EF562E7"
+          "uuid": "607317A0-3B97-3815-95EB-35DF9A083A38"
         }
       ]
     },
@@ -5795,7 +5830,7 @@
       "libraries": [
         {
           "name": "libfmt.12.dylib",
-          "uuid": "FA4E8BE7-5664-3DFD-A968-42867930FB85"
+          "uuid": "25160F6B-91F4-3578-96EF-AED91455C499"
         }
       ]
     },
@@ -5804,7 +5839,7 @@
       "name": "gettext",
       "version": "1.0",
       "license_declaration": "all_of: [\n    \"GPL-3.0-or-later\",\n    \"LGPL-2.1-or-later\", # libintl, libasprintf",
-      "source_url": "https://ftpmirror.gnu.org/gnu/gettext/gettext-1.0.tar.gz",
+      "source_url": "https://ftpmirror.gnu.org/gettext/gettext-1.0.tar.gz",
       "source_pin": "sha256 \"85d99b79c981a404874c02e0342176cf75c7698e2b51fe41031cf6526d974f1a\"",
       "notices": [
         "native/gettext-1.0/COPYING",
@@ -5814,7 +5849,7 @@
       "libraries": [
         {
           "name": "libintl.8.dylib",
-          "uuid": "685F7630-FFC2-340B-B015-A7EE74C4D830"
+          "uuid": "D989156F-E9D3-3B0B-A4CC-D5A2EC16A5FB"
         }
       ],
       "bundled_library_license": "LGPL-2.1-or-later",
@@ -5845,19 +5880,19 @@
       "libraries": [
         {
           "name": "libgio-2.0.0.dylib",
-          "uuid": "89A13D30-0BB4-31A9-A04E-61B651B58385"
+          "uuid": "19B9DAEC-B0B6-3FC6-9D68-21CEA1FF59FD"
         },
         {
           "name": "libglib-2.0.0.dylib",
-          "uuid": "27D1BA34-5D60-3DE0-8F3B-00BCF5E09139"
+          "uuid": "5C6787DF-5C94-388F-A644-E0BE11246455"
         },
         {
           "name": "libgmodule-2.0.0.dylib",
-          "uuid": "B0128761-B3AC-351D-9B6C-364C8A04730C"
+          "uuid": "F9004F1C-CB4A-3B6C-9C37-ECE925854CCD"
         },
         {
           "name": "libgobject-2.0.0.dylib",
-          "uuid": "B086FDBA-868D-3C61-8749-8264F51490FD"
+          "uuid": "F9F752B3-7014-30CE-A88C-F1F83BD6CF4B"
         }
       ],
       "build_patches": [
@@ -5885,53 +5920,53 @@
       "libraries": [
         {
           "name": "libgiomm-2.4.1.dylib",
-          "uuid": "4FC67B95-55D8-3ACA-9D91-948A7A8DAC9B"
+          "uuid": "9F8DC715-ABD4-3D0D-97B9-E9A769296C8A"
         },
         {
           "name": "libglibmm-2.4.1.dylib",
-          "uuid": "F52B3D8C-9951-3708-884A-E417A016442B"
+          "uuid": "85681F97-016D-3D8D-B4FC-82FB30663EC7"
         }
       ]
     },
     {
       "ecosystem": "native",
       "name": "inih",
-      "version": "62",
+      "version": "63",
       "license_declaration": "\"BSD-3-Clause\"",
-      "source_url": "https://github.com/benhoyt/inih/archive/refs/tags/r62.tar.gz",
-      "source_pin": "sha256 \"9c15fa751bb8093d042dae1b9f125eb45198c32c6704cd5481ccde460d4f8151\"",
+      "source_url": "https://github.com/benhoyt/inih/archive/refs/tags/r63.tar.gz",
+      "source_pin": "sha256 \"5d7967de62c5bfdc4f9f5ab06ce44c9e498bae021c7dac5792c0696e76aa9963\"",
       "notices": [
-        "native/inih-62/LICENSE.txt",
-        "native/inih-62/build-formula.rb"
+        "native/inih-63/LICENSE.txt",
+        "native/inih-63/build-formula.rb"
       ],
       "libraries": [
         {
           "name": "libINIReader.0.dylib",
-          "uuid": "A166345E-3A7D-3936-966C-7396954757C7"
+          "uuid": "62A1DB02-879C-3F31-BD16-1B3E97D3D7DF"
         },
         {
           "name": "libinih.0.dylib",
-          "uuid": "A3721007-705F-3C13-B9C6-0CE5B400EA1C"
+          "uuid": "22B2CD79-C170-3A4C-9CEE-723CB75F406C"
         }
       ]
     },
     {
       "ecosystem": "native",
       "name": "jpeg-turbo",
-      "version": "3.2.0",
+      "version": "3.2.1",
       "license_declaration": "all_of: [\n    \"IJG\", # libjpeg API library and programs\n    \"Zlib\", # libjpeg-turbo SIMD source code\n    \"BSD-3-Clause\", # TurboJPEG API library and programs",
-      "source_url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.0/libjpeg-turbo-3.2.0.tar.gz",
-      "source_pin": "sha256 \"6f30092cef9fb839779646608f4ee14ae3cbac989c47fa05e841b0841f09878e\"",
+      "source_url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.2.1/libjpeg-turbo-3.2.1.tar.gz",
+      "source_pin": "sha256 \"c27ad72a68da151177929aa969ae773a2da5ac2af9ce946079314fdac8cece7f\"",
       "notices": [
-        "native/jpeg-turbo-3.2.0/LICENSE.md",
-        "native/jpeg-turbo-3.2.0/share/doc/libjpeg-turbo/LICENSE.md",
-        "native/jpeg-turbo-3.2.0/build-formula.rb",
-        "native/jpeg-turbo-3.2.0/README.ijg"
+        "native/jpeg-turbo-3.2.1/LICENSE.md",
+        "native/jpeg-turbo-3.2.1/share/doc/libjpeg-turbo/LICENSE.md",
+        "native/jpeg-turbo-3.2.1/build-formula.rb",
+        "native/jpeg-turbo-3.2.1/README.ijg"
       ],
       "libraries": [
         {
           "name": "libjpeg.8.dylib",
-          "uuid": "D713D0E1-7E05-38BB-8701-075F69F0C6A9"
+          "uuid": "DEF4F136-56EF-370D-9E0B-D9B151464A3B"
         }
       ]
     },
@@ -5950,7 +5985,7 @@
       "libraries": [
         {
           "name": "liblensfun.1.dylib",
-          "uuid": "D3B60B62-1AF5-39AB-9357-5DAA54E777F4"
+          "uuid": "576CB493-19FC-3BBB-8E78-443867EA4A45"
         }
       ]
     },
@@ -5968,25 +6003,25 @@
       "libraries": [
         {
           "name": "libde265.0.dylib",
-          "uuid": "658F4F66-3774-36E6-AAC7-263E7F9E0890"
+          "uuid": "BAB93974-2C34-35B5-877E-8EF8C5C1F0CD"
         }
       ]
     },
     {
       "ecosystem": "native",
       "name": "libheif",
-      "version": "1.23.6",
+      "version": "1.23.7",
       "license_declaration": "\"LGPL-3.0-or-later\"",
-      "source_url": "https://github.com/strukturag/libheif/releases/download/v1.23.6/libheif-1.23.6.tar.gz",
-      "source_pin": "sha256 \"4484346dc5995319dbc11e3a1c35d0a2ec46511ce370900869337fd2c7033125\"",
+      "source_url": "https://github.com/strukturag/libheif/releases/download/v1.23.7/libheif-1.23.7.tar.gz",
+      "source_pin": "sha256 \"f7483e818503ea6224c8863e4a56ac02c7089021a98472c811c12aa19faf2475\"",
       "notices": [
-        "native/libheif-1.23.6/COPYING",
-        "native/libheif-1.23.6/build-formula.rb"
+        "native/libheif-1.23.7/COPYING",
+        "native/libheif-1.23.7/build-formula.rb"
       ],
       "libraries": [
         {
           "name": "libheif.1.dylib",
-          "uuid": "B0B660B0-38B6-377B-A59D-D450540A7CEA"
+          "uuid": "A4DC04C9-0781-39ED-AB7D-445982F4E030"
         }
       ]
     },
@@ -6005,7 +6040,7 @@
       "libraries": [
         {
           "name": "libomp.dylib",
-          "uuid": "D4F53797-2C2F-3B52-A390-4F2CD7BAB9B6"
+          "uuid": "D0CAF578-FA67-33EB-81F6-0DF51F67F071"
         }
       ],
       "license": "Apache-2.0 WITH LLVM-exception",
@@ -6028,30 +6063,30 @@
       "libraries": [
         {
           "name": "libpng16.16.dylib",
-          "uuid": "4CC26026-4CD3-3266-8F77-BA6679FA1D42"
+          "uuid": "7477C063-3048-3006-B32F-6A0C0451FCE2"
         }
       ]
     },
     {
       "ecosystem": "native",
       "name": "libraw",
-      "version": "0.22.2",
+      "version": "0.22.3",
       "license_declaration": "any_of: [\"LGPL-2.1-only\", \"CDDL-1.0\"]",
-      "source_url": "https://www.libraw.org/data/LibRaw-0.22.2.tar.gz",
-      "source_pin": "sha256 \"de86b035655accff8d4010f1a221fdf50d353cb7b1422ba26f14a0db92612cfa\"",
+      "source_url": "https://www.libraw.org/data/LibRaw-0.22.3.tar.gz",
+      "source_pin": "sha256 \"789f3c33466210a1a0907f747a97c715d21bbf4af712f257fcbbd90111b227e4\"",
       "notices": [
-        "native/libraw-0.22.2/COPYRIGHT",
-        "native/libraw-0.22.2/LICENSE.CDDL",
-        "native/libraw-0.22.2/LICENSE.LGPL",
-        "native/libraw-0.22.2/share/doc/libraw/COPYRIGHT",
-        "native/libraw-0.22.2/share/doc/libraw/LICENSE.CDDL",
-        "native/libraw-0.22.2/share/doc/libraw/LICENSE.LGPL",
-        "native/libraw-0.22.2/build-formula.rb"
+        "native/libraw-0.22.3/COPYRIGHT",
+        "native/libraw-0.22.3/LICENSE.CDDL",
+        "native/libraw-0.22.3/LICENSE.LGPL",
+        "native/libraw-0.22.3/share/doc/libraw/COPYRIGHT",
+        "native/libraw-0.22.3/share/doc/libraw/LICENSE.CDDL",
+        "native/libraw-0.22.3/share/doc/libraw/LICENSE.LGPL",
+        "native/libraw-0.22.3/build-formula.rb"
       ],
       "libraries": [
         {
           "name": "libraw_r.25.dylib",
-          "uuid": "87E74EC7-E784-32CA-ABD2-75E0417B4E2A"
+          "uuid": "7B439755-E3B6-3554-BABB-83A8AEFB5645"
         }
       ]
     },
@@ -6069,7 +6104,7 @@
       "libraries": [
         {
           "name": "libsigc-2.0.0.dylib",
-          "uuid": "9FBC4910-F4A6-356D-AA05-B2072919546E"
+          "uuid": "9208101B-942A-3B78-9FB1-28A323B7C6A7"
         }
       ]
     },
@@ -6090,7 +6125,7 @@
       "libraries": [
         {
           "name": "libtiff.6.dylib",
-          "uuid": "B469A724-741D-380D-962F-358A533BF9DA"
+          "uuid": "BAD662AF-1DAB-3278-84D5-96DD88E3369A"
         }
       ]
     },
@@ -6108,7 +6143,7 @@
       "libraries": [
         {
           "name": "libvmaf.3.dylib",
-          "uuid": "F11CF4B6-164C-3CFE-9E04-D346E4DD32F2"
+          "uuid": "A29F9509-5876-379A-AF9F-43BF2525D3BE"
         }
       ]
     },
@@ -6126,7 +6161,7 @@
       "libraries": [
         {
           "name": "liblcms2.2.dylib",
-          "uuid": "247D934A-222E-3F3D-AABD-D671985D53B2"
+          "uuid": "C82F20BF-AEC5-32FA-85DC-CA4EEFA06424"
         }
       ]
     },
@@ -6147,7 +6182,7 @@
       "libraries": [
         {
           "name": "libpcre2-8.0.dylib",
-          "uuid": "D5E8721E-717E-33FA-AFC2-43784CD7EE3A"
+          "uuid": "62682F15-FA68-3F00-94FE-37639B916371"
         }
       ]
     },
@@ -6166,11 +6201,11 @@
       "libraries": [
         {
           "name": "libsharpyuv.0.dylib",
-          "uuid": "C9262A37-4290-3A1C-B9FA-793D0404D712"
+          "uuid": "47376E2C-C544-37EF-BD5D-040A84A1D83F"
         },
         {
           "name": "libwebp.7.dylib",
-          "uuid": "125736F7-37E7-3884-8F27-B6E94E711760"
+          "uuid": "43D2CC31-59BF-35BA-AAD9-3516DBB13540"
         }
       ],
       "notice_sources": [
@@ -6191,7 +6226,7 @@
       "libraries": [
         {
           "name": "libx265.217.dylib",
-          "uuid": "57B60449-9FB0-3EF9-ADDA-9DF4A4926CE4"
+          "uuid": "B46DD5F2-DC75-3298-A694-CD4DAB7FD179"
         }
       ]
     },
@@ -6216,7 +6251,7 @@
       "libraries": [
         {
           "name": "liblzma.5.dylib",
-          "uuid": "EE743822-2399-31A5-83DE-33580E7738B2"
+          "uuid": "C724575B-978E-3C90-8AF9-1C3A98CF6D15"
         }
       ]
     },

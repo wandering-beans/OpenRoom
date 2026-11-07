@@ -32,6 +32,8 @@ jobs:
         if: ${{ !inputs.audit_dependencies }}
       - run: python3 scripts/test-privacy-check.py
         if: ${{ !inputs.audit_dependencies }}
+      - run: python3 scripts/test-license-inventory.py
+        if: ${{ !inputs.audit_dependencies }}
       - run: python3 scripts/privacy-check.py --tracked
         if: ${{ !inputs.audit_dependencies }}
       - run: sh scripts/build-desktop.sh dist/OpenRoom.app
@@ -45,6 +47,11 @@ jobs:
           python3 scripts/privacy-check.py dist/OpenRoom.app
           codesign --verify --deep --strict dist/OpenRoom.app
           test "$(lipo -archs dist/OpenRoom.app/Contents/MacOS/OpenRoom)" = arm64
+          AE_DATA_DIR="$RUNNER_TEMP/openroom-smoke" dist/OpenRoom.app/Contents/MacOS/OpenRoom &
+          app_pid=$!
+          sleep 10
+          kill -0 "$app_pid"
+          kill "$app_pid"
       - name: Package manual download
         if: ${{ !inputs.audit_dependencies }}
         run: |

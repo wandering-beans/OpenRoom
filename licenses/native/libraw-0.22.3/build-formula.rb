@@ -1,8 +1,8 @@
 class Libraw < Formula
   desc "Library for reading RAW files from digital photo cameras"
   homepage "https://www.libraw.org/"
-  url "https://www.libraw.org/data/LibRaw-0.22.2.tar.gz"
-  sha256 "de86b035655accff8d4010f1a221fdf50d353cb7b1422ba26f14a0db92612cfa"
+  url "https://www.libraw.org/data/LibRaw-0.22.3.tar.gz"
+  sha256 "789f3c33466210a1a0907f747a97c715d21bbf4af712f257fcbbd90111b227e4"
   license any_of: ["LGPL-2.1-only", "CDDL-1.0"]
   compatibility_version 2
 
@@ -31,6 +31,12 @@ class Libraw < Formula
     depends_on "zlib-ng-compat"
   end
 
+  resource "homebrew-librawtestfile", :test do
+    url "https://www.rawsamples.ch/raws/nikon/d1/RAW_NIKON_D1.NEF"
+    mirror "https://web.archive.org/web/20200703103724/https://www.rawsamples.ch/raws/nikon/d1/RAW_NIKON_D1.NEF"
+    sha256 "7886d8b0e1257897faa7404b98fe1086ee2d95606531b6285aed83a0939b768f"
+  end
+
   def install
     # Work around "checking for OpenMP flag of C compiler... unknown".
     # Using -dead_strip_dylibs so `brew linkage` can show if OpenMP is actually used.
@@ -44,12 +50,6 @@ class Libraw < Formula
   end
 
   test do
-    resource "homebrew-librawtestfile" do
-      url "https://www.rawsamples.ch/raws/nikon/d1/RAW_NIKON_D1.NEF"
-      mirror "https://web.archive.org/web/20200703103724/https://www.rawsamples.ch/raws/nikon/d1/RAW_NIKON_D1.NEF"
-      sha256 "7886d8b0e1257897faa7404b98fe1086ee2d95606531b6285aed83a0939b768f"
-    end
-
     resource("homebrew-librawtestfile").stage(testpath)
     filename = "RAW_NIKON_D1.NEF"
     system bin/"raw-identify", "-u", filename
