@@ -23,6 +23,7 @@ jobs:
       - run: brew install libheif pkgconf cmake ninja gtkmm3 fftw libiptcdata lensfun exiv2 little-cms2 libomp librsvg fmt libraw
       - run: python3 scripts/audit-macos-dependencies.py
       - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
           name: macos-dependency-audit
           path: dist/macos-dependency-audit

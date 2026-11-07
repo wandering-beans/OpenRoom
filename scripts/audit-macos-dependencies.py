@@ -10,7 +10,7 @@ import subprocess
 
 def source_recipe(text):
     # Bottle hashes describe platform builds, not source or build instructions.
-    return re.sub(r'^  bottle do\n.*?^  end\n', '', text.replace('\r\n', '\n'),
+    return re.sub(r'^  bottle do\n.*?^  end\n\n?', '', text.replace('\r\n', '\n'),
                   flags=re.MULTILINE | re.DOTALL).strip()
 
 
@@ -18,22 +18,27 @@ def main():
     root = Path(__file__).resolve().parents[1]
     manifest = json.loads((root / 'licenses/manifest.json').read_text())
     evidence = []
+    changes = []
+    output = root / 'dist/macos-dependency-audit'
+    output.mkdir(parents=True, exist_ok=True)
     for package in manifest['packages']:
         if not package.get('libraries') or package['name'] == 'RawTherapee':
             continue
         name = package['name']
         prefix = Path(subprocess.check_output(['brew', '--prefix', name], text=True).strip()).resolve()
-        if prefix.name != package['version']:
-            raise ValueError(f'Installed version changed: {name}: {prefix.name}')
         installed = (prefix / '.brew' / f'{name}.rb').read_text()
         recorded = next(p for p in package['notices'] if p.endswith('/build-formula.rb'))
         previous = (root / 'licenses' / recorded).read_text()
-        if source_recipe(installed) != source_recipe(previous):
+        if prefix.name != package['version'] or source_recipe(installed) != source_recipe(previous):
+            changes.append(f'{name}: recorded {package["version"]}, installed {prefix.name}')
+            (output / f'{name}.rb').write_text(installed)
             print(''.join(difflib.unified_diff(source_recipe(previous).splitlines(True),
                                              source_recipe(installed).splitlines(True))))
-            raise ValueError(f'Source recipe changed: {name}; review before packaging')
         for library in package['libraries']:
-            binary = (prefix / 'lib' / library['name']).resolve(strict=True)
+            binary = (prefix / 'lib' / library['name']).resolve()
+            if not binary.is_file():
+                changes.append(f'{name}: missing {library["name"]}')
+                continue
             if not binary.is_relative_to(prefix):
                 raise ValueError(f'Library escapes its package: {library["name"]}')
             library['uuid'] = subprocess.check_output(
@@ -41,10 +46,10 @@ def main():
         evidence.append({'name': name, 'version': prefix.name,
                          'source_recipe_sha256': hashlib.sha256(source_recipe(installed).encode()).hexdigest(),
                          'libraries': package['libraries']})
-    output = root / 'dist/macos-dependency-audit'
-    output.mkdir(parents=True, exist_ok=True)
-    (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     (output / 'evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
+    if changes:
+        raise ValueError('Review changed dependencies:\n' + '\n'.join(changes))
+    (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(f'Verified unchanged source recipes for {len(evidence)} Homebrew packages')
 
 
