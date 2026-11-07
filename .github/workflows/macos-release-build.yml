@@ -2,6 +2,9 @@ name: macOS release build
 on:
   workflow_dispatch:
     inputs:
+      source_ref:
+        description: Application commit to build (defaults to this workflow revision)
+        type: string
       audit_dependencies:
         description: Collect dependency evidence without building
         type: boolean
@@ -12,15 +15,30 @@ jobs:
   build:
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_FROM_API: 1
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
-      - run: brew install libheif pkgconf cmake ninja gtkmm3 fftw libiptcdata lensfun exiv2 little-cms2 libomp librsvg fmt libraw
+      - name: Select the Homebrew recipes used for the release inventory
+        run: |
+          core="$(brew --repository)/Library/Taps/homebrew/homebrew-core"
+          mkdir -p "$core"
+          if [ ! -d "$core/.git" ]; then
+            git -C "$core" init --quiet
+            git -C "$core" remote add origin https://github.com/Homebrew/homebrew-core.git
+          fi
+          git -C "$core" fetch --depth=1 origin 543e7034a78b2d4aa344685f89cffeb15d210ca5
+          git -C "$core" checkout --detach FETCH_HEAD
+      - run: brew install aom inih jpeg-turbo libheif pkgconf cmake ninja gtkmm3 fftw libiptcdata lensfun exiv2 little-cms2 libomp librsvg fmt libraw
       - run: python3 scripts/audit-macos-dependencies.py
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
