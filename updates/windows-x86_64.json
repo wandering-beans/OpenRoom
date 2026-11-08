@@ -1,10 +1,10 @@
 {
-  "version": "0.7.13",
-  "notes": "OpenRoom 0.7.13では、初回起動時に利用規約と免責事項を表示します。「同意して続ける」を選ぶとカタログを開けます。「同意せず終了」を選ぶと、カタログを開かずにアプリが終了します。\n\n旧版からの更新でも、最初の起動時に同意を求めます。同意した文面は端末内に保存します。次回の起動では同じ文面を再表示せず、規約か免責事項の本文が変わったときに再度表示します。\n\nWindows x64版はインストーラーから利用できます。Apple Silicon向けのmacOS版（macOS 26以降）はZIPを展開し、起動中のOpenRoomを終了してから既存のアプリを置き換えてください。Windows版はアプリ内更新に対応しています。macOS版は手動更新です。\n\nWindowsの発行元署名とmacOSのDeveloper ID署名・公証は付いていません。",
+  "version": "0.7.14",
+  "notes": "OpenRoom 0.7.14では、RAWの取り込みと、写真を選んでから現像画面で編集を始めるまでの時間を短縮しました。Windows 11の内蔵SSDで異なるRAW 23枚を取り込んだ試験では、一覧画像と閲覧画像をすべて保存するまでの時間が平均38.56秒から14.30秒になりました。\n\nライブラリから現像に切り替える間も、選んだ写真を表示し続けます。写真とフォルダーのメニューは右クリック、メニューキー、Shift+F10で開けます。ルーペでは拡大率を保ったまま写真をドラッグできます。\n\n写真のメニューに「ディスクから削除」を追加しました。確認後、原本をゴミ箱に移し、カタログの登録とプレビューを削除します。\n\nWindows x64版はアプリ内更新またはインストーラーから更新できます。Apple Silicon搭載のMac（macOS 26以降）では、OpenRoomを終了し、ZIPを展開して既存のアプリを置き換えてください。\n\nWindowsの更新パッケージにはOpenRoomの更新用署名が付いています。Windowsの発行元署名、macOSのDeveloper ID署名・公証は付いていません。",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.13/OpenRoom-0.7.13-windows-x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbXZxQnpEY0sweXVia2E1TFJmSUxKWFhHYno5OUFLTDBXdjIwNXk1enozUDdFczkwN2tLbVp6NmhqaEhnRlZYaXNnLzhnZzEyVCtLOS9WTy9adlJ1SUEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MDE5NDU5CWZpbGU6T3BlblJvb20tMC43LjEzLXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xMwp3dFcxbVBNcFBNeW83YVh5b1VNR08zYmlyOFlYV2tHczdXeXhZRDJuMG5KM2xLcXRXT3dmQWJSK3JLNHVYN2dXUEVsV3ZLcnpCM2padDZnMnhEZ3pEZz09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.14/OpenRoom-0.7.14-windows-x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbXNDV0c4dlY4a2NCakhmRDF2VUNrMEJqQnIzM0xuVmpwLysxbGZma1dTNWJoVGZ2NVRkRG10U3JmaUIrM2VSWEVTTVZpb2h1SGptQklCa3JseDJ6b1FFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MDk1MzYyCWZpbGU6T3BlblJvb20tMC43LjE0LXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xNApRNHhVUDIwaDM2M2RvdXVvSU83bzBxUVBmVkxWbk5vTERBZ2R4RmVtZ2MzZEFlbzE4Mk1BN1hmMytmUXhHQTV6WkYyYjVOR0NKQzdDTCtMS0Q2NkRBUT09Cg=="
     }
   }
 }
