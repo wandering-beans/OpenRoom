@@ -1,5 +1,5 @@
 {
   "version": "0.7.9",
-  "notes": "Automatic macOS updates are unavailable. Download the macOS ZIP manually from the OpenRoom v0.7.14 GitHub release.",
+  "notes": "Automatic macOS updates are unavailable. Open the DMG from the OpenRoom v0.7.14 GitHub release and drag OpenRoom into Applications.",
   "platforms": {}
 }

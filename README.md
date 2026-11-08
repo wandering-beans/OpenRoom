@@ -4,12 +4,17 @@ OpenRoomは写真の整理とRAW現像ができるデスクトップアプリで
 
 ## インストールと更新
 
-[最新版のダウンロード](https://github.com/wandering-beans/OpenRoom/releases/latest)
+### macOS 26以降（Apple Silicon）
 
-| 環境 | インストール | 更新 |
-| --- | --- | --- |
-| Windows 11（x64） | インストーラー（`.exe`）を実行 | 「環境設定」→「更新を確認」→「更新して再起動」 |
-| macOS 26以降（Apple Silicon） | macOS版のZIPを展開 | OpenRoomを終了し、最新版のZIPから展開したアプリで置き換える |
+1. 最新リリースの「Assets」から、ファイル名の末尾が `-macos-arm64.dmg` のファイルをダウンロードし、ダブルクリックします。[最新版のダウンロード](https://github.com/wandering-beans/OpenRoom/releases/latest)
+2. 開いたウインドウで、`OpenRoom` を隣の `Applications` フォルダにドラッグします。旧版から更新するときは、先にOpenRoomを終了し、確認画面で「置き換える」を選びます。
+3. コピーが終わったらディスクイメージを取り出し、Finderの「アプリケーション」からOpenRoomを開きます。
+
+0.7.14はAppleのDeveloper ID署名と公証を受けていないため、初回起動時にmacOSが警告を表示することがあります。[警告が表示されたときのAppleの案内](https://support.apple.com/ja-jp/102445)
+
+### Windows 11（x64）
+
+最新版のリリースからWindows用インストーラー（`.exe`）をダウンロードして実行します。インストール済みの場合は「環境設定」→「更新を確認」→「更新して再起動」で更新できます。[最新版のダウンロード](https://github.com/wandering-beans/OpenRoom/releases/latest)
 
 ## 写真を開いて書き出す
 
