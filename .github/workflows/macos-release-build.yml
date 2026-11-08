@@ -5,6 +5,9 @@ on:
       source_ref:
         description: Application commit to build (defaults to this workflow revision)
         type: string
+      dmg_from_release:
+        description: Package the ZIP already published at this tag instead of rebuilding (e.g. v0.7.14)
+        type: string
       audit_dependencies:
         description: Collect dependency evidence without building
         type: boolean
@@ -13,6 +16,7 @@ permissions:
   contents: read
 jobs:
   build:
+    if: ${{ !inputs.dmg_from_release }}
     runs-on: macos-latest
     timeout-minutes: 60
     env:
@@ -83,4 +87,51 @@ jobs:
           path: |
             dist/OpenRoom-*-macos-arm64.zip
             dist/MACOS-SHA256SUMS.txt
+          if-no-files-found: error
+  disk-image:
+    needs: build
+    if: ${{ always() && !cancelled() && !inputs.audit_dependencies && (needs.build.result == 'success' || (needs.build.result == 'skipped' && inputs.dmg_from_release != '')) }}
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        if: ${{ !inputs.dmg_from_release }}
+        with:
+          name: macos-release
+          path: dist
+      - name: Download the published ZIP for the requested release
+        if: ${{ inputs.dmg_from_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.dmg_from_release }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          file="OpenRoom-${RELEASE_TAG#v}-macos-arm64.zip"
+          gh release download "$RELEASE_TAG" --pattern "$file" --pattern SHA256SUMS.txt --dir dist
+          awk -v file="$file" '$2 == file { print $1 "  dist/" file; n++ } END { if (n != 1) exit 1 }' dist/SHA256SUMS.txt > dist/MACOS-SHA256SUMS.txt
+      - name: Build disk image and test installation through its Applications link
+        run: |
+          shasum -a 256 -c dist/MACOS-SHA256SUMS.txt
+          bash scripts/package-macos-dmg.sh dist/OpenRoom-*-macos-arm64.zip
+          mount="$RUNNER_TEMP/openroom-dmg-mount"
+          mkdir "$mount"
+          hdiutil attach -readonly -nobrowse -mountpoint "$mount" dist/OpenRoom-*-macos-arm64.dmg
+          trap 'hdiutil detach "$mount"' EXIT
+          test "$(readlink "$mount/Applications")" = /Applications
+          test ! -e /Applications/OpenRoom.app
+          ditto "$mount/OpenRoom.app" "$mount/Applications/OpenRoom.app"
+          codesign --verify --deep --strict /Applications/OpenRoom.app
+          AE_DATA_DIR="$RUNNER_TEMP/openroom-dmg-smoke" /Applications/OpenRoom.app/Contents/MacOS/OpenRoom &
+          pid=$!
+          sleep 10
+          kill -0 "$pid"
+          kill "$pid"
+          (cd dist && shasum -a 256 OpenRoom-*-macos-arm64.dmg > DMG-SHA256SUMS.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: |
+            dist/OpenRoom-*-macos-arm64.dmg
+            dist/DMG-SHA256SUMS.txt
           if-no-files-found: error
