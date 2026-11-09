@@ -5,14 +5,45 @@ on:
   workflow_dispatch:
     inputs:
       verify_mac_update:
-        description: Test installation of the signed update from this version's release or draft
+        description: Test installation of the offline-signed macOS update
         type: boolean
         default: false
+      mac_build_run_id:
+        description: Run ID that produced the macos-update artifact
+        type: string
+      mac_source_commit:
+        description: Full application commit used for that build
+        type: string
+      mac_update_manifest:
+        description: Contents of the signed macos-aarch64.json (public)
+        type: string
 jobs:
   test:
     runs-on: macos-latest
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.verify_mac_update && inputs.mac_source_commit || github.sha }}
+      - name: Fetch the Mac update archive and its public manifest
+        if: ${{ inputs.verify_mac_update }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MAC_RUN: ${{ inputs.mac_build_run_id }}
+          APP_SHA: ${{ inputs.mac_source_commit }}
+          MANIFEST: ${{ inputs.mac_update_manifest }}
+        run: |
+          [[ "$MAC_RUN" =~ ^[0-9]+$ && "$APP_SHA" =~ ^[0-9a-f]{40}$ && "$(git rev-parse HEAD)" == "$APP_SHA" ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$MAC_RUN" | jq -e '.path == ".github/workflows/macos-release-build.yml" and .conclusion == "success"' >/dev/null
+          dest="$RUNNER_TEMP/signed-mac-update"
+          gh run download "$MAC_RUN" --name macos-update --dir "$dest"
+          version=$(jq -r .version desktop/tauri.conf.json)
+          name="OpenRoom-$version-macos-arm64.app.tar.gz"
+          test -f "$dest/$name"
+          (cd "$dest" && shasum -a 256 -c SHA256SUMS.txt)
+          printf '%s' "$MANIFEST" | jq -e --arg v "$version" --arg url "https://github.com/$GITHUB_REPOSITORY/releases/download/v$version/$name" 'select(.version == $v and (.platforms | keys) == ["darwin-aarch64"] and .platforms["darwin-aarch64"].url == $url)' > "$dest/macos-aarch64.json"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -36,6 +67,11 @@ jobs:
       - run: cargo test --locked
       - name: macOS media prerequisites
         run: brew install libheif pkgconf cmake ninja gtkmm3 fftw libiptcdata lensfun exiv2 little-cms2 libomp librsvg fmt libraw
+      - name: Install the signed macOS update in a temporary catalog
+        if: ${{ inputs.verify_mac_update }}
+        env:
+          OPENROOM_UPDATE_PACKAGE: ${{ runner.temp }}/signed-mac-update
+        run: cargo test --manifest-path desktop/Cargo.toml --locked packaged_release_verifies_and_installs_with_the_production_public_key -- --ignored
       - run: python scripts/fetch-media-fixtures.py "${{ runner.temp }}/raw-assets"
       - run: cargo test --manifest-path crates/media-core/Cargo.toml --locked -- --include-ignored
         env:
@@ -45,15 +81,6 @@ jobs:
       - run: python scripts/test-rtengine-contract.py .tools/rtengine/build/libopenroom_rtengine.dylib
       - run: cargo test --manifest-path crates/develop-core/Cargo.toml --locked
       - run: cargo test --manifest-path desktop/Cargo.toml --locked
-      - name: Install the signed macOS update in a temporary catalog
-        if: ${{ inputs.verify_mac_update }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          OPENROOM_UPDATE_PACKAGE: ${{ runner.temp }}/signed-mac-update
-        run: |
-          version=$(node -p "require('./desktop/package.json').version")
-          gh release download "v$version" --dir "$OPENROOM_UPDATE_PACKAGE" --pattern "OpenRoom-$version-macos-arm64.app.tar.gz" --pattern macos-aarch64.json
-          cargo test --manifest-path desktop/Cargo.toml --locked packaged_release_verifies_and_installs_with_the_production_public_key -- --ignored
       - name: Frontend regression tests
         run: node scripts/test-desktop-ui.cjs
       - name: Startup update regression tests
