@@ -8,6 +8,27 @@ module.exports = async function testCatalogRemoval(page) {
   assert.equal(await page.locator('#search').evaluate(el =>
     ['c','v'].every(key => el.dispatchEvent(new KeyboardEvent('keydown',
       {key,ctrlKey:true,bubbles:true,cancelable:true})))),true);
+  const drive = '\\\\?\\D:\\', share = '\\\\?\\UNC\\server\\photos\\';
+  await page.evaluate(([drive,share]) => { window.folderChoices = [
+    {id:2,path:drive+'撮影A'}, {id:3,path:drive+'撮影B'},
+    {id:4,path:share+'撮影A'}, {id:5,path:share+'撮影B'}
+  ]; }, [drive,share]);
+  await page.click('#add-small');
+  await page.waitForFunction(() => document.querySelectorAll('.folder-parent').length === 2 && !document.querySelector('#add-small').disabled);
+  for (const [raw,title,label,rootId] of [[drive,'D:\\','D:\\',2], [share,'\\\\server\\photos','photos',4]]) {
+    const row = page.locator('.folder-parent').filter({has:page.getByText(label,{exact:true})});
+    assert.equal(await row.getAttribute('title'), title);
+    assert.equal(await page.locator('.folder-row[data-root="'+rootId+'"][data-folder=""] .folder-label').getAttribute('title'),
+      title.replace(/\\$/, '')+'\\撮影A');
+    await row.click({button:'right'}); await page.click('#disk-remove');
+    await page.locator('#discard-dialog[open]').waitFor();
+    assert((await page.locator('#discard-message').textContent()).includes(title));
+    assert(!(await page.locator('#discard-message').textContent()).includes('\\\\?\\'));
+    assert.equal(await page.evaluate(() => calls.filter(c=>c.command==='plan_disk_removal').at(-1).args.selection.path),
+      raw === drive ? drive : share.slice(0,-1));
+    await page.click('#discard-dialog button[value="cancel"]');
+  }
+  await page.reload(); await first.waitFor();
   await page.evaluate(() => { window.folderChoices = [{id:2,path:'/albums/A'},{id:3,path:'/albums/B'}]; });
   await page.click('#add-small');
   const parent = page.locator('.folder-parent[title="/albums"]');

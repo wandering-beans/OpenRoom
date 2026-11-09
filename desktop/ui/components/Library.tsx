@@ -86,6 +86,17 @@ function folderMenuKey(event: KeyboardEvent, open: () => void) {
   }
 }
 
+// Catalog commands need the original path, even when Windows uses an extended path prefix.
+export function displayFolderPath(path: string) {
+  return path.replace(/^\\\\\?\\UNC\\/i, '\\\\').replace(/^\\\\\?\\(?=[a-z]:\\)/i, '');
+}
+
+export function folderLabel(path: string) {
+  const display = displayFolderPath(path);
+  if (/^[a-z]:\\$/i.test(display)) return display;
+  return display.split(display.startsWith('/') ? '/' : '\\').filter(Boolean).at(-1) || display;
+}
+
 function parentPath(path: string) {
   const separator = path.startsWith('/') ? '/' : '\\';
   const cut = path.lastIndexOf(separator);
@@ -113,14 +124,13 @@ export function FolderTree({ trees, ...controls }: FolderControls & { trees: Roo
 
 function ParentFolder({ path, trees, filter, ...controls }: FolderControls & { path: string; trees: RootTree[] }) {
   const [expanded, setExpanded] = useState(true);
-  const separator = path.startsWith('/') ? '/' : '\\';
-  const name = path.slice(path.lastIndexOf(separator) + 1) || path;
+  const name = folderLabel(path);
   const childFilter = name.toLocaleLowerCase().includes(filter) ? '' : filter;
   if (!trees.some(tree => matches(tree.node, childFilter))) return null;
   const menu = (event: MouseEvent | KeyboardEvent) => controls.menu({ kind: 'parent', path, root_ids: trees.map(tree => tree.root.id) }, event);
   const total = trees.reduce((sum, tree) => sum + tree.node.count, 0);
   return <div className="folder-branch">
-    <button type="button" className="folder-row folder-parent" title={path} aria-expanded={expanded} aria-haspopup="menu" onClick={() => setExpanded(!expanded)}
+    <button type="button" className="folder-row folder-parent" title={displayFolderPath(path)} aria-expanded={expanded} aria-haspopup="menu" onClick={() => setExpanded(!expanded)}
       onContextMenu={menu} onKeyDown={event => folderMenuKey(event, () => menu(event))}>
       <span className="folder-toggle" aria-hidden="true">{expanded ? '▾' : '▸'}</span>
       <span className="folder-label"><span className="folder-icon" /><span>{name}</span></span>
@@ -135,13 +145,15 @@ function FolderBranch({ root, node, depth, filter, rootId, folderPath, allSelect
   if (!matches(node, filter)) return null;
   const childFilter = !filter || node.name.toLocaleLowerCase().includes(filter) ? '' : filter;
   const children = [...node.children.values()].filter(child => matches(child, childFilter));
+  const separator = root.path.startsWith('/') ? '/' : '\\';
+  const fullPath = node.path ? root.path + (root.path.endsWith(separator) ? '' : separator) + node.path : root.path;
   const openMenu = (event: MouseEvent | KeyboardEvent) => menu({ kind: 'folder', root_id: root.id, path: node.path }, event);
   const selected = allSelected || (rootId === root.id && folderPath === node.path);
   return <div className="folder-branch">
     <div className={`folder-row${selected ? ' active' : ''}`} style={{ '--depth': depth } as CSSProperties} data-root={root.id} data-folder={node.path}
       onContextMenu={openMenu} onKeyDown={event => folderMenuKey(event, () => openMenu(event))}>
       <button className="folder-toggle" aria-label={t('{0}のサブフォルダーを切り替え', node.name)} disabled={!children.length} aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{children.length ? expanded ? '▾' : '▸' : '·'}</button>
-      <button className="folder-label" aria-pressed={selected} aria-haspopup="menu" title={node.path ? root.path + (root.path.includes('\\') ? '\\' : '/') + node.path : root.path} onClick={() => { choose(root, node); setExpanded(true); }}><span className="folder-icon" /><span>{node.name}</span></button>
+      <button className="folder-label" aria-pressed={selected} aria-haspopup="menu" title={displayFolderPath(fullPath)} onClick={() => { choose(root, node); setExpanded(true); }}><span className="folder-icon" /><span>{node.name}</span></button>
       <span className="folder-count">{node.count.toLocaleString()}</span>
     </div>
     <div hidden={!expanded}>{children.map(child => <FolderBranch key={child.path} root={root} node={child} depth={depth + 1} filter={childFilter} rootId={rootId} folderPath={folderPath} allSelected={allSelected} choose={choose} menu={menu} />)}</div>

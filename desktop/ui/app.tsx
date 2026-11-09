@@ -1,6 +1,6 @@
 import { createView } from './components/view';
 import { bindWarningBanner } from './components/WarningBanner';
-import { PhotoTile, FolderTree, Properties, type FolderNode, type ThumbnailLoader } from './components/Library';
+import { PhotoTile, FolderTree, Properties, displayFolderPath, folderLabel, type FolderNode, type ThumbnailLoader } from './components/Library';
 import type { ReactNode, CSSProperties } from 'react';
 import type { CatalogRemoval, Commands, TrashPlan } from './backend';
 import type { Detail, Photo, Root, Folder, Cursor, Preview, PhotoMetadata, ViewMode, Module, Focus, Query, UiState, PreviewProgress, ScanProgress, Recipe } from './models';
@@ -258,8 +258,8 @@ async function relinkFolder(sourceRoot: number, path: string) {
 }
 async function removeLibraryItems(selection: CatalogRemoval, mode: 'catalog' | 'disk') {
   if (!await allowChange()) return;
-  const folderName = selection.kind === 'photos' ? '' : selection.kind === 'parent' ? selection.path
-    : selection.path || roots.find(root => root.id === selection.root_id)?.path || '';
+  const folderName = selection.kind === 'photos' ? '' : displayFolderPath(selection.kind === 'parent' ? selection.path
+    : selection.path || roots.find(root => root.id === selection.root_id)?.path || '');
   const target = selection.kind === 'photos' ? t('{0}枚の写真', selection.ids.length) : t('フォルダー「{0}」内のすべての写真（サブフォルダーを含む）', folderName);
   let plan: TrashPlan | undefined;
   confirmingChange = true;
@@ -694,7 +694,7 @@ function renderFolders() {
   const filter = $('folder-search').value.toLocaleLowerCase();
   const trees = roots.map(root => {
     const separator = root.path.includes('\\') ? '\\' : '/';
-    const rootName = root.path.split(/[\\/]/).filter(Boolean).pop() || root.path;
+    const rootName = folderLabel(root.path);
     const tree: FolderNode = { path: '', name: rootName, count: 0, children: new Map() };
     for (const folder of folders.filter(folder => folder.root_id === root.id)) {
       if (!folder.path) { tree.count = folder.count; continue; }
@@ -774,7 +774,7 @@ async function addFolder() {
     folderPath = rootId === null ? null : '';
     libraryFilters.clear();
     $('folder-search').value = '';
-    $('title').textContent = roots.length === 1 ? t("フォルダー：{0}", root.path.split(/[\\/]/).filter(Boolean).at(-1)) : t("すべての写真");
+    $('title').textContent = roots.length === 1 ? t("フォルダー：{0}", folderLabel(root.path)) : t("すべての写真");
     await loadFolders();
     await refresh();
     await scan(roots.map(root => root.id));
