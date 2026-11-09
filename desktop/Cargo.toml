@@ -1,6 +1,6 @@
 [package]
 name = "advanced-explorer-desktop"
-version = "0.7.15"
+version = "0.7.16"
 edition = "2024"
 license = "GPL-3.0-or-later"
 build = "build.rs"

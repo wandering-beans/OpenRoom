@@ -160,7 +160,7 @@ async fn packaged_release_verifies_and_installs_with_the_production_public_key()
         std::env::var_os("OPENROOM_UPDATE_PACKAGE").expect("package directory"),
     );
     let mut manifest: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(package.join("latest.json")).unwrap()).unwrap();
+        serde_json::from_slice(&std::fs::read(package.join("macos-aarch64.json")).unwrap()).unwrap();
     let version = manifest["version"].as_str().unwrap().to_owned();
     let archive = Arc::new(
         std::fs::read(package.join(format!("OpenRoom-{version}-macos-arm64.app.tar.gz"))).unwrap(),

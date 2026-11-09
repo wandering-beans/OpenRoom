@@ -2,7 +2,11 @@
 """Exercise Windows release signing with a disposable key, never the release key."""
 import base64
 import importlib.util
+import io
 import json
+import plistlib
+import sys
+import tarfile
 import os
 from pathlib import Path
 import subprocess
@@ -25,7 +29,7 @@ class WindowsUpdates(unittest.TestCase):
         windows = json.loads((ROOT / 'desktop/tauri.windows.conf.json').read_text())
         mac_feed = config['plugins']['updater']['endpoints']
         win_feed = windows['plugins']['updater']['endpoints']
-        self.assertTrue(mac_feed[0].endswith('/updates/latest.json'))
+        self.assertTrue(mac_feed[0].endswith('/updates/macos-aarch64.json'))
         self.assertTrue(win_feed[0].endswith('/updates/windows-x86_64.json'))
         self.assertTrue(config['plugins']['updater']['requireSignedVersion'])
         self.assertNotEqual(windows['plugins']['updater']['pubkey'], config['plugins']['updater']['pubkey'])
@@ -65,7 +69,7 @@ class WindowsUpdates(unittest.TestCase):
                 comment = base64.b64decode(platform['signature']).decode()
                 self.assertIn(f'file:{installer.name}\tversion:{version}', comment)
                 self.assertEqual((args.output / installer.name).read_bytes(), installer.read_bytes())
-                self.assertFalse((args.output / 'latest.json').exists())
+                self.assertFalse((args.output / 'macos-aarch64.json').exists())
                 self.assertFalse(list(args.output.glob('*.key*')))
                 with self.assertRaisesRegex(ValueError, 'Output already exists'):
                     package.package_windows(installer, args, fixture, config)
@@ -81,6 +85,37 @@ class WindowsUpdates(unittest.TestCase):
                     package.package_windows(installer, args, fixture, config)
                 self.assertFalse(args.output.exists())
         self.assertEqual((ROOT / 'desktop/tauri.conf.json').read_bytes(), original)
+
+
+
+class MacUpdates(unittest.TestCase):
+    def test_offline_signing_rejects_modified_archive_and_wrong_key(self):
+        config = json.loads((ROOT / 'desktop/tauri.conf.json').read_bytes())
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary)
+            archive = work / f"OpenRoom-{config['version']}-macos-arm64.app.tar.gz"
+            plist = plistlib.dumps({'CFBundleIdentifier': config['identifier'],
+                                    'CFBundleShortVersionString': config['version'],
+                                    'LSMinimumSystemVersion': '26.0'})
+            with tarfile.open(archive, 'w:gz') as output:
+                info = tarfile.TarInfo('OpenRoom.app/Contents/Info.plist')
+                info.size = len(plist)
+                output.addfile(info, io.BytesIO(plist))
+            notes = work / 'notes.txt'
+            notes.write_text('Test update')
+            args = ['package-update', str(archive), '--notes', str(notes), '--output', str(work / 'signed')]
+            key = work / 'wrong.key'
+            key.touch()
+            Path(str(key) + '.pub').write_text('wrong public key')
+            checksum = work / 'SHA256SUMS.txt'
+            checksum.write_text('incorrect')
+            with patch.object(sys, 'argv', args), patch.dict(os.environ, {'TAURI_SIGNING_PRIVATE_KEY_PATH': str(key)}):
+                with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
+                    package.main()
+                checksum.write_text(package.checksum_line(archive))
+                with self.assertRaisesRegex(ValueError, 'Signing key does not match'):
+                    package.main()
+            self.assertFalse((work / 'signed').exists())
 
 
 if __name__ == '__main__':

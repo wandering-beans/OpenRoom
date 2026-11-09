@@ -1,5 +1,13 @@
 name: Platform checks
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      verify_mac_update:
+        description: Test installation of the signed update from this version's release or draft
+        type: boolean
+        default: false
 jobs:
   test:
     runs-on: macos-latest
@@ -37,12 +45,22 @@ jobs:
       - run: python scripts/test-rtengine-contract.py .tools/rtengine/build/libopenroom_rtengine.dylib
       - run: cargo test --manifest-path crates/develop-core/Cargo.toml --locked
       - run: cargo test --manifest-path desktop/Cargo.toml --locked
+      - name: Install the signed macOS update in a temporary catalog
+        if: ${{ inputs.verify_mac_update }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPENROOM_UPDATE_PACKAGE: ${{ runner.temp }}/signed-mac-update
+        run: |
+          version=$(node -p "require('./desktop/package.json').version")
+          gh release download "v$version" --dir "$OPENROOM_UPDATE_PACKAGE" --pattern "OpenRoom-$version-macos-arm64.app.tar.gz" --pattern macos-aarch64.json
+          cargo test --manifest-path desktop/Cargo.toml --locked packaged_release_verifies_and_installs_with_the_production_public_key -- --ignored
       - name: Frontend regression tests
         run: node scripts/test-desktop-ui.cjs
       - name: Startup update regression tests
         run: node scripts/test-desktop-ui.cjs --updates
 
   windows-core:
+    if: ${{ !inputs.verify_mac_update }}
     runs-on: windows-latest
     timeout-minutes: 60
     env:

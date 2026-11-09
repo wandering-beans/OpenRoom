@@ -74,6 +74,15 @@ jobs:
           sleep 10
           kill -0 "$app_pid"
           kill "$app_pid"
+      - name: Prepare the macOS update archive for offline signing
+        if: ${{ !inputs.audit_dependencies }}
+        run: python3 scripts/package-update.py dist/OpenRoom.app --prepare-only --output dist/macos-update
+      - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.audit_dependencies }}
+        with:
+          name: macos-update
+          path: dist/macos-update/
+          if-no-files-found: error
       - name: Package manual download
         if: ${{ !inputs.audit_dependencies }}
         run: |
