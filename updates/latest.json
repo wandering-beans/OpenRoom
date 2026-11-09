@@ -1,5 +1,5 @@
 {
   "version": "0.7.9",
-  "notes": "Automatic macOS updates are unavailable. Open the DMG from the OpenRoom v0.7.15 GitHub release and drag OpenRoom into Applications.",
+  "notes": "Mac installations through 0.7.15 use the previous signing key. Install OpenRoom 0.7.16 or newer once from the DMG, then use automatic updates.",
   "platforms": {}
 }
