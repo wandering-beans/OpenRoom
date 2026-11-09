@@ -149,7 +149,25 @@ fn relink_repairs_only_bad_thumbnail_and_rejects_a_different_original() {
             .is_none()
     );
     let counts = state.library.counts.lock().unwrap().clone();
-    assert_eq!(prepare_pending(&state, |_| {}).unwrap().generated, 2);
+    let progress = prepare_pending(&state, |_| {}).unwrap();
+    assert_eq!(
+        (
+            progress.total,
+            progress.generated,
+            progress.failed,
+            progress.retained
+        ),
+        (2, 2, 0, 0),
+        "repair error: {:?}; per-photo results: {:?}",
+        progress.error,
+        ids.iter()
+            .map(|id| (
+                *id,
+                cat.library_preview(*id).unwrap().and_then(|p| p.error),
+                state.library.counts.lock().unwrap().get(id).copied()
+            ))
+            .collect::<Vec<_>>()
+    );
     let after = state.library.counts.lock().unwrap();
     assert_eq!(after[&ids[0]].renders, counts[&ids[0]].renders);
     assert_eq!(after[&ids[0]].encodes, counts[&ids[0]].encodes + 1);

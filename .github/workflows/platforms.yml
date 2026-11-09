@@ -80,11 +80,11 @@ jobs:
       - run: cargo test --manifest-path crates/rtengine/Cargo.toml --locked
       - run: python scripts/test-rtengine-contract.py .tools/rtengine/build/libopenroom_rtengine.dylib
       - run: cargo test --manifest-path crates/develop-core/Cargo.toml --locked
-      - run: cargo test --manifest-path desktop/Cargo.toml --locked
       - name: Verify RAW preview reuse after a folder rename
         run: |
           cargo build --manifest-path desktop/Cargo.toml --locked
           AE_TEST_EXECUTABLE="$PWD/target/debug/advanced-explorer-desktop" AE_PREVIEW_PHOTO="$(find "$RUNNER_TEMP/raw-assets" -name '*D2H*.NEF' -print -quit)" cargo test --manifest-path desktop/Cargo.toml --locked native_raw_relocation_counts -- --ignored
+      - run: cargo test --manifest-path desktop/Cargo.toml --locked
       - name: Frontend regression tests
         run: node scripts/test-desktop-ui.cjs
       - name: Startup update regression tests
