@@ -172,7 +172,18 @@ fn relink_repairs_only_bad_thumbnail_and_rejects_a_different_original() {
     assert_eq!(after[&ids[0]].renders, counts[&ids[0]].renders);
     assert_eq!(after[&ids[0]].encodes, counts[&ids[0]].encodes + 1);
     assert_eq!(after[&ids[1]].renders, counts[&ids[1]].renders + 1);
-    assert_eq!(both(&state.library, &cat, ids[0])[1], original[1]);
+    let repaired = both(&state.library, &cat, ids[0]);
+    assert_eq!(repaired[1], original[1]);
+    let thumbnail = image::load_from_memory(&original[1].1)
+        .unwrap()
+        .thumbnail(384, 384)
+        .into_rgb8();
+    let expected = advanced_explorer_media::preview::encode(&thumbnail, true, false).unwrap();
+    // The embedded color profile records its creation time; compare displayed pixels.
+    assert!(
+        image::load_from_memory(&repaired[0].1).unwrap()
+            == image::load_from_memory(&expected).unwrap()
+    );
 }
 
 #[test]

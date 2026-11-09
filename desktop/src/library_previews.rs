@@ -898,14 +898,24 @@ impl Store {
                 ))
             };
             let (pixels, info) = if let Some(stored) = &stored {
-                let intermediate = temporary.path().join("stored.tif");
-                state
-                    .renderer
-                    .render(Path::new(&stored.path), &intermediate, 1600, cancelled)?;
-                (
-                    advanced_explorer_media::preview::read_srgb(&intermediate)?,
-                    stored.clone(),
-                )
+                let path = Path::new(&stored.path);
+                let rgb = if path.extension().is_some_and(|ext| ext == "jpg") {
+                    // Our JPEG is already oriented and encoded in sRGB.
+                    use image::ImageDecoder;
+                    let decoder = image::codecs::jpeg::JpegDecoder::new(std::io::BufReader::new(
+                        std::fs::File::open(path)?,
+                    ))?;
+                    ensure!(
+                        decoder.dimensions() == (stored.render_width as u32, stored.render_height as u32),
+                        "Invalid stored JPEG dimensions"
+                    );
+                    image::DynamicImage::from_decoder(decoder)?.into_rgb8()
+                } else {
+                    let intermediate = temporary.path().join("stored.tif");
+                    state.renderer.render(path, &intermediate, 1600, cancelled)?;
+                    advanced_explorer_media::preview::read_srgb(&intermediate)?
+                };
+                (rgb, stored.clone())
             } else if json.is_some() || raw {
                 let settings = json
                     .as_deref()
