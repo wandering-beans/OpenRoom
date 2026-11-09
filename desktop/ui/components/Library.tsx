@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type KeyboardEvent } from 'react';
 import { t, metadataValue } from '../i18n';
+import type { CatalogRemoval } from '../backend';
 import type { Photo, Preview, Root, PhotoMetadata } from '../models';
 
 export interface ThumbnailLoader {
@@ -72,16 +73,23 @@ export function PhotoTile({ photo, index, film, selected, active, adjusted, styl
 }
 
 export interface FolderNode { path: string; name: string; count: number; children: Map<string, FolderNode> }
-interface FolderProps { root: Root; node: FolderNode; depth: number; filter: string; rootId: number | null; folderPath: string | null; allSelected: boolean; choose(root: Root, node: FolderNode): void; menu(root: Root, node: FolderNode, event: MouseEvent | KeyboardEvent): void }
+interface FolderProps { root: Root; node: FolderNode; depth: number; filter: string; rootId: number | null; folderPath: string | null; allSelected: boolean; choose(root: Root, node: FolderNode): void; menu(selection: Exclude<CatalogRemoval, { kind: 'photos' }>, event: MouseEvent | KeyboardEvent): void }
 function matches(node: FolderNode, filter: string): boolean {
   return !filter || node.name.toLocaleLowerCase().includes(filter) || [...node.children.values()].some(child => matches(child, filter));
 }
 type RootTree = Pick<FolderProps, 'root' | 'node'>;
 type FolderControls = Omit<FolderProps, 'root' | 'node' | 'depth'>;
 
+function folderMenuKey(event: KeyboardEvent, open: () => void) {
+  if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+    event.stopPropagation(); open();
+  }
+}
+
 function parentPath(path: string) {
   const separator = path.startsWith('/') ? '/' : '\\';
-  return path.slice(0, Math.max(0, path.lastIndexOf(separator)));
+  const cut = path.lastIndexOf(separator);
+  return path.slice(0, Math.max(0, separator === '\\' && path[cut - 1] === ':' ? cut + 1 : cut));
 }
 
 export function FolderTree({ trees, ...controls }: FolderControls & { trees: RootTree[] }) {
@@ -109,9 +117,11 @@ function ParentFolder({ path, trees, filter, ...controls }: FolderControls & { p
   const name = path.slice(path.lastIndexOf(separator) + 1) || path;
   const childFilter = name.toLocaleLowerCase().includes(filter) ? '' : filter;
   if (!trees.some(tree => matches(tree.node, childFilter))) return null;
+  const menu = (event: MouseEvent | KeyboardEvent) => controls.menu({ kind: 'parent', path, root_ids: trees.map(tree => tree.root.id) }, event);
   const total = trees.reduce((sum, tree) => sum + tree.node.count, 0);
   return <div className="folder-branch">
-    <button type="button" className="folder-row folder-parent" title={path} aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
+    <button type="button" className="folder-row folder-parent" title={path} aria-expanded={expanded} aria-haspopup="menu" onClick={() => setExpanded(!expanded)}
+      onContextMenu={menu} onKeyDown={event => folderMenuKey(event, () => menu(event))}>
       <span className="folder-toggle" aria-hidden="true">{expanded ? '▾' : '▸'}</span>
       <span className="folder-label"><span className="folder-icon" /><span>{name}</span></span>
       <span className="folder-count">{total.toLocaleString()}</span>
@@ -125,10 +135,11 @@ function FolderBranch({ root, node, depth, filter, rootId, folderPath, allSelect
   if (!matches(node, filter)) return null;
   const childFilter = !filter || node.name.toLocaleLowerCase().includes(filter) ? '' : filter;
   const children = [...node.children.values()].filter(child => matches(child, childFilter));
+  const openMenu = (event: MouseEvent | KeyboardEvent) => menu({ kind: 'folder', root_id: root.id, path: node.path }, event);
   const selected = allSelected || (rootId === root.id && folderPath === node.path);
   return <div className="folder-branch">
     <div className={`folder-row${selected ? ' active' : ''}`} style={{ '--depth': depth } as CSSProperties} data-root={root.id} data-folder={node.path}
-      onContextMenu={event => menu(root, node, event)} onKeyDown={event => { if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) { event.stopPropagation(); menu(root, node, event); } }}>
+      onContextMenu={openMenu} onKeyDown={event => folderMenuKey(event, () => openMenu(event))}>
       <button className="folder-toggle" aria-label={t('{0}のサブフォルダーを切り替え', node.name)} disabled={!children.length} aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{children.length ? expanded ? '▾' : '▸' : '·'}</button>
       <button className="folder-label" aria-pressed={selected} aria-haspopup="menu" title={node.path ? root.path + (root.path.includes('\\') ? '\\' : '/') + node.path : root.path} onClick={() => { choose(root, node); setExpanded(true); }}><span className="folder-icon" /><span>{node.name}</span></button>
       <span className="folder-count">{node.count.toLocaleString()}</span>

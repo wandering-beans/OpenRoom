@@ -538,11 +538,7 @@ PRAGMA user_version=9; COMMIT;")?;
     }
     pub fn remove_root(&mut self, id: i64) -> Result<()> {
         let tx = self.conn.transaction()?;
-        tx.execute("DELETE FROM items WHERE root_id=?", [id])?;
-        ensure!(
-            tx.execute("DELETE FROM roots WHERE id=?", [id])? == 1,
-            "root not found"
-        );
+        removal::remove_root(&tx, id)?;
         tx.execute("UPDATE state SET generation=generation+1", [])?;
         tx.commit()?;
         Ok(())

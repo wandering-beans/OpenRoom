@@ -3,7 +3,7 @@ export type Language = 'ja' | 'en';
 export interface TrashPlan { ids: number[]; generation: number }
 export interface AvailableUpdate { version: string; notes: string }
 export type ExportFormat = 'jpeg' | 'png' | 'tiff';
-export type CatalogRemoval = { kind: 'photos'; ids: number[] } | { kind: 'folder'; root_id: number; path: string };
+export type CatalogRemoval = { kind: 'photos'; ids: number[] } | { kind: 'folder'; root_id: number; path: string } | { kind: 'parent'; path: string; root_ids: number[] };
 
 export interface ExportRequest {
   ids: number[];

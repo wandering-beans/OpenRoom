@@ -10,6 +10,7 @@ use std::path::{Component, Path};
 pub enum Removal {
     Photos { ids: Vec<i64> },
     Folder { root_id: i64, path: String },
+    Parent { path: String, root_ids: Vec<i64> },
 }
 
 #[derive(Deserialize, Serialize)]
@@ -25,12 +26,48 @@ pub struct TrashReport {
     pub errors: Vec<String>,
 }
 
+pub(super) fn remove_root(tx: &Transaction<'_>, id: i64) -> Result<usize> {
+    let count = tx.execute("DELETE FROM items WHERE root_id=?", [id])?;
+    ensure!(
+        tx.execute("DELETE FROM roots WHERE id=?", [id])? == 1,
+        "Root not found"
+    );
+    Ok(count)
+}
+
 impl Catalog {
+    // Only act on the registered children shown when the menu opened.
+    fn check_parent(&self, path: &str, ids: &[i64]) -> Result<()> {
+        let parent = Path::new(path);
+        let children: std::collections::HashSet<_> = self
+            .roots()?
+            .into_iter()
+            .filter(|root| Path::new(&root.path).parent() == Some(parent))
+            .map(|root| root.id)
+            .collect();
+        ensure!(
+            !ids.is_empty() && ids.iter().all(|id| children.contains(id)),
+            "Folder group changed"
+        );
+        Ok(())
+    }
+
     pub fn plan_trash(&self, selection: &Removal) -> Result<TrashPlan> {
         let tx = Transaction::new_unchecked(&self.conn, TransactionBehavior::Deferred)?;
         let generation = tx.query_row("SELECT generation FROM state", [], |r| r.get(0))?;
         let mut ids = match selection {
             Removal::Photos { ids } => ids.clone(),
+            Removal::Parent { path, root_ids } => {
+                self.check_parent(path, root_ids)?;
+                let mut query = tx.prepare("SELECT id FROM items WHERE root_id=?")?;
+                let mut ids = Vec::new();
+                for root_id in root_ids {
+                    for id in query.query_map([root_id], |row| row.get(0))? {
+                        ids.push(id?);
+                    }
+                }
+                ids
+            }
             Removal::Folder { root_id, path } => {
                 ensure!(
                     Path::new(path)
@@ -184,6 +221,14 @@ impl Catalog {
     ) -> Result<usize> {
         let tx = Transaction::new_unchecked(&self.conn, TransactionBehavior::Immediate)?;
         let count = match selection {
+            Removal::Parent { path, root_ids } => {
+                self.check_parent(path, root_ids)?;
+                let mut count = 0;
+                for &id in root_ids {
+                    count += remove_root(&tx, id)?;
+                }
+                count
+            }
             Removal::Photos { ids } => {
                 ensure!(
                     !ids.is_empty() && ids.len() <= 10000,
@@ -214,9 +259,7 @@ impl Catalog {
                     "Invalid folder path"
                 );
                 let count = if path.is_empty() {
-                    let count = tx.execute("DELETE FROM items WHERE root_id=?", [root_id])?;
-                    tx.execute("DELETE FROM roots WHERE id=?", [root_id])?;
-                    count
+                    remove_root(&tx, *root_id)?
                 } else {
                     let prefix = format!("{path}{}", std::path::MAIN_SEPARATOR);
                     tx.execute(
@@ -279,6 +322,38 @@ mod tests {
             std::fs::read(root.join("trip/photo.jpg")).unwrap(),
             b"replacement original"
         );
+    }
+
+    #[test]
+    fn parent_menu_only_targets_the_selected_registered_children() {
+        let dir = tempfile::tempdir().unwrap();
+        let parent = dir.path().join("photos");
+        let mut catalog = Catalog::open(dir.path().join("catalog.db")).unwrap();
+        let mut ids = Vec::new();
+        for folder in [
+            parent.join("A"),
+            parent.join("B"),
+            dir.path().join("other/photos/A"),
+        ] {
+            std::fs::create_dir_all(&folder).unwrap();
+            std::fs::write(folder.join("sample.jpg"), b"original").unwrap();
+            ids.push(catalog.add_root(&folder).unwrap().id);
+        }
+        catalog.scan(&AtomicBool::new(false), |_| {}).unwrap();
+        let selection = |root_ids| Removal::Parent {
+            path: parent.canonicalize().unwrap().to_str().unwrap().into(),
+            root_ids,
+        };
+        let wrong = selection(ids.clone());
+        assert!(catalog.plan_trash(&wrong).is_err());
+        assert!(catalog.remove_catalog_items(&wrong, |_| Ok(())).is_err());
+        let group = selection(ids[..2].to_vec());
+        let plan = catalog.plan_trash(&group).unwrap();
+        assert_eq!(plan.ids.len(), 2);
+        assert_eq!(catalog.remove_catalog_items(&group, |_| Ok(())).unwrap(), 2);
+        assert_eq!(catalog.roots().unwrap()[0].id, ids[2]);
+        assert_eq!(catalog.count(&Query::default()).unwrap(), 1);
+        assert!(parent.join("A/sample.jpg").is_file() && parent.join("B/sample.jpg").is_file());
     }
 
     #[cfg(unix)]

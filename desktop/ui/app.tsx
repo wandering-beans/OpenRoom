@@ -258,7 +258,9 @@ async function relinkFolder(sourceRoot: number, path: string) {
 }
 async function removeLibraryItems(selection: CatalogRemoval, mode: 'catalog' | 'disk') {
   if (!await allowChange()) return;
-  const target = selection.kind === 'photos' ? t('{0}枚の写真', selection.ids.length) : t('フォルダー「{0}」内のすべての写真（サブフォルダーを含む）', selection.path || roots.find(root => root.id === selection.root_id)?.path || '');
+  const folderName = selection.kind === 'photos' ? '' : selection.kind === 'parent' ? selection.path
+    : selection.path || roots.find(root => root.id === selection.root_id)?.path || '';
+  const target = selection.kind === 'photos' ? t('{0}枚の写真', selection.ids.length) : t('フォルダー「{0}」内のすべての写真（サブフォルダーを含む）', folderName);
   let plan: TrashPlan | undefined;
   confirmingChange = true;
   try {
@@ -266,8 +268,8 @@ async function removeLibraryItems(selection: CatalogRemoval, mode: 'catalog' | '
       plan = await invoke('plan_disk_removal', { selection });
       if (!plan.ids.length) { $('status').textContent = t('削除する登録写真がありません。'); return; }
       const [firstId] = plan.ids;
-      const selected = selection.kind === 'folder'
-        ? t('フォルダー「{0}」内の登録写真{1}枚（サブフォルダーを含む）', selection.path || roots.find(root => root.id === selection.root_id)?.path || '', plan.ids.length)
+      const selected = selection.kind !== 'photos'
+        ? t('フォルダー「{0}」内の登録写真{1}枚（サブフォルダーを含む）', folderName, plan.ids.length)
         : plan.ids.length === 1 ? items.find(item => item.id === firstId)?.name || target : target;
       if (!await confirmDiscard(t('{0}の原本をゴミ箱に移動します。プレビュー、現像設定、編集履歴、評価もカタログから削除します。原本をゴミ箱から戻しても、これらの登録情報は戻りません。', selected), t('ディスクから削除'), t('ゴミ箱に移動'))) return;
     } else if (!await confirmDiscard(t('{0}をカタログから削除します。原本ファイルは削除しません。プレビュー、現像設定、編集履歴、評価などの登録情報は削除され、元に戻せません。', target), t('カタログから削除'), t('カタログから削除'))) return;
@@ -291,7 +293,7 @@ async function removeLibraryItems(selection: CatalogRemoval, mode: 'catalog' | '
       const count = await invoke('remove_from_catalog', { selection });
       status = t('{0}枚をカタログから削除しました。原本は残しています。', count);
     }
-    if (selection.kind === 'folder') {
+    if (selection.kind !== 'photos') {
       allFoldersSelected = false;
       rootId = null; folderPath = null;
       $('title').textContent = t('すべての写真');
@@ -707,12 +709,12 @@ function renderFolders() {
     }
     return { root, node: tree };
   });
-  foldersView.render(<FolderTree trees={trees} filter={filter} rootId={rootId} folderPath={folderPath} allSelected={allFoldersSelected} choose={chooseFolder} menu={(root, node, event) => {
+  foldersView.render(<FolderTree trees={trees} filter={filter} rootId={rootId} folderPath={folderPath} allSelected={allFoldersSelected} choose={chooseFolder} menu={(selection, event) => {
       event.preventDefault();
       if (document.body.dataset.catalogBusy || confirmingChange || photoExport.busy) return;
       const target = event.currentTarget as HTMLElement;
       const rect = target.getBoundingClientRect();
-      photoExport.menu({ kind: 'folder', root_id: root.id, path: node.path }, 'clientX' in event ? event.clientX : rect.left, 'clientY' in event ? event.clientY : rect.bottom, target.querySelector('button.folder-label') ?? target);
+      photoExport.menu(selection, 'clientX' in event ? event.clientX : rect.left, 'clientY' in event ? event.clientY : rect.bottom, target.querySelector('button.folder-label') ?? target);
   }} />);
   updateFolderSelection();
 }

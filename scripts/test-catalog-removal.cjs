@@ -8,6 +8,34 @@ module.exports = async function testCatalogRemoval(page) {
   assert.equal(await page.locator('#search').evaluate(el =>
     ['c','v'].every(key => el.dispatchEvent(new KeyboardEvent('keydown',
       {key,ctrlKey:true,bubbles:true,cancelable:true})))),true);
+  await page.evaluate(() => { window.folderChoices = [{id:2,path:'/albums/A'},{id:3,path:'/albums/B'}]; });
+  await page.click('#add-small');
+  const parent = page.locator('.folder-parent[title="/albums"]');
+  await parent.waitFor();
+  await page.waitForFunction(() => !document.querySelector('#add-small').disabled);
+  await parent.click();
+  for (const key of ['Shift+F10','ContextMenu']) {
+    await parent.press(key);
+    await page.locator('#photo-menu').waitFor();
+    await page.keyboard.press('Escape');
+    assert(await parent.evaluate(el => el === document.activeElement));
+    assert.equal(await parent.getAttribute('aria-expanded'), 'false');
+  }
+  await parent.click({button:'right'});
+  assert.equal(await page.locator('#catalog-relink').isVisible(), false);
+  await page.click('#disk-remove');
+  await page.locator('#discard-dialog[open]').waitFor();
+  assert.match(await page.locator('#discard-message').textContent(), /albums.*登録写真84枚/);
+  await page.click('#discard-dialog button[value="cancel"]');
+  assert.equal(await page.evaluate(() => calls.some(c => c.command === 'trash_photos')), false);
+  await parent.click({button:'right'});
+  await page.click('#catalog-remove');
+  await page.click('#discard-dialog button[value="discard"]');
+  await parent.waitFor({state:'detached'});
+  assert.equal(await page.locator('#catalog-count').textContent(), '2,000');
+  assert.deepEqual(await page.evaluate(() => calls.find(c => c.command === 'remove_from_catalog').args.selection),
+    {kind:'parent', path:'/albums', root_ids:[2,3]});
+  await page.reload(); await first.waitFor();
   const inspectorInitiallyHidden = !await page.locator('#library-inspector').isVisible();
   if (inspectorInitiallyHidden) await page.locator('#toggle-inspector').click();
   const fileSummary = page.locator('details:has(#selection-details) > summary');
