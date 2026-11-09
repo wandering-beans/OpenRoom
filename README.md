@@ -10,7 +10,7 @@ OpenRoomは写真の整理とRAW現像ができるデスクトップアプリで
 2. 開いたウインドウで、`OpenRoom` を隣の `Applications` フォルダにドラッグします。旧版から更新するときは、先にOpenRoomを終了し、確認画面で「置き換える」を選びます。
 3. コピーが終わったらディスクイメージを取り出し、Finderの「アプリケーション」からOpenRoomを開きます。
 
-0.7.14はAppleのDeveloper ID署名と公証を受けていないため、初回起動時にmacOSが警告を表示することがあります。[警告が表示されたときのAppleの案内](https://support.apple.com/ja-jp/102445)
+公開中のMac版はAppleのDeveloper ID署名と公証を受けていないため、初回起動時にmacOSが警告を表示することがあります。[警告が表示されたときのAppleの案内](https://support.apple.com/ja-jp/102445)
 
 ### Windows 11（x64）
 
