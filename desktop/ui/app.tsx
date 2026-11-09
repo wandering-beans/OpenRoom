@@ -1,4 +1,5 @@
 import { createView } from './components/view';
+import { bindWarningBanner } from './components/WarningBanner';
 import { PhotoTile, FolderTree, Properties, type FolderNode, type ThumbnailLoader } from './components/Library';
 import type { ReactNode, CSSProperties } from 'react';
 import type { CatalogRemoval, Commands, TrashPlan } from './backend';
@@ -56,6 +57,8 @@ const developVersions = new Map<number, number>();
 const itemKey = (item: Photo) => `${item.id}:${item.root_id}:${item.path}:${item.modified}:${item.size}:${developVersions.get(item.id) || 0}`;
 const bytes = (size: number) => size >= 1048576 ? `${(size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(size / 1024))} KB`;
 
+const workspaceWarning = bindWarningBanner($('error'));
+const setupWarning = bindWarningBanner($('catalog-setup-error'));
 const libraryFilters = createLibraryFilters({invoke, query, refresh, error:showError, resize:scheduleDraw});
 async function setPhotoAttributes(attributes: Partial<Pick<Photo, 'rating' | 'flag' | 'label'>>) {
   const item=items[selected];
@@ -120,7 +123,7 @@ const develop = createDevelop({
     return true;
   },
   saved(id, refreshPreview = true) {
-    $('error').hidden = true;
+    workspaceWarning.dismiss();
     updateAdjustmentBadge(id);
     if (refreshPreview) invalidatePhotoPreview(id);
   },
@@ -309,7 +312,7 @@ async function removeLibraryItems(selection: CatalogRemoval, mode: 'catalog' | '
 async function setModule(name: Module) {
   const isDevelop = name === 'develop';
   if (develop.active === isDevelop || !await allowChange()) return;
-  $('error').hidden = true;
+  workspaceWarning.dismiss();
   if (!isDevelop && items[selected]) {
     confirmingChange = true;
     $('app-shell').inert = true;
@@ -370,7 +373,7 @@ async function switchCatalog(create: boolean) {
   document.body.dataset.catalogBusy = 'true';
   $('workspace').inert = true; $('module-bar').inert = true; $('filmstrip').inert = true;
   $('catalog-setup-new').disabled = true; $('catalog-setup-open').disabled = true;
-  $('catalog-setup-error').textContent = '';
+  setupWarning.dismiss();
   let restarting = false;
   try {
     const path = await invoke('choose_catalog', { create });
@@ -379,8 +382,8 @@ async function switchCatalog(create: boolean) {
       await invoke('restart_catalog'); restarting = true;
     }
   } catch (failure) {
-    showError(failure);
-    $('catalog-setup-error').textContent = String(failure);
+    if ($('catalog-setup').hidden) showError(failure);
+    else setupWarning.show(failure);
   }
   finally {
     if (!restarting) {
@@ -401,8 +404,7 @@ function remember<K, V>(map: Map<K, V>, key: K, value: V, limit: number) {
   return value;
 }
 function showError(error: unknown) {
-  $('error').textContent = String(error);
-  $('error').hidden = false;
+  workspaceWarning.show(error);
 }
 function confirmDiscard(message: string, title = t('未保存の変更'), action = t('変更を破棄')) {
   const dialog = $('discard-dialog');
@@ -482,7 +484,7 @@ async function refresh(keepId: number | null = null, throwErrors = false) {
   clearTiles();
   thumbnailJobs.length = 0;
   updateSelection();
-  $('error').hidden = true;
+  workspaceWarning.dismiss();
   $('result-count').textContent = t("検索中…");
   libraryFilters.refresh();
   const requestedQuery = query();
@@ -747,7 +749,7 @@ async function selectAll() {
     if (!items.length) return;
     // An explicit retry must not mistake a failed page for the end of the list.
     if (cursor && !hasMore) hasMore = true;
-    $('error').hidden = true;
+    workspaceWarning.dismiss();
     // Finish pagination before changing the selection; a failed fetch must not select only part of it.
     while (token === epoch && intent === selectionIntent && (loading || hasMore)) await more(token, true);
     if (token !== epoch || intent !== selectionIntent) return;

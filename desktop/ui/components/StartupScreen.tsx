@@ -1,3 +1,5 @@
+import { WarningBanner } from './WarningBanner';
+
 export function StartupScreen() {
   return <>
   <section id="startup-screen" className="startup-screen" role="status" aria-label="OpenRoomを起動しています">
@@ -12,7 +14,7 @@ export function StartupScreen() {
       <p>カタログ名と保存先を指定してください。</p>
       <button id="catalog-setup-new">新規作成</button>
       <button id="catalog-setup-open">既存のカタログを開く</button>
-      <p id="catalog-setup-error" role="alert"></p>
+      <WarningBanner id="catalog-setup-error" />
     </div>
   </section>
   </>;

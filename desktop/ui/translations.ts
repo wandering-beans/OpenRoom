@@ -624,6 +624,7 @@ export const english = {
   "選択写真に同期": "Sync Selected Photos",
   "部分補正": "Local Adjustments",
   "長辺（px、0＝元の大きさ）": "Long edge (px, 0 = original size)",
+  "警告を閉じる": "Dismiss warning",
   "閉じる": "Close",
   "開く": "Open Catalog",
   "除外": "Reject",

@@ -1,3 +1,5 @@
+import { WarningBanner } from './WarningBanner';
+
 export function Workspace() {
   return <>
   <div id="app-shell" inert>
@@ -55,7 +57,7 @@ export function Workspace() {
           <div className="filter-heading"></div><div id="filter-text"><label className="search"><input id="search" type="search" placeholder="名前・タグ・メモを検索" aria-label="名前・タグ・メモを検索" autoComplete="off" /><kbd>⌘ F</kbd></label><button id="scan" title="フォルダを再走査">↻ 再読み込み</button></div><div id="attribute-filters"></div><div id="metadata-filters"></div>
         </section>
         <div id="progress" role="status" hidden><span id="progress-text"></span><button id="cancel">中止</button></div>
-        <div id="error" role="alert" hidden></div>
+        <WarningBanner id="error" />
         <div id="ai-selection" hidden>AI選択 <button id="ai-selection-clear">絞り込みを解除</button></div>
         <div className="photo-stage">
           <section id="viewport" aria-label="写真一覧" tabIndex={0} hidden><div id="grid" role="group"></div></section>
