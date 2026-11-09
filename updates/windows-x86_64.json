@@ -1,10 +1,10 @@
 {
-  "version": "0.7.14",
-  "notes": "OpenRoom 0.7.14では、RAWの取り込みと、写真を選んでから現像画面で編集を始めるまでの時間を短縮しました。Windows 11の内蔵SSDで異なるRAW 23枚を取り込んだ試験では、一覧画像と閲覧画像をすべて保存するまでの時間が平均38.56秒から14.30秒になりました。\n\nライブラリから現像に切り替える間も、選んだ写真を表示し続けます。写真とフォルダーのメニューは右クリック、メニューキー、Shift+F10で開けます。ルーペでは拡大率を保ったまま写真をドラッグできます。\n\n写真のメニューに「ディスクから削除」を追加しました。確認後、原本をゴミ箱に移し、カタログの登録とプレビューを削除します。\n\nWindows x64版はアプリ内更新またはインストーラーから更新できます。Apple Silicon搭載のMac（macOS 26以降）では、OpenRoomを終了し、ZIPを展開して既存のアプリを置き換えてください。\n\nWindowsの更新パッケージにはOpenRoomの更新用署名が付いています。Windowsの発行元署名、macOSのDeveloper ID署名・公証は付いていません。",
+  "version": "0.7.15",
+  "notes": "現像画面で、RGB・赤・緑・青のトーンカーブをチャンネル間でコピーできるようになりました。たとえば赤のカーブを青に使う場合は、赤で「カーブをコピー」を押し、青に切り替えて「カーブを貼り付け」を押します。貼り付けは「元に戻す」で取り消せます。現像設定全体のコピー・貼り付けには、従来どおりCtrl+C/V（Macでは⌘C/V）を使えます。\n\n作業画面やカタログの起動画面に出る赤い警告に「×」を追加しました。警告は通常8秒で消えます。警告にマウスを重ねている間や、「×」にキーボードフォーカスがある間は表示を続けます。\n\nWindows x64版はアプリ内更新またはインストーラーで更新できます。Apple Silicon搭載のMac（macOS 26以降）では、[0.7.15のDMG](https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.15/OpenRoom-0.7.15-macos-arm64.dmg) を開き、OpenRoomを隣のApplicationsフォルダへドラッグしてください。更新するときは先にOpenRoomを終了してから「置き換える」を選びます。\n\nWindowsの更新ファイルにはOpenRoomの更新用署名が付いています。Windowsの発行元署名、macOSのDeveloper ID署名・公証は付いていません。",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.14/OpenRoom-0.7.14-windows-x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbXNDV0c4dlY4a2NCakhmRDF2VUNrMEJqQnIzM0xuVmpwLysxbGZma1dTNWJoVGZ2NVRkRG10U3JmaUIrM2VSWEVTTVZpb2h1SGptQklCa3JseDJ6b1FFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MDk1MzYyCWZpbGU6T3BlblJvb20tMC43LjE0LXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xNApRNHhVUDIwaDM2M2RvdXVvSU83bzBxUVBmVkxWbk5vTERBZ2R4RmVtZ2MzZEFlbzE4Mk1BN1hmMytmUXhHQTV6WkYyYjVOR0NKQzdDTCtMS0Q2NkRBUT09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.15/OpenRoom-0.7.15-windows-x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbW1DOW5OR21tRWgrVEs1ZVh2blYrdm9OWjEwejNqdnpHaHJnVzlqaG5uUXNzRXhWYlJOS1p2Z2xhNEl0MmtXNlF5Vy9hQnR3SW9DKytidUhlZ05mVXc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjIyNTk5CWZpbGU6T3BlblJvb20tMC43LjE1LXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xNQp6M04rZWJjQ1poKzRwYUFBaVpsYUlTeG1Oelc3ZWN0VHZsTkFmQVUrdjI3WVdwWjNCdnhkUjJIL3I5MXYzWFdPNUhESlJZbkNzVk9OY3BNZlNnMkdBdz09Cg=="
     }
   }
 }
