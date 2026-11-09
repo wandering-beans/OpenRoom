@@ -8,6 +8,8 @@ module.exports = async function testCopySettings(page) {
     const source = await read(1), destination = await read(2);
     Object.assign(source.settings, {exposure:1.75, saturation:135, distortion:12, angle:15, crop:[.1,.1,.8,.8],
       masks:[{name:'Source mask',enabled:true,invert:false,amount:1,shapes:[],adjustments:{exposure:1}}]});
+    source.settings.point_curves[1] = [[0,.05],[.36,.58],[.73,.8],[1,.97]];
+    source.settings.curves[2] = [0,.15,.6,.85,1];
     Object.assign(destination.settings, {exposure:-.5, angle:-8, crop:[.2,.2,.6,.6], perspective_v:10,
       masks:[{name:'Destination mask',enabled:true,invert:false,amount:1,shapes:[],adjustments:{exposure:-1}}]});
     for (const [id, recipe] of [[1,source],[2,destination]]) {
@@ -76,6 +78,61 @@ module.exports = async function testCopySettings(page) {
   await page.waitForFunction(() => document.querySelector('#develop-exposure-value').value === '1.75' && document.querySelector('#develop-save').disabled);
   const afterDevelop = await page.evaluate(async () => (await __TAURI__.core.invoke('get_develop',{id:2})).settings);
   assert.deepEqual(afterDevelop.crop,original.destination.crop,'cancelling the second copy retained the original clipboard');
+  const curveButton = channel => page.locator(`#curve-channel-buttons [data-channel="${channel}"]`);
+  const curveLine = () => page.locator('#develop-curve-line').getAttribute('points');
+  async function expectRecipe(expected) {
+    await page.waitForFunction(async expected =>
+      JSON.stringify((await __TAURI__.core.invoke('get_develop', {id:2})).settings) === JSON.stringify(expected), expected);
+  }
+
+  assert.equal(await page.locator('#curve-paste').isEnabled(),false);
+  await curveButton(1).click();
+  const redLine = await curveLine();
+  await page.click('#curve-copy');
+  await page.click('#curve-reset');
+  const reset = structuredClone(afterDevelop);
+  reset.point_curves[1] = [[0,0],[1,1]];
+  reset.curves[1] = [0,.25,.5,.75,1];
+  await expectRecipe(reset);
+  await curveButton(3).click();
+  await page.click('#curve-paste');
+  const blue = structuredClone(reset);
+  blue.point_curves[3] = afterDevelop.point_curves[1];
+  blue.curves[3] = afterDevelop.curves[1];
+  await expectRecipe(blue);
+  assert.equal(await curveLine(),redLine,'paste uses the snapshot taken before red was reset');
+  await page.waitForFunction(expected => calls.some(c => c.command==='develop_preview'
+    && JSON.stringify(c.args.settings.point_curves) === JSON.stringify(expected)),blue.point_curves);
+  await page.click('#develop-undo');
+  await expectRecipe(reset);
+  await page.click('#develop-redo');
+  await expectRecipe(blue);
+
+  await curveButton(2).click();
+  const greenLine = await curveLine();
+  await page.click('#curve-copy');
+  await curveButton(1).click();
+  await page.click('#curve-paste');
+  const legacy = structuredClone(blue);
+  legacy.curves[1] = blue.curves[2];
+  legacy.point_curves[1] = [];
+  await expectRecipe(legacy);
+  assert.equal(await curveLine(),greenLine,'five-point curves retain their linear interpolation');
+
+  // The usual shortcuts still operate on the photo clipboard from within the curve panel.
+  await page.locator('#curve-copy').press('Control+c');
+  await page.locator('#copy-settings-dialog[open]').waitFor();
+  await page.keyboard.press('Escape');
+  await page.locator('#curve-paste').press('Meta+v');
+  await expectRecipe(afterDevelop);
+  await curveButton(0).click();
+  await page.click('#curve-paste');
+  const rgb = structuredClone(afterDevelop);
+  rgb.curves[0] = legacy.curves[2];
+  rgb.point_curves[0] = [];
+  await expectRecipe(rgb);
+  await page.click('#develop-undo');
+  await expectRecipe(afterDevelop);
   await page.click('#develop-copy');
   await page.locator('#copy-settings-dialog[open]').waitFor();
   await page.locator('[data-copy-field="exposure"]').uncheck();

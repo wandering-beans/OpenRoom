@@ -32,6 +32,7 @@ export function createToneCurve({ get, begin, change, end, edit, blocked }: { ge
   const handles = createView($('curve-handles'));
   let selected = 0,
     dragging = false;
+  let copiedCurve: { values: number[]; points: Point[] } | null = null;
   const channel = () => Number($("develop-curve-channel").value);
   function points(): Point[] {
     const s = get();
@@ -179,6 +180,26 @@ export function createToneCurve({ get, begin, change, end, edit, blocked }: { ge
       );
       end();
     }
+  };
+  $("curve-copy").onclick = () => {
+    const settings = get();
+    if (!settings || blocked()) return;
+    const index = channel();
+    copiedCurve = structuredClone({
+      values: settings.curves[index],
+      points: settings.point_curves?.[index] ?? [],
+    });
+    $("curve-paste").disabled = false;
+  };
+  $("curve-paste").onclick = () => {
+    if (!copiedCurve || blocked()) return;
+    const index = channel();
+    const { values, points } = structuredClone(copiedCurve);
+    edit((s) => {
+      s.curves[index] = values;
+      s.point_curves ??= [[], [], [], []];
+      s.point_curves[index] = points;
+    }, t("カーブを貼り付け"));
   };
   $("curve-delete").onclick = remove;
   $("curve-reset").onclick = () => {

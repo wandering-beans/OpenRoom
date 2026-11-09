@@ -214,6 +214,8 @@ export const english = {
   "トークンをコピー": "Copy Token",
   "トーンカーブ": "Tone Curve",
   "トーンカーブのチャンネル": "Tone curve channel",
+  "カーブをコピー": "Copy curve",
+  "カーブを貼り付け": "Paste curve",
   "トーンカーブをリセット": "Reset tone curve",
   "ドラッグまたは上下キーで高さを調整": "Drag or use Up/Down to adjust height",
   "ドラッグまたは左右キーで幅を調整": "Drag or use Left/Right to adjust width",

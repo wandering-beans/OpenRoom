@@ -42,7 +42,9 @@ interface Controls {
   'crop-ratio': HTMLSelectElement;
   'crop-reset': HTMLButtonElement;
   'crop-straighten': HTMLButtonElement;
+  'curve-copy': HTMLButtonElement;
   'curve-delete': HTMLButtonElement;
+  'curve-paste': HTMLButtonElement;
   'curve-handles': SVGGElement;
   'curve-input': HTMLInputElement;
   'curve-output': HTMLInputElement;
