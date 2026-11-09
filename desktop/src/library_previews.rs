@@ -13,6 +13,12 @@ use std::{
     time::SystemTime,
 };
 
+mod relocation;
+#[cfg(test)]
+#[path = "library_previews/relocation_tests.rs"]
+mod relocation_tests;
+use relocation::Binding;
+
 const VERSION: &str = "library-avif-srgb-v1";
 const IMAGE_LIMIT: u64 = 7_500_000_000;
 const TOTAL_LIMIT: u64 = 9_500_000_000; // Stored previews and database only; leave 500 MB for atomic replacements.
@@ -42,6 +48,8 @@ pub struct Progress {
 
 #[derive(Serialize, Deserialize)]
 struct Images {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    binding: Option<Binding>,
     version: String,
     #[serde(default)]
     render_version: String,
@@ -60,6 +68,20 @@ struct Images {
     thumbnail_bytes: u64,
 }
 
+impl Images {
+    fn disk_stamp<'a>(&'a self, fallback: &'a str) -> &'a str {
+        self.binding.as_ref().map_or(fallback, |binding| &binding.storage_stamp)
+    }
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
+struct WorkCounts {
+    requests: usize,
+    renders: usize,
+    encodes: usize,
+}
+
 struct Usage {
     files: HashMap<PathBuf, u64>,
     bytes: u64,
@@ -67,6 +89,8 @@ struct Usage {
 }
 
 pub struct Store {
+    #[cfg(test)]
+    counts: Mutex<HashMap<i64, WorkCounts>>,
     pub updates: crate::deferred_previews::Updates,
     pub directory: PathBuf,
     pub ready: tokio::sync::Notify,
@@ -262,6 +286,8 @@ impl Store {
             );
         }
         let store = Self {
+            #[cfg(test)]
+            counts: Mutex::default(),
             directory,
             ready: Default::default(),
             usage: Mutex::new(usage),
@@ -373,7 +399,7 @@ impl Store {
             "プレビューの寸法情報が不正です。"
         );
         let path = self.path(
-            &record.stamp,
+            images.disk_stamp(&record.stamp),
             &images.extension,
             bound,
             &images.render_version,
@@ -543,7 +569,7 @@ impl Store {
         Self::remove(
             &mut usage,
             &self.path(
-                &record.stamp,
+                images.disk_stamp(&record.stamp),
                 &images.extension,
                 bound,
                 &images.render_version,
@@ -604,7 +630,7 @@ impl Store {
                 );
                 for bound in [384, 1600] {
                     retained.insert(self.path(
-                        &record.stamp,
+                        images.disk_stamp(&record.stamp),
                         &images.extension,
                         bound,
                         &images.render_version,
@@ -647,7 +673,7 @@ impl Store {
         }
         Ok(!self
             .path(
-                &record.stamp,
+                images.disk_stamp(&record.stamp),
                 &images.extension,
                 1600,
                 &images.render_version,
@@ -729,6 +755,8 @@ impl Store {
         defer_edits: bool,
         priority: u8,
     ) -> Result<bool> {
+        #[cfg(test)]
+        { self.counts.lock().unwrap().entry(id).or_default().requests += 1; }
         // Explicit library edits need their result now; Develop autosaves remain deferred.
         let deferred = if defer_edits {
             catalog.preview_update(id)?
@@ -833,6 +861,7 @@ impl Store {
         usage.reserved += IMPORT_RESERVE;
         drop(usage);
         let _reservation = Reservation { store: self, id };
+        let mut written = Vec::new();
         let result = (|| -> Result<()> {
             let temporary = tempfile::Builder::new()
                 .prefix("import-")
@@ -848,6 +877,12 @@ impl Store {
             } else {
                 None
             };
+            let binding = match &request {
+                Some(request) => Binding::new(&request.source, id, &stamp),
+                None => previous.as_ref().and_then(|images| images.binding.clone()),
+            };
+            #[cfg(test)]
+            if request.is_some() { self.counts.lock().unwrap().entry(id).or_default().renders += 1; }
             let (json, _) = catalog.develop_recipe(id)?;
             let render_source = || -> Result<_> {
                 let intermediate = temporary.path().join("source.tif");
@@ -906,7 +941,7 @@ impl Store {
                     1600,
                 )?;
                 ensure!(
-                    request.image == after.image,
+                    request.image == after.image && binding.as_ref().is_none_or(|b| b.matches(&request.source)),
                     "生成中に原本が変更されました。再走査してください。"
                 );
             }
@@ -930,6 +965,7 @@ impl Store {
                 self.ready.notify_waiters();
             }
             let mut images = Images {
+                binding: binding.clone(),
                 version: VERSION.into(),
                 render_version: render_version.clone(),
                 raw_developed,
@@ -959,12 +995,18 @@ impl Store {
                 });
                 let bytes = advanced_explorer_media::preview::encode(pixels, bound == 384, avif)?;
                 drop(compress);
+                #[cfg(test)]
+                { self.counts.lock().unwrap().entry(id).or_default().encodes += 1; }
+                if let Some(binding) = &mut images.binding {
+                    let crc = crc32fast::hash(&bytes);
+                    if bound == 384 { binding.thumbnail_crc = crc; } else { binding.large_crc = crc; }
+                }
                 ensure!(
                     bytes.len() < 16 * 1024 * 1024,
                     "プレビューが保存予約量を超えています。"
                 );
                 let mut usage = self.usage.lock().unwrap();
-                let target = self.path(&stamp, extension, bound, &render_version);
+                let target = self.path(images.disk_stamp(&stamp), extension, bound, &render_version);
                 std::fs::create_dir_all(target.parent().unwrap())?;
                 ensure!(
                     !std::fs::symlink_metadata(target.parent().unwrap())?
@@ -976,6 +1018,7 @@ impl Store {
                 let file = temporary.path().join(format!("{bound}.{extension}"));
                 std::fs::write(&file, bytes)?;
                 std::fs::rename(&file, &target)?;
+                written.push(target.clone());
                 if let Some(size) = usage.files.remove(&target) {
                     usage.bytes -= size;
                 }
@@ -987,18 +1030,17 @@ impl Store {
                 } else {
                     images.large_bytes = std::fs::metadata(&target)?.len();
                 }
-                let _catalog = advanced_explorer_develop::timing::start("catalog-update");
-                ensure!(
-                    !cancelled()
-                        && catalog.save_library_preview(
-                            id,
-                            &stamp,
-                            Some(&serde_json::to_string(&images)?),
-                            None
+                // Preserve the old file references until a replacement pair commits.
+                if old.is_none() && bound == 384 {
+                    let _catalog = advanced_explorer_develop::timing::start("catalog-update");
+                    ensure!(
+                        !cancelled() && catalog.save_library_preview(
+                            id, &stamp, Some(&serde_json::to_string(&images)?), None
                         )?,
-                    "生成中に写真の編集設定が変更されました。"
-                );
-                self.ready.notify_waiters();
+                        "生成中に写真の編集設定が変更されました。"
+                    );
+                    self.ready.notify_waiters();
+                }
             }
             ensure!(!cancelled(), "プレビュー生成を中止しました。");
             if let Some(request) = request {
@@ -1010,7 +1052,7 @@ impl Store {
                     1600,
                 )?;
                 ensure!(
-                    request.image == after.image,
+                    request.image == after.image && binding.as_ref().is_none_or(|b| b.matches(&request.source)),
                     "生成中に原本が変更されました。再走査してください。"
                 );
             }
@@ -1030,14 +1072,14 @@ impl Store {
                 && let Some(data) = &old.data
                 && let Ok(images) = serde_json::from_str::<Images>(data)
                 && ["avif", "jpg"].contains(&images.extension.as_str())
-                && (old.stamp != stamp
+                && (images.disk_stamp(&old.stamp) != binding.as_ref().map_or(stamp.as_str(), |b| b.storage_stamp.as_str())
                     || images.extension != extension
                     || images.render_version != render_version)
             {
                 for bound in [384, 1600] {
                     Self::remove(
                         &mut usage,
-                        &self.path(&old.stamp, &images.extension, bound, &images.render_version),
+                        &self.path(images.disk_stamp(&old.stamp), &images.extension, bound, &images.render_version),
                     )?;
                 }
             }
@@ -1045,25 +1087,13 @@ impl Store {
         })();
         if let Err(error) = &result {
             let mut usage = self.usage.lock().unwrap();
-            let retained = if stored.is_some()
-                || (outdated && old.as_ref().is_some_and(|record| record.stamp == stamp))
-            {
-                old.as_ref().and_then(|record| record.data.as_deref())
-            } else {
-                None
-            };
             if old.as_ref().is_none_or(|record| record.stamp == stamp) {
+                let retained = old.as_ref().and_then(|record| record.data.as_deref());
                 let _ =
                     catalog.save_library_preview(id, &stamp, retained, Some(&error.to_string()));
             }
-            for bound in [384, 1600] {
-                if bound == 1600 && reuse_large {
-                    continue;
-                }
-                let _ = Self::remove(
-                    &mut usage,
-                    &self.path(&stamp, extension, bound, &render_version),
-                );
+            for path in written {
+                let _ = Self::remove(&mut usage, &path);
             }
         }
         result.map(|_| true)
@@ -1207,7 +1237,7 @@ fn prepare_batch(
                                             .into_iter()
                                             .all(|(bound, bytes)| {
                                                 let path = state.library.path(
-                                                    &record.stamp,
+                                                    images.disk_stamp(&record.stamp),
                                                     &images.extension,
                                                     bound,
                                                     &images.render_version,
@@ -1355,7 +1385,7 @@ mod tests {
         }
     }
 
-    fn fixture() -> (tempfile::TempDir, AppState, PathBuf) {
+    pub(super) fn fixture() -> (tempfile::TempDir, AppState, PathBuf) {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path().join("originals");
         std::fs::create_dir(&root).unwrap();
@@ -1664,7 +1694,7 @@ mod tests {
             images.render_version = advanced_explorer_develop::RENDER_VERSION.into();
             for bound in [384, 1600] {
                 let legacy = state.library.path(
-                    &record.stamp,
+                    images.disk_stamp(&record.stamp),
                     &images.extension,
                     bound,
                     &images.render_version,
@@ -1673,7 +1703,7 @@ mod tests {
                 std::fs::rename(
                     state
                         .library
-                        .path(&record.stamp, &images.extension, bound, &current_version),
+                        .path(images.disk_stamp(&record.stamp), &images.extension, bound, &current_version),
                     legacy,
                 )
                 .unwrap();
@@ -1891,7 +1921,7 @@ mod tests {
         images.render_version = String::new();
         for bound in [384, 1600] {
             let legacy = state.library.path(
-                &record.stamp,
+                images.disk_stamp(&record.stamp),
                 &images.extension,
                 bound,
                 &images.render_version,
@@ -1900,7 +1930,7 @@ mod tests {
             std::fs::rename(
                 state
                     .library
-                    .path(&record.stamp, &images.extension, bound, &old_version),
+                    .path(images.disk_stamp(&record.stamp), &images.extension, bound, &old_version),
                 legacy,
             )
             .unwrap();
@@ -2124,7 +2154,7 @@ mod tests {
                     .unwrap();
             std::fs::write(
                 state.library.path(
-                    &record.stamp,
+                    images.disk_stamp(&record.stamp),
                     &images.extension,
                     384,
                     &images.render_version,
@@ -2326,7 +2356,7 @@ mod tests {
         let mut images: Images = serde_json::from_str(record.data.as_ref().unwrap()).unwrap();
         for bound in [384, 1600] {
             let old = state.library.path(
-                &record.stamp,
+                images.disk_stamp(&record.stamp),
                 &images.extension,
                 bound,
                 &images.render_version,
@@ -2334,7 +2364,7 @@ mod tests {
             let previous =
                 state
                     .library
-                    .path(&record.stamp, &images.extension, bound, "previous-render");
+                    .path(images.disk_stamp(&record.stamp), &images.extension, bound, "previous-render");
             std::fs::create_dir_all(previous.parent().unwrap()).unwrap();
             std::fs::rename(old, previous).unwrap();
         }

@@ -41,6 +41,17 @@ impl Catalog {
         search: &Path,
         cancelled: impl Fn() -> bool,
     ) -> Result<RelinkReport> {
+        self.relink_folder_with_previews(root_id, folder, search, cancelled, |_, _| None)
+    }
+
+    pub fn relink_folder_with_previews(
+        &mut self,
+        root_id: i64,
+        folder: &Path,
+        search: &Path,
+        cancelled: impl Fn() -> bool,
+        reuse_preview: impl Fn(&crate::previews::PreviewRecord, &Path) -> Option<String>,
+    ) -> Result<RelinkReport> {
         ensure!(
             folder
                 .components()
@@ -141,6 +152,11 @@ impl Catalog {
                 .strip_prefix(destination)?
                 .to_str()
                 .context("non-UTF8 photo path")?;
+            let old_stamp = self.preview_stamp(original.id)?;
+            let reusable = self
+                .library_preview(original.id)?
+                .filter(|r| r.stamp == old_stamp && r.error.is_none())
+                .and_then(|record| reuse_preview(&record, path));
             let changed = tx.execute(
                 "UPDATE OR IGNORE items SET root_id=?,path=?,identity=?,missing=0
                 WHERE id=? AND root_id=? AND path=? AND identity=? AND size=? AND modified=?",
@@ -159,6 +175,20 @@ impl Catalog {
             if changed == 0 {
                 report.conflicts += 1;
                 continue;
+            }
+            let new_stamp = self.preview_stamp(original.id)?;
+            if let Some(data) = reusable {
+                tx.execute(
+                    "UPDATE library_previews SET stamp=?, data=? WHERE item_id=? AND stamp=?",
+                    params![new_stamp, data, original.id, old_stamp],
+                )?;
+            } else {
+                // A different file can reappear at precisely the old path with the same size and time.
+                tx.execute(
+                    "UPDATE library_previews SET data=json_set(data,'$.version','')
+                    WHERE item_id=? AND stamp=? AND json_valid(data)",
+                    params![original.id, new_stamp],
+                )?;
             }
             report.linked += 1;
             report.first_id.get_or_insert(original.id);

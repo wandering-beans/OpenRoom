@@ -123,13 +123,14 @@ pub async fn relink_folder(
     let cancel = state.cancel.clone();
     cancel.store(false, Ordering::SeqCst);
     let db = state.db.clone();
+    let library = state.library.clone();
     work(move || {
         let Some(chosen) = app.dialog().file().set_parent(&window).blocking_pick_folder() else {
             return Ok(None);
         };
         let directory = chosen.into_path().map_err(|error| anyhow::anyhow!(error.to_string()))?;
         let mut catalog = Catalog::open(db)?;
-        let report = catalog.relink_folder(root_id, folder.as_ref(), &directory, || {
+        let report = library.relink_folder(&mut catalog, root_id, folder.as_ref(), &directory, || {
             cancel.load(Ordering::Relaxed)
         })?;
         Ok(Some(report))
