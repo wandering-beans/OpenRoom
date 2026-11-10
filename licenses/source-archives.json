@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "scope": "Source-package inventory for macOS arm64 OpenRoom 0.7.17. Hashes identify the release dependency source archives; they do not certify license clearance or a successful offline rebuild.",
+  "scope": "Source-package inventory for macOS arm64 OpenRoom 0.7.18. Hashes identify the release dependency source archives; they do not certify license clearance or a successful offline rebuild.",
   "records": [
     {
       "ecosystem": "cargo",
@@ -5890,16 +5890,16 @@
       "verification": "Archive from gitHead declared by the exact npm package version metadata; upstream tree includes original source."
     }
   ],
-  "app_version": "0.7.17",
+  "app_version": "0.7.18",
   "inputs": {
     "Cargo.lock": "9f9a120ff83833f1cd5604669f7e81a4ac001cc903ce336cbb3d6b8bd8d14deb",
-    "desktop/Cargo.lock": "5a229d7aba468f746cd9afc394161be9a77554bba902aeb49f56ebc0b130b1e2",
+    "desktop/Cargo.lock": "27f0923882c9ca2b7f00f88d6101afb85030da1c975f518e065ba424f49acd69",
     "crates/develop-core/Cargo.lock": "b5e7193a525845466ac7dda114fb2c4a563939ad422eb41a5d28a48e43166747",
     "crates/media-core/Cargo.lock": "536ea4946bec1b50d1c18028ac52cd7fe077b82035bbef480e2f6c15fca33f96",
     "crates/rtengine/Cargo.lock": "12c10b2e60cb4987383831e8978d9849ed22ca6531e59a9f08eab7b3d79786d0",
-    "desktop/package-lock.json": "4eb92e08024d4424cd3a3a286292f0726b3da35ef50b33f758f4723121f87481",
+    "desktop/package-lock.json": "b6c11aa14f73c8138af6c4e6dcf191a15a6eaab68436370558855f0af58b97e3",
     "native/rtengine/source.json": "8af41792cbf40a3099af47cfc625413dcac609320332b063f497ee350b1e0c07"
   },
   "archive_directory": "archives",
-  "app_source_tag": "v0.7.17"
+  "app_source_tag": "v0.7.18"
 }

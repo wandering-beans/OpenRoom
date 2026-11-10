@@ -98,7 +98,7 @@ pub async fn choose_catalog(
                     "カタログ名と保存先を指定",
                     "Choose a Catalog Name and Location",
                 ))
-                .set_file_name("")
+                .set_file_name("MyCatalog")
                 .blocking_save_file()
         } else {
             dialog.blocking_pick_file()
@@ -168,7 +168,9 @@ mod tests {
             startup_catalog(dir.path()).unwrap(),
             Some(dir.path().join("catalog.db"))
         );
-        let target = dir.path().join("作品.openroom");
+        let folder = dir.path().join("撮影記録").join("２０２６年 春");
+        std::fs::create_dir_all(&folder).unwrap();
+        let target = folder.join("作品集.openroom");
         let canonical = prepare_catalog(&target, true).unwrap();
         remember_catalog(dir.path(), &canonical).unwrap();
         assert_eq!(
