@@ -1,10 +1,10 @@
 {
-  "version": "0.7.17",
-  "notes": "写真フォルダーを同じドライブ内で移動・改名した後、「見つからない原本を検索…」で再接続すると、完成済みのプレビューを再利用できます。0.7.17以降で生成したプレビューが対象です。原本と編集内容が一致し、1600pxの閲覧画像が使える場合は、384pxの一覧画像だけが壊れていてもRAWを現像せずに修復できます。\n\n複数の登録フォルダーをまとめる親フォルダーでも、右クリック、Shift+F10、メニューキーで削除メニューを開けるようになりました。Windowsでは、ドライブ直下の親フォルダーに通常のドライブ名（例 `D:\\`）を表示します。\n\nWindows x64版とApple Silicon Mac版を配布します。Macで0.7.15以前をお使いの方は、今回だけDMGから手動で更新してください。",
+  "version": "0.7.18",
+  "notes": "新しいカタログを作成すると、保存画面の名前欄に `MyCatalog` が入ります。初回起動時も、保存先を選んでそのまま `MyCatalog.openroom` を作成できます。名前は保存前に変更できます。",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.17/OpenRoom-0.7.17-windows-x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbWgzS2t3MWovbTZXRUJtSUQxeVNZa29Oc1pjWmNyUFlrVTRwU3l3NGJTUjdReEZFUVY5SkVpVWdEaDhDZExuQUl0TldJL0NFZEZFNEVNa2FJVWhuT2cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjY5NjE5CWZpbGU6T3BlblJvb20tMC43LjE3LXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xNwpSRDJQRzFOenFJMjZMaVp0Z0JTWGJwdjVZNUsxYnQ5UXFHWE9RQWpBcVkyWXgydEVVNHMrZ0ZzMDYzQmMxbVAycDViNnM2eXJBODVWMlMwTFQ3UndEUT09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.18/OpenRoom-0.7.18-windows-x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbXA4Umczcm1tSm1nSy9nRWRiU3RHUFFjYWRkSHB1cGtBWWRVUUt2NG9LeThlSGdzZ1duaWNhbnB0ZWpOa2JoZmtWMk5vTFh5RTZEa2hHNDBnS3ArZFFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MzAxNzc5CWZpbGU6T3BlblJvb20tMC43LjE4LXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xOAphNWNtbTNUdkxvbS9IN3QycDlEZWxTRis2RkdVdHpUam5XbHRuYXlsTk4vdlJsa3FHcEpQQXVnbGdCZEdWL2ZxM0RWNG53MHd3VXJrZWpZbHYrTlJCUT09Cg=="
     }
   }
 }
