@@ -1,10 +1,10 @@
 {
-  "version": "0.7.16",
-  "notes": "Mac版の更新ファイルを新しい鍵で署名しました。\n\n**Macで0.7.15以前を使っている方は、今回だけ手動で更新してください。** OpenRoomを終了し、[0.7.16のDMG](https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.16/OpenRoom-0.7.16-macos-arm64.dmg) を開いて、OpenRoomをApplicationsフォルダにドラッグします。「置き換える」を選び、「アプリケーション」からOpenRoomを起動してください。\n\n0.7.16を入れた後は、「環境設定」→「更新を確認」で次のMac版に更新できます。「起動時に更新を確認」がオンなら、新しい版が配信されたときに自動で更新します。\n\nWindows x64版は従来どおり、アプリ内更新またはインストーラーで更新できます。Mac版の更新用署名はAppleのDeveloper ID署名・公証とは別です。初回起動時にmacOSが警告を表示する場合があります。",
+  "version": "0.7.17",
+  "notes": "写真フォルダーを同じドライブ内で移動・改名した後、「見つからない原本を検索…」で再接続すると、完成済みのプレビューを再利用できます。0.7.17以降で生成したプレビューが対象です。原本と編集内容が一致し、1600pxの閲覧画像が使える場合は、384pxの一覧画像だけが壊れていてもRAWを現像せずに修復できます。\n\n複数の登録フォルダーをまとめる親フォルダーでも、右クリック、Shift+F10、メニューキーで削除メニューを開けるようになりました。Windowsでは、ドライブ直下の親フォルダーに通常のドライブ名（例 `D:\\`）を表示します。\n\nWindows x64版とApple Silicon Mac版を配布します。Macで0.7.15以前をお使いの方は、今回だけDMGから手動で更新してください。",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.16/OpenRoom-0.7.16-windows-x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbW0rMUV5WkFBZHUraGRuNEVTZlNHQkNkbStPRmczWU9ldE5sU0plYnBDdkQ5Q1V6SlJUL2tQNjB6NG4wQ1A3aVA0S1FGM0pVVEhlRHpxNTI5a0I1N3dnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjI2MTMyCWZpbGU6T3BlblJvb20tMC43LjE2LXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xNgphKzdhVnoxcDhoZnIzUFBuTVFGME56UkF3MFpmNzJycS9nUXVnRHdCRVQvUStwam9FMVROYWllRk92VFhUbWRMZm1oYzQwNE84MloxbHprb01XNk5DUT09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.17/OpenRoom-0.7.17-windows-x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbWgzS2t3MWovbTZXRUJtSUQxeVNZa29Oc1pjWmNyUFlrVTRwU3l3NGJTUjdReEZFUVY5SkVpVWdEaDhDZExuQUl0TldJL0NFZEZFNEVNa2FJVWhuT2cwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MjY5NjE5CWZpbGU6T3BlblJvb20tMC43LjE3LXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xNwpSRDJQRzFOenFJMjZMaVp0Z0JTWGJwdjVZNUsxYnQ5UXFHWE9RQWpBcVkyWXgydEVVNHMrZ0ZzMDYzQmMxbVAycDViNnM2eXJBODVWMlMwTFQ3UndEUT09Cg=="
     }
   }
 }
