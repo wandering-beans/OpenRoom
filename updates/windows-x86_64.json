@@ -1,10 +1,10 @@
 {
-  "version": "0.7.18",
-  "notes": "新しいカタログを作成すると、保存画面の名前欄に `MyCatalog` が入ります。初回起動時も、保存先を選んでそのまま `MyCatalog.openroom` を作成できます。名前は保存前に変更できます。",
+  "version": "0.7.19",
+  "notes": "現像設定の自動同期中に編集を続けても、最後の変更を保存できるようにしました。写真フォルダーを読み込むときは、OpenRoomが生成したプレビューを除外します。\n\nMac版のDMGには、OpenRoomをApplicationsフォルダーへドラッグする向きを示す矢印を追加しました。",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.18/OpenRoom-0.7.18-windows-x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbXA4Umczcm1tSm1nSy9nRWRiU3RHUFFjYWRkSHB1cGtBWWRVUUt2NG9LeThlSGdzZ1duaWNhbnB0ZWpOa2JoZmtWMk5vTFh5RTZEa2hHNDBnS3ArZFFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MzAxNzc5CWZpbGU6T3BlblJvb20tMC43LjE4LXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xOAphNWNtbTNUdkxvbS9IN3QycDlEZWxTRis2RkdVdHpUam5XbHRuYXlsTk4vdlJsa3FHcEpQQXVnbGdCZEdWL2ZxM0RWNG53MHd3VXJrZWpZbHYrTlJCUT09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.19/OpenRoom-0.7.19-windows-x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbW1RL1ZxOU9wY25wNS9WWmJvNUU4d3BWN09iamJZejJmVGVWcjFMczdjNlgzNEVZZisyTDJocHNkMjJvUDlKa05yNjg2WkFDN2p5c3BwdlBOY0FPS0FZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MzYzNjM5CWZpbGU6T3BlblJvb20tMC43LjE5LXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4xOQp3ejdiOFl1OGdkM0dpWk9ZV0FaUDNFeFZhUDFxMGJEWjRsUUZtM2pab0w0RnVJRVJQeFd4LzhPZnlTV3J0L1hINzBOQmoyTEtuT2xObFk1c3I2RUpBZz09Cg=="
     }
   }
 }
