@@ -3,11 +3,11 @@
   "scope": "macOS arm64 desktop Cargo resolution, including build/dev dependencies; production npm packages; exact packaged native libraries. This is a notice inventory, not a complete corresponding-source archive or legal compatibility certification.",
   "inputs": {
     "Cargo.lock": "9f9a120ff83833f1cd5604669f7e81a4ac001cc903ce336cbb3d6b8bd8d14deb",
-    "desktop/Cargo.lock": "27f0923882c9ca2b7f00f88d6101afb85030da1c975f518e065ba424f49acd69",
+    "desktop/Cargo.lock": "8b4d63c00e96314287065f3fdd5425c03b5dad73da535faeea110b189d65baa1",
     "crates/develop-core/Cargo.lock": "b5e7193a525845466ac7dda114fb2c4a563939ad422eb41a5d28a48e43166747",
     "crates/media-core/Cargo.lock": "536ea4946bec1b50d1c18028ac52cd7fe077b82035bbef480e2f6c15fca33f96",
     "crates/rtengine/Cargo.lock": "12c10b2e60cb4987383831e8978d9849ed22ca6531e59a9f08eab7b3d79786d0",
-    "desktop/package-lock.json": "b6c11aa14f73c8138af6c4e6dcf191a15a6eaab68436370558855f0af58b97e3",
+    "desktop/package-lock.json": "410518f43e146a6f0d225d32222e7db7244b7e91d11eb70ff7930ab65790aeb8",
     "native/rtengine/source.json": "8af41792cbf40a3099af47cfc625413dcac609320332b063f497ee350b1e0c07"
   },
   "packages": [
