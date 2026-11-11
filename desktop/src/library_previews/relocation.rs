@@ -29,13 +29,8 @@ impl Binding {
 }
 
 fn fingerprint(id: String, info: &std::fs::Metadata) -> Option<String> {
-    let nanos = |t: std::time::SystemTime| {
-        t.duration_since(std::time::UNIX_EPOCH)
-            .ok()
-            .map(|d| d.as_nanos())
-    };
-    let modified = nanos(info.modified().ok()?)?;
-    let birth = info.created().ok().and_then(nanos);
+    let modified = advanced_explorer::unix_nanos(info.modified().ok()?);
+    let birth = info.created().ok().map(advanced_explorer::unix_nanos);
     Some(format!("{id}:{}:{modified}:{birth:?}", info.len()))
 }
 

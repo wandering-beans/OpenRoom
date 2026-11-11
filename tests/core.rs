@@ -56,6 +56,124 @@ fn all(c: &Catalog, q: &Query) -> Vec<Item> {
     }
 }
 #[test]
+fn catalog_previews_are_never_originals() {
+    let dir = TempDir::new().unwrap();
+    let root = dir.path();
+    let mut catalog = Catalog::open(root.join("library.openroom")).unwrap();
+    let backup = root.join("copy.db");
+    catalog.backup(&backup).unwrap();
+    for folder in [
+        "library.openroom.previews/thumbnails",
+        "copy.db.previews/large",
+        "holiday.previews",
+    ] {
+        let path = root.join(folder);
+        std::fs::create_dir_all(&path).unwrap();
+        std::fs::write(path.join("photo.jpg"), folder).unwrap();
+    }
+    std::fs::write(root.join("original.jpg"), b"original").unwrap();
+    let source = catalog.add_root(root).unwrap();
+    for _ in 0..2 {
+        scan(&mut catalog);
+        let mut names: Vec<_> = all(&catalog, &Query::default())
+            .into_iter()
+            .map(|i| std::path::PathBuf::from(i.path))
+            .collect();
+        names.sort();
+        assert_eq!(
+            names,
+            [
+                std::path::Path::new("holiday.previews").join("photo.jpg"),
+                "original.jpg".into()
+            ]
+        );
+    }
+    let decoy = root.join("copy.db.previews/large/original.jpg");
+    std::fs::rename(root.join("original.jpg"), &decoy).unwrap();
+    scan(&mut catalog);
+    for search in [root, decoy.parent().unwrap()] {
+        let result = catalog
+            .relink_folder(source.id, std::path::Path::new(""), search, || false)
+            .unwrap();
+        assert_eq!((result.linked, result.not_found), (0, 1));
+    }
+    let separate = Catalog::open(root.join("another.db")).unwrap();
+    assert!(separate.add_root(decoy.parent().unwrap()).is_err());
+}
+#[test]
+fn rescan_retires_previously_imported_previews_without_erasing_edits() {
+    let dir = TempDir::new().unwrap();
+    let cache = dir.path().join("copy.db.previews").join("large");
+    std::fs::create_dir_all(&cache).unwrap();
+    let image = cache.join("old.jpg");
+    std::fs::write(&image, b"preview").unwrap();
+    let mut catalog = Catalog::open(dir.path().join("library.db")).unwrap();
+    let source = catalog.add_root(&cache).unwrap();
+    scan(&mut catalog);
+    let id = catalog.preview_items(Some(source.id), 0).unwrap()[0];
+    let recipe = r#"{"version":1,"exposure":0.5}"#;
+    catalog.save_develop_recipe(id, recipe, 0).unwrap();
+    catalog.backup(dir.path().join("copy.db")).unwrap();
+
+    scan(&mut catalog);
+    assert!(catalog.preview_items(None, 0).unwrap().is_empty());
+    assert!(catalog.detail(id).unwrap().item.missing);
+    assert_eq!(
+        catalog.develop_recipe(id).unwrap().0.as_deref(),
+        Some(recipe)
+    );
+    assert_eq!(std::fs::read(image).unwrap(), b"preview");
+}
+#[test]
+fn scan_keeps_photos_modified_before_the_unix_epoch() {
+    let (root, _db, mut catalog) = setup();
+    let photo = std::fs::File::create(root.path().join("archive.jpg")).unwrap();
+    photo
+        .set_modified(std::time::UNIX_EPOCH - std::time::Duration::from_secs(1))
+        .unwrap();
+    scan(&mut catalog);
+    let page = catalog.page(&Query::default(), 1, None).unwrap();
+    assert_eq!(page.items[0].modified, -1_000_000_000);
+}
+#[test]
+fn modified_cursor_preserves_nanoseconds_across_json_pages() {
+    let (root, db, mut catalog) = setup();
+    for name in ["a.jpg", "b.jpg", "c.jpg"] {
+        std::fs::write(root.path().join(name), b"photo").unwrap();
+    }
+    scan(&mut catalog);
+    // All three timestamps round to the same JavaScript number.
+    let conn = rusqlite::Connection::open(db.path().join("test.db")).unwrap();
+    conn.execute("UPDATE items SET modified=1700000000000000000+id", [])
+        .unwrap();
+    for descending in [false, true] {
+        let query = Query {
+            sort: Sort::Modified,
+            descending,
+            ..Default::default()
+        };
+        let expected = catalog.page(&query, 3, None).unwrap().items;
+        let mut cursor = None;
+        for photo in expected {
+            let page = catalog.page(&query, 1, cursor.as_ref()).unwrap();
+            assert_eq!(page.items, vec![photo.clone()]);
+            cursor = page.next.map(|next| {
+                let mut wire = serde_json::to_value(next).unwrap();
+                assert_eq!(wire["key"], photo.modified.to_string());
+                let next = serde_json::from_value(wire.clone()).unwrap();
+                wire["key"] = photo.modified.into();
+                let legacy = serde_json::from_value(wire).unwrap();
+                assert_eq!(
+                    catalog.page(&query, 1, Some(&next)).unwrap().items,
+                    catalog.page(&query, 1, Some(&legacy)).unwrap().items
+                );
+                next
+            });
+        }
+        assert!(cursor.is_none());
+    }
+}
+#[test]
 fn large_photo_selections_support_search_counts_and_facets() {
     let (root, _db, mut catalog) = setup();
     for name in ["first.jpg", "second.jpg", "other.png", "unselected.jpg"] {

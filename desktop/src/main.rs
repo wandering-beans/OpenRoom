@@ -18,9 +18,7 @@ use advanced_explorer::{Annotation, Catalog, Cursor, Detail, Folder, Query, Root
 use media::Renderer;
 use serde::{Deserialize, Serialize};
 #[cfg(test)]
-use std::time::Duration;
-#[cfg(test)]
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::{
     collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
@@ -29,7 +27,6 @@ use std::{
         Arc,
         atomic::{AtomicBool, AtomicUsize, Ordering},
     },
-    time::UNIX_EPOCH,
 };
 use tauri::{Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
@@ -320,7 +317,7 @@ fn prepare_render(
     (
         &path,
         m.len(),
-        m.modified()?.duration_since(UNIX_EPOCH)?.as_nanos(),
+        advanced_explorer::unix_nanos(m.modified()?),
         size,
     )
         .hash(&mut hash);

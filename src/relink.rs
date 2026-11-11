@@ -252,7 +252,11 @@ fn find_candidates(
 ) -> Result<(CandidatePaths, ClaimCounts)> {
     let mut candidates = HashMap::<i64, Vec<PathBuf>>::new();
     let mut claims = HashMap::<PathBuf, usize>::new();
-    for entry in WalkDir::new(&search_root.path).follow_links(false) {
+    for entry in WalkDir::new(&search_root.path)
+        .follow_links(false)
+        .into_iter()
+        .filter_entry(crate::is_original_entry)
+    {
         ensure!(!cancelled(), "原本の検索を中止しました。");
         let entry = match entry {
             Ok(entry) => entry,

@@ -443,22 +443,27 @@ export function createDevelop({
     // Coalesce edits made during a write, and let navigation await the latest revision.
     saveTask = Promise.resolve().then(async () => {
       try {
-        while (selection === epoch && settings && dirty() && !interacting) {
-          finishGesture();
-          if (!pendingStep) recordStep(baseline, t("現像設定"));
-          const step = pendingStep;
-          const snapshot = clone(settings);
-          const steps = [{settings: snapshot, label: pendingStep?.label || t("現像設定")}];
-          const undoSnapshot = undo.slice(-10).map(clone);
-          status(t("カタログに保存中…"));
-          const nextRevision = await invoke('save_develop', { id, settings: snapshot, expectedRevision: revision, steps, undo: undoSnapshot });
-          saved(id, false);
+        do {
+          if (selection !== epoch || !settings) return false;
+          if (dirty() && !interacting) {
+            finishGesture();
+            if (!pendingStep) recordStep(baseline, t("現像設定"));
+            const step = pendingStep;
+            const snapshot = clone(settings);
+            const steps = [{settings: snapshot, label: pendingStep?.label || t("現像設定")}];
+            const undoSnapshot = undo.slice(-10).map(clone);
+            status(t("カタログに保存中…"));
+            const nextRevision = await invoke('save_develop', { id, settings: snapshot, expectedRevision: revision, steps, undo: undoSnapshot });
+            saved(id, false);
+            if (selection !== epoch) return false;
+            revision = nextRevision; baseline = snapshot; if (pendingStep === step) pendingStep = null;
+            if (dirty() && !interacting) continue;
+          }
+          syncFailed = true;
+          await tools.afterSave(baseline!);
+          syncFailed = false;
           if (selection !== epoch) return false;
-          revision = nextRevision; baseline = snapshot; if (pendingStep === step) pendingStep = null;
-        }
-        syncFailed = true;
-        await tools.afterSave(baseline!);
-        syncFailed = false;
+        } while (dirty() && !interacting);
         status(interacting || dirty() ? t("編集中") : t("保存済み"));
         refreshHistory();
         return true;

@@ -462,10 +462,8 @@ async fn preview_inner(
                 }
             }
         };
-        if hit.is_none() {
-            if let Some(error) = flight.error.lock().unwrap().clone() {
-                return Err(error);
-            }
+        if hit.is_none() && let Some(error) = flight.error.lock().unwrap().clone() {
+            return Err(error);
         }
         Some((flight, guard))
     } else {

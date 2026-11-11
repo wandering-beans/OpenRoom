@@ -50,7 +50,6 @@ impl Catalog {
         limit: usize,
     ) -> Result<Vec<MetadataCandidate>> {
         ensure!((1..=32).contains(&limit), "Invalid metadata batch size");
-        // Metadata filters cannot match photos whose metadata has not been read yet.
         // Index the selected source, including photos hidden by the current filters.
         let scope = Query {
             root_id: query.root_id,
@@ -308,6 +307,20 @@ mod tests {
         );
         let pending = catalog.metadata_candidates(&Query::default(), 32).unwrap();
         assert_eq!(pending.len(), 1);
+        let unknown_date = Query {
+            metadata: BTreeMap::from([("date".into(), vec![String::new()])]),
+            ..Default::default()
+        };
+        let facets = catalog.metadata_facets(&unknown_date, "date").unwrap();
+        assert_eq!(
+            facets
+                .iter()
+                .find(|facet| facet.value.is_empty())
+                .unwrap()
+                .count,
+            1
+        );
+        assert_eq!(catalog.count(&unknown_date).unwrap(), 1);
         catalog
             .index_metadata(
                 &pending[0],
@@ -315,14 +328,6 @@ mod tests {
                 Some("unreadable test source"),
             )
             .unwrap();
-        assert_eq!(
-            catalog
-                .count(&Query {
-                    metadata: BTreeMap::from([("date".into(), vec!["".into()])]),
-                    ..Default::default()
-                })
-                .unwrap(),
-            1
-        );
+        assert_eq!(catalog.count(&unknown_date).unwrap(), 1);
     }
 }

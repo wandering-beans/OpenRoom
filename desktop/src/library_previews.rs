@@ -2336,6 +2336,25 @@ mod tests {
     }
 
     #[test]
+    fn catalog_inside_photo_root_does_not_import_its_generated_previews() {
+        let (dir, state, _) = fixture();
+        let mut catalog = Catalog::open(&state.db).unwrap();
+        let old_root = catalog.roots().unwrap()[0].id;
+        catalog.remove_root(old_root).unwrap();
+        let root = catalog.add_root(dir.path()).unwrap();
+        catalog.scan_root(root.id, &state.cancel, |_| {}).unwrap();
+        let first = prepare_import(&state, Some(root.id), |_| {}).unwrap();
+        assert_eq!((first.generated, first.failed), (2, 0));
+        for _ in 0..2 {
+            let scan = catalog.scan_root(root.id, &state.cancel, |_| {}).unwrap();
+            assert!(scan.errors.is_empty());
+            assert_eq!((scan.indexed, scan.unchanged), (0, 2));
+            let next = prepare_import(&state, Some(root.id), |_| {}).unwrap();
+            assert_eq!((next.generated, next.failed), (0, 0));
+        }
+    }
+
+    #[test]
     fn repeated_import_preserves_catalog_and_cache_then_only_adds_new_photos() {
         let (dir, state, root) = fixture();
         let mut catalog = Catalog::open(&state.db).unwrap();

@@ -21,6 +21,13 @@ pub use workflow::SavedRecipe;
 pub fn normalize(s: &str) -> String {
     s.nfkc().flat_map(char::to_lowercase).collect()
 }
+/// Signed nanoseconds for catalog timestamps and source fingerprints.
+pub fn unix_nanos(time: SystemTime) -> i128 {
+    match time.duration_since(UNIX_EPOCH) {
+        Ok(duration) => duration.as_nanos() as i128,
+        Err(error) => -(error.duration().as_nanos() as i128),
+    }
+}
 fn now() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -163,6 +170,30 @@ pub struct HistoryEdit {
     pub label: String,
 }
 const CATALOG_APPLICATION_ID: i64 = 0x4f524f4d; // OROM
+
+fn is_catalog_preview_dir(path: &Path) -> bool {
+    if !path
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("previews"))
+    {
+        return false;
+    }
+    // The desktop app appends ".previews" to the complete catalog filename.
+    let owner = path.with_extension("");
+    owner.is_file()
+        && Connection::open_with_flags(owner, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .and_then(|conn| {
+                conn.query_row("PRAGMA application_id", [], |row| row.get::<_, i64>(0))
+            })
+            .is_ok_and(|id| id == CATALOG_APPLICATION_ID)
+}
+
+fn is_original_entry(entry: &walkdir::DirEntry) -> bool {
+    if entry.depth() == 0 {
+        return !entry.path().ancestors().any(is_catalog_preview_dir);
+    }
+    !entry.file_type().is_dir() || !is_catalog_preview_dir(entry.path())
+}
 
 impl Catalog {
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
@@ -515,6 +546,10 @@ PRAGMA user_version=9; COMMIT;")?;
     pub fn add_root(&self, path: impl AsRef<Path>) -> Result<Root> {
         let path = std::fs::canonicalize(path)?;
         ensure!(path.is_dir(), "root must be a directory");
+        ensure!(
+            !path.ancestors().any(is_catalog_preview_dir),
+            "カタログのプレビュー保存先は登録できません。"
+        );
         let text = path
             .to_str()
             .ok_or_else(|| anyhow::anyhow!("non-UTF8 root path"))?
@@ -581,6 +616,9 @@ PRAGMA user_version=9; COMMIT;")?;
                 .follow_links(false)
                 .into_iter()
                 .filter_entry(|e| {
+                    if !is_original_entry(e) {
+                        return false;
+                    }
                     if e.depth() == 0 {
                         return true;
                     }
@@ -876,6 +914,9 @@ PRAGMA user_version=9; COMMIT;")?;
                         .ok_or_else(|| anyhow::anyhow!("invalid cursor key"))?
                         .to_owned(),
                 ),
+                Sort::Modified if let Some(key) = c.key.as_str() => {
+                    Value::Integer(key.parse().context("invalid cursor key")?)
+                }
                 _ => Value::Integer(
                     c.key
                         .as_i64()
@@ -901,7 +942,8 @@ PRAGMA user_version=9; COMMIT;")?;
                 key: match q.sort {
                     Sort::Name => normalize(&i.name).into(),
                     Sort::Added => i.added.into(),
-                    Sort::Modified => i.modified.into(),
+                    // Nanosecond timestamps must survive a JavaScript JSON round trip.
+                    Sort::Modified => i.modified.to_string().into(),
                     Sort::Size => i.size.into(),
                 },
                 id: i.id,
@@ -1057,7 +1099,12 @@ fn filter(q: &Query) -> Result<(String, Vec<Value>)> {
             }
             args.push(Value::Text(value.clone()));
         }
-        conditions.push(format!("id IN (SELECT m.item_id FROM photo_metadata m WHERE m.source_size=items.size AND m.source_modified=items.modified AND ({}))",clauses.join(" OR ")));
+        // Facets include unindexed or stale photos in the empty ("unknown") bucket.
+        let unknown = i32::from(values.iter().any(String::is_empty));
+        conditions.push(format!(
+            "coalesce((SELECT ({}) FROM photo_metadata m WHERE m.item_id=items.id AND m.source_size=items.size AND m.source_modified=items.modified),{unknown})",
+            clauses.join(" OR ")
+        ));
     }
     if let Some(root_id) = q.root_id {
         conditions.push("root_id=?".into());
@@ -1107,11 +1154,7 @@ fn file_record(root: &Root, p: &Path, extension: String) -> Result<FileRecord> {
         .ok_or_else(|| anyhow::anyhow!("non-UTF8 filename"))?
         .to_owned();
     let name = p.file_name().and_then(|s| s.to_str()).unwrap().to_owned();
-    let modified = m
-        .modified()?
-        .duration_since(UNIX_EPOCH)?
-        .as_nanos()
-        .min(i64::MAX as u128) as i64;
+    let modified = unix_nanos(m.modified()?).clamp(i64::MIN.into(), i64::MAX.into()) as i64;
     #[cfg(unix)]
     let identity = {
         use std::os::unix::fs::MetadataExt;

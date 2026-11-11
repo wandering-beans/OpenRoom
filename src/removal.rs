@@ -258,7 +258,7 @@ impl Catalog {
                             .all(|part| matches!(part, Component::Normal(_))),
                     "Invalid folder path"
                 );
-                let count = if path.is_empty() {
+                if path.is_empty() {
                     remove_root(&tx, *root_id)?
                 } else {
                     let prefix = format!("{path}{}", std::path::MAIN_SEPARATOR);
@@ -266,8 +266,7 @@ impl Catalog {
                         "DELETE FROM items WHERE root_id=? AND substr(path,1,length(?))=?",
                         params![root_id, prefix, prefix],
                     )?
-                };
-                count
+                }
             }
         };
         // A failed cache cleanup must not discard edits or history.

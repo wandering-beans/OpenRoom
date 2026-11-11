@@ -254,6 +254,10 @@ async function run() {
             }
             if(command === 'develop_workflow') {
               const request=args.request;
+              if (request.action === 'apply' && window.holdAutoSync) {
+                window.holdAutoSync = false;
+                await new Promise(resolve => { window.releaseAutoSync = resolve; });
+              }
               if(request.action==='list')return savedRecipes.filter(row=>row.item_id===request.item_id);
               if(request.action==='store'){const patch=request.item_id?request.settings:Object.fromEntries(request.fields.map(key=>[key,request.settings[key]]));const row={id:savedRecipes.length+1,item_id:request.item_id,name:request.name,recipe:JSON.stringify(patch)};savedRecipes.push(row);return row.id;}
               if(request.action==='rename'){savedRecipes.find(row=>row.id===request.id).name=request.name;return;}
@@ -1607,6 +1611,22 @@ async function run() {
     await page.waitForFunction(()=>calls.some(call=>call.command==='develop_workflow'&&call.args.request.action==='apply'));
     const synced=await page.evaluate(async()=> (await __TAURI__.core.invoke('get_develop',{id:2})).settings);
     assert.deepEqual(synced.masks,localRecipe.masks);
+    await page.check('#auto-sync');
+    await page.evaluate(() => { window.holdAutoSync = true; });
+    await exposure(1.25);
+    await page.waitForFunction(() => typeof window.releaseAutoSync === 'function');
+    await exposure(2.75);
+    const atClose = await page.evaluate(async () => {
+      const start = calls.length;
+      const closing = window.listeners['close-requested']();
+      window.releaseAutoSync();
+      await closing;
+      const exposures = await Promise.all([1, 2].map(async id =>
+        (await __TAURI__.core.invoke('get_develop', {id})).settings.exposure));
+      return {closed: calls.slice(start).some(call => call.command === 'close_window'), exposures};
+    });
+    assert.deepEqual(atClose, {closed:true, exposures:[2.75, 2.75]}, 'closing during auto-sync must persist the last edit on both photos');
+    await page.uncheck('#auto-sync');
     await page.locator('.film-tile').filter({has:page.locator('.film-number', {hasText:/^1$/})}).click({button:'right'});
     assert.match(await page.textContent('#selection-count'), /2枚/, 'right click preserves multiple selection');
     await page.click('#photo-export');

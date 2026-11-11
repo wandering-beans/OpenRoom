@@ -663,6 +663,7 @@ export const english = {
   "現像用の作業領域が不足しています。": "Insufficient development workspace.",
   "現像用の作業領域が不足しています。処理を終えてから再試行してください。": "Insufficient development workspace. Wait for active operations to finish and try again.",
   "プレビュー保存先にシンボリックリンクは使えません。": "The preview destination cannot be a symbolic link.",
+  "カタログのプレビュー保存先は登録できません。": "A catalog preview folder cannot be added as a photo folder.",
   "作業領域にシンボリックリンクは使えません。": "The workspace cannot be a symbolic link.",
   "ライブラリの表示サイズが不正です。": "Invalid library preview size.",
   "プレビューの寸法情報が不正です。": "Invalid preview dimensions.",
