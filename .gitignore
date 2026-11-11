@@ -60,6 +60,7 @@ fixtures/
 *.[aA][vV][iI][fF]
 *.[pP][sS][dDbB]
 !/assets/branding/**/*.png
+!/assets/branding/macos-install-arrow.tiff
 !/desktop/icons/**/*.png
 !/desktop/ui/public/branding/*.png
 

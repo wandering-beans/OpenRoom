@@ -2,6 +2,7 @@
 # Package the exact app already distributed in the release ZIP.
 set -euo pipefail
 archive=$1
+scripts=$(cd "$(dirname "$0")" && pwd)
 name=$(basename "$archive" .zip)
 [[ $name =~ ^OpenRoom-([0-9]+\.[0-9]+\.[0-9]+)-macos-arm64$ ]]
 version=${BASH_REMATCH[1]}
@@ -14,18 +15,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir "$work/unpack" "$work/image" "$work/mount"
+mkdir "$work/unpack" "$work/mount"
 ditto -x -k "$archive" "$work/unpack"
-mv "$work/unpack/OpenRoom.app" "$work/image/"
-app=$work/image/OpenRoom.app
+app=$work/unpack/OpenRoom.app
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" = "$version"
 test "$(lipo -archs "$app/Contents/MacOS/OpenRoom")" = arm64
 codesign --verify --deep --strict "$app"
-ln -s /Applications "$work/image/Applications"
-hdiutil create -fs HFS+ -volname OpenRoom -format UDZO -srcfolder "$work/image" "$work/distribution.dmg"
+art="$scripts/../assets/branding/macos-install-arrow.tiff"
+dmgbuild -s "$scripts/macos-dmg-settings.py" -D app="$app" -D background="$art" OpenRoom "$work/distribution.dmg"
 hdiutil verify "$work/distribution.dmg"
 hdiutil attach -readonly -nobrowse -mountpoint "$work/mount" "$work/distribution.dmg"
 mounted=true
+test -s "$work/mount/.DS_Store"
+cmp "$art" "$work/mount/.background.tiff"
 test "$(readlink "$work/mount/Applications")" = /Applications
 test -d "$work/mount/Applications"
 codesign --verify --deep --strict "$work/mount/OpenRoom.app"

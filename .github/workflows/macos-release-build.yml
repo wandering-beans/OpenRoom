@@ -121,6 +121,9 @@ jobs:
           awk -v file="$file" '$2 == file { print $1 "  dist/" file; n++ } END { if (n != 1) exit 1 }' dist/SHA256SUMS.txt > dist/MACOS-SHA256SUMS.txt
       - name: Build disk image and test installation through its Applications link
         run: |
+          python3 -m venv "$RUNNER_TEMP/dmg-tools"
+          source "$RUNNER_TEMP/dmg-tools/bin/activate"
+          python -m pip install dmgbuild==1.6.7
           shasum -a 256 -c dist/MACOS-SHA256SUMS.txt
           bash scripts/package-macos-dmg.sh dist/OpenRoom-*-macos-arm64.zip
           mount="$RUNNER_TEMP/openroom-dmg-mount"
