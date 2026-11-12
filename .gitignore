@@ -30,7 +30,7 @@
 # Personal catalogs, photo collections and local test data.
 *.[oO][pP][eE][nN][rR][oO][oO][mM]
 *.[oO][pP][eE][nN][rR][oO][oO][mM]-*
-*.previews/
+*.[pP][rR][eE][vV][iI][eE][wW][sS]/
 *.lrcat
 *.lrcat-*
 *.lrdata/

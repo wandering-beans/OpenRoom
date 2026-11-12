@@ -65,6 +65,29 @@ with tempfile.TemporaryDirectory() as temp:
         assert 'test-only' not in result.stdout
     print('Forced catalog additions, rollback journals and renamed databases detected')
 
+    previews = [
+        'albums/Personal.openroom.previews/thumbnails/small.avif',
+        'catalog.db.previews/large/large.jpg',
+        'catalog.db.previews/working/render.bin',
+        'backup.openroom.PREVIEWS/working/frame.bin',
+        'previews/export.tmp',
+    ]
+    for name in previews:
+        path = repo / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b'test-only')
+        assert subprocess.run(['git', '-c', 'core.ignoreCase=false', 'check-ignore', '-q', '--', name], cwd=repo).returncode == 0, name
+    subprocess.run(['git', 'add', '--all'], cwd=repo, check=True)
+    assert not subprocess.check_output(['git', 'ls-files', '--', *previews], cwd=repo)
+    subprocess.run(['git', 'add', '-f', '--', *previews], cwd=repo, check=True)
+    for args in [['--tracked'], previews]:
+        result = subprocess.run([sys.executable, str(checker), *args], cwd=repo, capture_output=True, text=True)
+        assert result.returncode == 1, result
+        for name in previews:
+            assert f'{Path(name).name}: preview-cache' in result.stdout, name
+        assert 'test-only' not in result.stdout
+    print('Preview caches excluded from normal adds and detected after forced adds')
+
 if (root / '.git').exists():
     for path in ['private/history.bundle', 'reports/local-audit.html', 'reports/tools/read.py',
                  'holiday.NEF', 'holiday.RW2', 'holiday.JPG', 'holiday.png', 'edit.xmp',

@@ -60,6 +60,12 @@ def main():
             if p.is_file() and not p.is_symlink()]
     errors = 0
     for path in files:
+        absolute = path.absolute()
+        name_in_scan = absolute.relative_to(root) if absolute.is_relative_to(root) else absolute
+        if (absolute.is_relative_to(root / 'previews')
+                or any(part.lower().endswith('.previews') for part in name_in_scan.parts[:-1])):
+            print(f'{path.name}: preview-cache'); errors += 1
+            continue
         if (
             CATALOG_NAME.search(path.name)
             or (path.name.startswith('.env') and path.name != '.env.example')
