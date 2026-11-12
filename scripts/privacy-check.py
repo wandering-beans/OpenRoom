@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail on local account paths or recognizable credentials in public files.
+"""Fail on catalogs, local account paths or recognizable credentials in public files.
 Default: source tree excluding build/local data. Pass files/directories for artifacts.
 Only filenames, offsets and categories are reported; never matching values.
 """
@@ -10,6 +10,7 @@ import re
 import subprocess
 
 EXCLUDED = {'target', 'dist', 'ui-dist', 'node_modules', '.git', '.tools', '.agents', '.codex', '__pycache__'}
+CATALOG_NAME = re.compile(r'\.(?:(?:openroom|lrcat)(?:-.*)?|(?:db|sqlite3?)(?:-(?:wal|shm|journal))?)\Z', re.IGNORECASE)
 PATTERNS = {
     'local-account-path': rb'(?<![\w/.-])(?:/(?:Users|home)/[A-Za-z0-9_.-]+/|[A-Za-z]:[\\/]+Users[\\/]+[A-Za-z0-9_. -]+[\\/])',
     'mac-private-temp-path': rb'/(?:private/)?var/folders/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+/',
@@ -28,6 +29,8 @@ def source_files(root):
                 yield path
 
 def findings(data):
+    if data.startswith(b'SQLite format 3\x00'):
+        yield 'sqlite-database', 0
     for category, pattern in PATTERNS.items():
         for match in re.finditer(pattern, data):
             yield category, match.start()
@@ -57,7 +60,11 @@ def main():
             if p.is_file() and not p.is_symlink()]
     errors = 0
     for path in files:
-        if path.name.startswith('.env') and path.name != '.env.example' or path.suffix.lower() in {'.p12', '.pfx', '.pem', '.key', '.db', '.sqlite', '.sqlite3'}:
+        if (
+            CATALOG_NAME.search(path.name)
+            or (path.name.startswith('.env') and path.name != '.env.example')
+            or path.suffix.lower() in {'.p12', '.pfx', '.pem', '.key'}
+        ):
             print(f'{path.name}: sensitive-file-type'); errors += 1
         for category, offset in findings(path.read_bytes()):
             print(f'{path.name}: {category} offset={offset}'); errors += 1

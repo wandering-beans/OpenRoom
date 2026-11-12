@@ -2,6 +2,9 @@
 """Small regression check for public-artifact filtering and credential matching."""
 import importlib.util
 from pathlib import Path
+import shutil
+import sqlite3
+import sys
 import tempfile
 import subprocess
 
@@ -34,6 +37,34 @@ with tempfile.TemporaryDirectory() as temp:
 print('Privacy regression checks passed')
 
 root = Path(__file__).resolve().parents[1]
+with tempfile.TemporaryDirectory() as temp:
+    repo = Path(temp)
+    subprocess.run(['git', 'init', '-q', str(repo)], check=True)
+    (repo / 'scripts').mkdir()
+    checker = repo / 'scripts' / 'privacy-check.py'
+    shutil.copyfile(root / 'scripts' / checker.name, checker)
+    shutil.copyfile(root / '.gitignore', repo / '.gitignore')
+    files = ['Personal.openroom', 'Archive.OPENROOM', 'Personal.openroom-wal', 'catalog.db-journal',
+             'archive.SQLITE-journal', 'library.sqlite3-journal', 'renamed.bin']
+    for name in files[:-1]:
+        (repo / name).write_bytes(b'test-only')
+        assert subprocess.run(['git', '-c', 'core.ignoreCase=false', 'check-ignore', '-q', '--', name], cwd=repo).returncode == 0, name
+    db = sqlite3.connect(repo / files[-1])
+    db.execute('CREATE TABLE photos (id INTEGER)')
+    db.close()
+    safe = repo / 'catalog-notes.txt'
+    safe.write_text('SQLite format 3 is documented here. A catalog.db-journal is temporary.')
+    subprocess.run(['git', 'add', '--', safe.name], cwd=repo, check=True)
+    subprocess.run([sys.executable, str(checker), '--tracked'], cwd=repo, check=True)
+    subprocess.run(['git', 'add', '-f', '--', *files], cwd=repo, check=True)
+    for args in [['--tracked'], files]:
+        result = subprocess.run([sys.executable, str(checker), *args], cwd=repo, capture_output=True, text=True)
+        assert result.returncode == 1, result
+        for name in files:
+            assert name + ':' in result.stdout, name
+        assert 'test-only' not in result.stdout
+    print('Forced catalog additions, rollback journals and renamed databases detected')
+
 if (root / '.git').exists():
     for path in ['private/history.bundle', 'reports/local-audit.html', 'reports/tools/read.py',
                  'holiday.NEF', 'holiday.RW2', 'holiday.JPG', 'holiday.png', 'edit.xmp',

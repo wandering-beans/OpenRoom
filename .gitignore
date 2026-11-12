@@ -3,6 +3,7 @@
 *.db
 *.db-shm
 *.db-wal
+*.[dD][bB]-journal
 /desktop/target/
 /dist/
 /desktop/node_modules/
@@ -27,8 +28,8 @@
 ._*
 
 # Personal catalogs, photo collections and local test data.
-*.openroom
-*.openroom-*
+*.[oO][pP][eE][nN][rR][oO][oO][mM]
+*.[oO][pP][eE][nN][rR][oO][oO][mM]-*
 *.previews/
 *.lrcat
 *.lrcat-*
@@ -37,6 +38,8 @@
 *.sqlite-wal
 *.sqlite3-shm
 *.sqlite3-wal
+*.[sS][qQ][lL][iI][tT][eE]-journal
+*.[sS][qQ][lL][iI][tT][eE]3-journal
 /data/
 /photos/
 /imports/
