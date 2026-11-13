@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package a built macOS app or Windows NSIS installer for its signed update feed."""
+"""Package a built macOS app, Windows NSIS installer, or Linux AppImage for its signed update feed."""
 import argparse
 import hashlib
 import json
@@ -15,7 +15,7 @@ import tempfile
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('app', type=Path, help='OpenRoom.app, its prepared macOS archive, or the Windows installer')
+    parser.add_argument('app', type=Path, help='OpenRoom.app, its prepared macOS archive, a Windows installer, or a Linux AppImage')
     parser.add_argument('--notes', type=Path)
     parser.add_argument('--prepare-only', action='store_true', help='Create the verified macOS archive without a signing key')
     parser.add_argument('--output', type=Path, required=True)

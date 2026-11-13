@@ -7,6 +7,7 @@ python3 scripts/build-rtengine.py
 export LD_LIBRARY_PATH="$PWD/.tools/rtengine/build-linux${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 notices=.tools/linux-notices
 mkdir -p "$notices" dist/ubuntu
+cp .tools/rtengine/fmt/LICENSE "$notices/fmt-LICENSE.txt"
 cp LICENSE COPYRIGHT.md DISCLAIMER.md TERMS.md THIRD_PARTY.md "$notices/"
 cp -R licenses "$notices/"
 cp native/rtengine/{COPYING.GPL-3.0,source.json,*.patch} "$notices/"

@@ -152,22 +152,26 @@ async fn signed_updates_reject_tampering_and_replace_only_the_temporary_app() {
     );
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 #[tokio::test]
 #[ignore = "requires OPENROOM_UPDATE_PACKAGE pointing to a locally packaged release"]
 async fn packaged_release_verifies_and_installs_with_the_production_public_key() {
     let package = std::path::PathBuf::from(
         std::env::var_os("OPENROOM_UPDATE_PACKAGE").expect("package directory"),
     );
+    let target = update_target().unwrap();
+    let feed = if cfg!(target_os = "linux") { "linux-x86_64.json" } else { "macos-aarch64.json" };
     let mut manifest: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(package.join("macos-aarch64.json")).unwrap()).unwrap();
+        serde_json::from_slice(&std::fs::read(package.join(feed)).unwrap()).unwrap();
     let version = manifest["version"].as_str().unwrap().to_owned();
     let archive = Arc::new(
-        std::fs::read(package.join(format!("OpenRoom-{version}-macos-arm64.app.tar.gz"))).unwrap(),
+        std::fs::read(package.join(asset_name(&version, target).unwrap())).unwrap(),
     );
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
-    manifest["platforms"]["darwin-aarch64"]["url"] = json!(format!("{base}/artifact"));
+    manifest["platforms"][target]["url"] = json!(format!("{base}/artifact"));
+    #[cfg(target_os = "linux")]
+    let expected_bytes = Arc::clone(&archive);
     let routes = axum::Router::new()
         .route(
             "/manifest",
@@ -188,6 +192,13 @@ async fn packaged_release_verifies_and_installs_with_the_production_public_key()
     });
     let config: serde_json::Value =
         serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
+    #[cfg(target_os = "linux")]
+    let config = {
+        let mut config = config;
+        let linux: serde_json::Value = serde_json::from_str(include_str!("../../tauri.linux.conf.json")).unwrap();
+        config["plugins"]["updater"]["pubkey"] = linux["plugins"]["updater"]["pubkey"].clone();
+        config
+    };
     let mut context = tauri::test::mock_context(tauri::test::noop_assets());
     context.package_info_mut().version = "0.0.0".parse().unwrap();
     context
@@ -200,7 +211,11 @@ async fn packaged_release_verifies_and_installs_with_the_production_public_key()
         .build(context)
         .unwrap();
     let temp = tempfile::tempdir().unwrap();
+    #[cfg(target_os = "macos")]
     let bundle = temp.path().join("OpenRoom.app");
+    #[cfg(target_os = "linux")]
+    let executable = temp.path().join("OpenRoom.AppImage");
+    #[cfg(target_os = "macos")]
     let executable = bundle.join("Contents/MacOS/OpenRoom");
     std::fs::create_dir_all(executable.parent().unwrap()).unwrap();
     std::fs::write(&executable, b"old application").unwrap();
@@ -208,7 +223,7 @@ async fn packaged_release_verifies_and_installs_with_the_production_public_key()
     std::fs::write(&catalog, b"keep this catalog").unwrap();
     let updater = app
         .updater_builder()
-        .target("darwin-aarch64")
+        .target(target)
         .executable_path(&executable)
         .endpoints(vec![format!("{base}/manifest").parse().unwrap()])
         .unwrap()
@@ -219,25 +234,30 @@ async fn packaged_release_verifies_and_installs_with_the_production_public_key()
     let update = updater.check().await.unwrap().unwrap();
     assert_eq!(update.version, version);
     let bytes = update.download(|_, _| {}, || {}).await.unwrap();
-    validate_verified_package(&update, "darwin-aarch64", &bytes).unwrap();
+    validate_verified_package(&update, target, &bytes).unwrap();
     update.install(bytes).unwrap();
-    assert!(
-        std::process::Command::new("codesign")
-            .args(["--verify", "--deep", "--strict"])
-            .arg(&bundle)
-            .status()
-            .unwrap()
-            .success()
-    );
-    let installed_version = std::process::Command::new("/usr/libexec/PlistBuddy")
-        .args(["-c", "Print :CFBundleShortVersionString"])
-        .arg(bundle.join("Contents/Info.plist"))
-        .output()
-        .unwrap();
-    assert_eq!(
-        String::from_utf8(installed_version.stdout).unwrap().trim(),
-        version
-    );
+    #[cfg(target_os = "linux")]
+    assert_eq!(std::fs::read(&executable).unwrap().as_slice(), expected_bytes.as_slice());
+    #[cfg(target_os = "macos")]
+    {
+        assert!(
+            std::process::Command::new("codesign")
+                .args(["--verify", "--deep", "--strict"])
+                .arg(&bundle)
+                .status()
+                .unwrap()
+                .success()
+        );
+        let installed_version = std::process::Command::new("/usr/libexec/PlistBuddy")
+            .args(["-c", "Print :CFBundleShortVersionString"])
+            .arg(bundle.join("Contents/Info.plist"))
+            .output()
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(installed_version.stdout).unwrap().trim(),
+            version
+        );
+    }
     assert_eq!(std::fs::read(catalog).unwrap(), b"keep this catalog");
     server.abort();
     let _ = server.await;

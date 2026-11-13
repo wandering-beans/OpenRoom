@@ -134,7 +134,17 @@ def build_engine(root, bridge, pin, cache, source, build):
         library = build / "libopenroom_rtengine.dylib"
     elif sys.platform == "linux":
         build = cache / "build-linux"
-        common += ["-DUSE_LIBCANBERRA=OFF"]
+        common += ["-DUSE_LIBCANBERRA=OFF", "-DWITH_SYSTEM_FMT=OFF"]
+        # Upstream pins fmt by commit. A shallow fetch can omit that commit.
+        fmt = cache / "fmt"
+        fmt_commit = "e424e3f2e607da02742f73db84873b8084fc714c"
+        if not (fmt / ".git").is_dir():
+            run("git", "init", str(fmt))
+        if subprocess.run(["git", "-C", str(fmt), "cat-file", "-e", fmt_commit], capture_output=True).returncode:
+            run("git", "-C", str(fmt), "fetch", "--depth=1", "https://github.com/fmtlib/fmt", fmt_commit)
+        run("git", "-C", str(fmt), "checkout", "--detach", fmt_commit)
+        run("git", "-C", str(fmt), "diff", "--exit-code", "HEAD")
+        common.append(f"-DFETCHCONTENT_SOURCE_DIR_FMT={fmt.as_posix()}")
         if subprocess.run(["pkg-config", "--atleast-version=0.21", "libraw_r"]).returncode:
             common.append("-DWITH_SYSTEM_LIBRAW=OFF")
         library = build / "libopenroom_rtengine.so"

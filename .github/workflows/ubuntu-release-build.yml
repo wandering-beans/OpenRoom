@@ -29,8 +29,12 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y ninja-build cmake libgtkmm-3.0-dev libfftw3-dev libiptcdata0-dev liblensfun-dev libexiv2-dev liblcms2-dev librsvg2-dev libfmt-dev libraw-dev libheif-dev libaom-dev libdav1d-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev libssl-dev libdbus-1-dev patchelf libfuse2t64 libtool automake nasm
+          sudo apt-get install -y ninja-build cmake libgtkmm-3.0-dev libfftw3-dev libiptcdata0-dev liblensfun-dev libexiv2-dev liblcms2-dev librsvg2-dev libraw-dev libheif-dev libaom-dev libdav1d-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev libssl-dev libdbus-1-dev patchelf libfuse2t64 libtool automake nasm
           df -h .
+      - uses: actions/cache@v4
+        with:
+          path: .tools/rtengine
+          key: ubuntu24-rtengine-${{ hashFiles('scripts/build-rtengine.py', 'native/rtengine/**') }}
       - run: npm ci --prefix desktop
       - run: npm --prefix desktop run test:unit
       - run: python3 scripts/test-package-update.py

@@ -128,6 +128,9 @@ fn linux_appimage_header(bytes: &[u8]) -> bool {
 fn installed_appimage(executable: &Path) -> bool {
     use std::io::Read;
     // Use the same AppImage environment that Tauri uses for the replacement path.
+    if !matches!(tauri::utils::platform::bundle_type(), Some(tauri::utils::config::BundleType::AppImage)) {
+        return false;
+    }
     let env = tauri::Env::default();
     let (Some(image), Some(directory)) = (env.appimage, env.appdir) else { return false };
     let image = Path::new(&image);
