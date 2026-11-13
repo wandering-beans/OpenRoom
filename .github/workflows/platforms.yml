@@ -119,6 +119,8 @@ jobs:
             lensfun:p libiptcdata:p exiv2:p fmt:p libraw:p
       - name: Configure native toolchains
         run: |
+          # Cargo's test executable may live outside target/debug/deps on newer toolchains.
+          "$env:GITHUB_WORKSPACE/.tools/rtengine/build-windows-x86_64" >> $env:GITHUB_PATH
           "OPENROOM_MSYS2_PREFIX=${{ steps.msys2.outputs.msys2-location }}/ucrt64" >> $env:GITHUB_ENV
           "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
           & "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" install 'libheif[aom]:x64-windows-static-md'
