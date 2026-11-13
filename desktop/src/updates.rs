@@ -50,12 +50,14 @@ fn update_target() -> Reply<&'static str> {
     match (std::env::consts::OS, std::env::consts::ARCH) {
         ("macos", "aarch64") => Ok("darwin-aarch64"),
         ("windows", "x86_64") => Ok("windows-x86_64"),
+        ("linux", "x86_64") => Ok("linux-x86_64"),
         _ => Err("このOS・CPUのアプリ内更新には対応していません。".into()),
     }
 }
 
 fn asset_name(version: &str, target: &str) -> Reply<String> {
     match target {
+        "linux-x86_64" => Ok(format!("OpenRoom-{version}-linux-x86_64.AppImage")),
         "darwin-aarch64" => Ok(format!("OpenRoom-{version}-macos-arm64.app.tar.gz")),
         "windows-x86_64" => Ok(format!("OpenRoom-{version}-windows-x64-setup.exe")),
         _ => Err("更新対象のOS・CPUを確認できません。".into()),
@@ -64,8 +66,9 @@ fn asset_name(version: &str, target: &str) -> Reply<String> {
 
 fn validate_target_release(update: &Update, target: &str) -> Reply<()> {
     let asset = asset_name(&update.version, target)?;
+    let tag_prefix = if target == "linux-x86_64" { "ubuntu-v" } else { "v" };
     let expected = format!(
-        "https://github.com/wandering-beans/OpenRoom/releases/download/v{}/{asset}",
+        "https://github.com/wandering-beans/OpenRoom/releases/download/{tag_prefix}{}/{asset}",
         update.version
     );
     let platform = &update.raw_json["platforms"][target];
@@ -95,6 +98,7 @@ fn validate_verified_package(update: &Update, target: &str, bytes: &[u8]) -> Rep
         return Err("署名された更新ファイルのOS・CPUが一致しません。".into());
     }
     let valid = match target {
+        "linux-x86_64" => linux_appimage_header(bytes),
         "darwin-aarch64" => bytes.starts_with(&[0x1f, 0x8b]),
         "windows-x86_64" => {
             // NSIS uses an x86 PE launcher even when its installed application is x64.
@@ -115,8 +119,29 @@ fn validate_verified_package(update: &Update, target: &str, bytes: &[u8]) -> Rep
     Ok(())
 }
 
+fn linux_appimage_header(bytes: &[u8]) -> bool {
+    bytes.len() >= 64 && bytes.starts_with(b"\x7fELF\x02\x01\x01")
+        && &bytes[8..11] == b"AI\x02" && bytes[18..20] == [62, 0]
+}
+
+#[cfg(target_os = "linux")]
+fn installed_appimage(executable: &Path) -> bool {
+    use std::io::Read;
+    // Use the same AppImage environment that Tauri uses for the replacement path.
+    let env = tauri::Env::default();
+    let (Some(image), Some(directory)) = (env.appimage, env.appdir) else { return false };
+    let image = Path::new(&image);
+    let binary = Path::new(&directory).join("usr/bin/advanced-explorer-desktop");
+    let mut header = [0; 64];
+    image.is_absolute() && std::fs::canonicalize(binary).is_ok_and(|path| path == executable)
+        && std::fs::File::open(image).and_then(|mut f| f.read_exact(&mut header)).is_ok()
+        && linux_appimage_header(&header)
+}
+
 fn installed_application(executable: &Path, target: &str) -> bool {
     match target {
+        #[cfg(target_os = "linux")]
+        "linux-x86_64" => installed_appimage(executable),
         "darwin-aarch64" => executable
             .ancestors()
             .nth(3)

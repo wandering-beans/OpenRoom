@@ -47,7 +47,7 @@ pub(crate) fn recycle(path: &Path) -> Result<()> {
     Ok(())
 }
 
-#[cfg(all(test, any(windows, target_os = "macos")))]
+#[cfg(test)]
 mod tests {
     #[test]
     #[ignore = "uses the real OS trash with a disposable test file"]

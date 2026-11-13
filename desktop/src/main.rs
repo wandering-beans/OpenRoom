@@ -11,7 +11,7 @@ mod media;
 mod preferences;
 mod updates;
 mod trash;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(desktop_rtengine)]
 mod rtengine_worker;
 mod workflow;
 use advanced_explorer::{Annotation, Catalog, Cursor, Detail, Folder, Query, Root, ScanReport};

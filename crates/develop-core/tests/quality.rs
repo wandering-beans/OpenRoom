@@ -1,7 +1,7 @@
 use advanced_explorer_develop::{self as engine, Settings};
 use image::{DynamicImage, ImageEncoder, Rgba, Rgba32FImage};
 
-#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+#[cfg(all(desktop_rtengine, feature = "rtengine"))]
 #[test]
 fn native_raster_retains_display_tone_and_applies_adjustments_once() {
     let directory = tempfile::tempdir().unwrap();

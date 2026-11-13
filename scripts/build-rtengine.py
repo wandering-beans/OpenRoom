@@ -132,8 +132,14 @@ def build_engine(root, bridge, pin, cache, source, build):
             f"-DOpenMP_omp_LIBRARY={omp}/lib/libomp.dylib",
             f"-DOpenMP_C_INCLUDE_DIR={omp}/include", f"-DOpenMP_CXX_INCLUDE_DIR={omp}/include"]
         library = build / "libopenroom_rtengine.dylib"
+    elif sys.platform == "linux":
+        build = cache / "build-linux"
+        common += ["-DUSE_LIBCANBERRA=OFF"]
+        if subprocess.run(["pkg-config", "--atleast-version=0.21", "libraw_r"]).returncode:
+            common.append("-DWITH_SYSTEM_LIBRAW=OFF")
+        library = build / "libopenroom_rtengine.so"
     else:
-        raise RuntimeError("rtengine is supported on macOS and Windows")
+        raise RuntimeError(f"Unsupported rtengine platform: {sys.platform}")
     run("cmake", "-S", str(source), "-B", str(build), "-G", "Ninja", *common)
     run("cmake", "--build", str(build), "--target", "openroom_rtengine", "--parallel", "4")
     data = cache / "data"

@@ -12,7 +12,7 @@ use std::{
     time::Duration,
 };
 
-#[cfg(target_os = "macos")]
+#[cfg(unix)]
 use std::os::{fd::OwnedFd, unix::net::UnixStream as WorkerInput};
 #[cfg(target_os = "windows")]
 #[path = "rtengine_pipe.rs"]
@@ -121,7 +121,7 @@ fn read_base(reader: &mut impl Read, info: BaseInfo, bytes: usize) -> Result<Wor
 impl Worker {
     fn start(import: bool) -> Result<Self> {
         let _start = engine::timing::start("worker-start");
-        #[cfg(target_os = "macos")]
+        #[cfg(unix)]
         let (input, child_input) = {
             let (input, child_input) = WorkerInput::pair()?;
             input.set_write_timeout(Some(Duration::from_millis(10)))?;
@@ -207,7 +207,7 @@ impl Worker {
             ensure!(!cancelled(), "現像対象が変更されました。");
             self.input.send(header, pixels)?;
         }
-        #[cfg(target_os = "macos")]
+        #[cfg(unix)]
         for mut bytes in [header.as_slice(), pixels.as_slice()] {
             while !bytes.is_empty() {
                 ensure!(!cancelled(), "現像対象が変更されました。");

@@ -61,7 +61,7 @@ class WindowsUpdates(unittest.TestCase):
             notes.write_text('Windows update fixture', encoding='utf-8')
             args = SimpleNamespace(notes=notes, output=work / 'release')
             with patch.dict(os.environ, env, clear=True), patch.object(package.subprocess, 'run', side_effect=sign):
-                package.package_windows(installer, args, fixture, config)
+                package.package_installer(installer, args, fixture, config)
                 result = json.loads((args.output / 'windows-x86_64.json').read_text())
                 self.assertEqual(list(result['platforms']), ['windows-x86_64'])
                 platform = result['platforms']['windows-x86_64']
@@ -72,20 +72,43 @@ class WindowsUpdates(unittest.TestCase):
                 self.assertFalse((args.output / 'macos-aarch64.json').exists())
                 self.assertFalse(list(args.output.glob('*.key*')))
                 with self.assertRaisesRegex(ValueError, 'Output already exists'):
-                    package.package_windows(installer, args, fixture, config)
+                    package.package_installer(installer, args, fixture, config)
                 args.output = work / 'invalid'
                 installer.write_bytes(b'\x1f\x8brenamed macOS archive')
                 with self.assertRaisesRegex(ValueError, 'Expected.*Windows'):
-                    package.package_windows(installer, args, fixture, config)
+                    package.package_installer(installer, args, fixture, config)
                 self.assertFalse(args.output.exists())
                 installer.write_bytes(b'MZ' + bytes(126))
                 windows['plugins']['updater']['pubkey'] = config['plugins']['updater']['pubkey']
                 windows_config.write_text(json.dumps(windows), encoding='utf-8')
                 with self.assertRaisesRegex(ValueError, 'Signing key does not match'):
-                    package.package_windows(installer, args, fixture, config)
+                    package.package_installer(installer, args, fixture, config)
                 self.assertFalse(args.output.exists())
         self.assertEqual((ROOT / 'desktop/tauri.conf.json').read_bytes(), original)
 
+
+
+class LinuxUpdates(unittest.TestCase):
+    def test_target_architecture_checksum_and_key_isolation(self):
+        configs = [json.loads((ROOT / 'desktop' / file).read_bytes())['plugins']['updater']
+                   for file in ['tauri.conf.json', 'tauri.windows.conf.json', 'tauri.linux.conf.json']]
+        self.assertEqual(len({c['pubkey'] for c in configs}), 3)
+        self.assertTrue(configs[2]['endpoints'][0].endswith('/updates/linux-x86_64.json'))
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary)
+            config = {'version': '1.0.0'}
+            image = work / 'OpenRoom-1.0.0-linux-x86_64.AppImage'
+            header = bytearray(64)
+            header[:7] = b'\x7fELF\x02\x01\x01'
+            header[8:11] = b'AI\x02'
+            image.write_bytes(header)
+            with self.assertRaisesRegex(ValueError, 'x86_64 Linux'):
+                package.package_installer(image, None, ROOT, config)
+            header[18:20] = b'\x3e\x00'
+            image.write_bytes(header)
+            (work / 'SHA256SUMS.txt').write_text('wrong')
+            with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
+                package.package_installer(image, None, ROOT, config)
 
 
 class MacUpdates(unittest.TestCase):

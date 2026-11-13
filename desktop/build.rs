@@ -1,4 +1,8 @@
 fn main() {
+    println!("cargo:rustc-check-cfg=cfg(desktop_rtengine)");
+    if matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("windows" | "macos" | "linux")) {
+        println!("cargo:rustc-cfg=desktop_rtengine");
+    }
     println!("cargo:rerun-if-changed=native/Preview.swift");
     if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "macos" {
         let arch = match std::env::var("CARGO_CFG_TARGET_ARCH").unwrap().as_str() {

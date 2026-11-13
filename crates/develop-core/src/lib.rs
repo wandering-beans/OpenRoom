@@ -2,7 +2,7 @@
 mod camera_profile;
 #[cfg(any(
     test,
-    all(any(target_os = "macos", target_os = "windows"), feature = "rtengine")
+    all(desktop_rtengine, feature = "rtengine")
 ))]
 mod camera_saturation;
 mod color;
@@ -10,7 +10,7 @@ mod curve;
 pub mod masks;
 mod raster_tone;
 mod raw_color;
-#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+#[cfg(all(desktop_rtengine, feature = "rtengine"))]
 mod rtengine;
 mod settings;
 pub mod timing;
@@ -23,9 +23,9 @@ use serde::{Deserialize, Serialize};
 pub use settings::Settings;
 use std::{borrow::Cow, io::Write, path::Path, time::Instant};
 
-#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+#[cfg(all(desktop_rtengine, feature = "rtengine"))]
 pub const RENDER_VERSION: &str = "develop-rtengine-5.13-19241791-v12";
-#[cfg(not(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine")))]
+#[cfg(not(all(desktop_rtengine, feature = "rtengine")))]
 pub const RENDER_VERSION: &str = "develop-v9";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -56,11 +56,11 @@ pub struct WorkingImage {
 /// Owns one immutable source and reuses its native stage while Rust-only sliders change.
 pub struct PreviewRenderer {
     working: WorkingImage,
-    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+    #[cfg(all(desktop_rtengine, feature = "rtengine"))]
     native_preview: Option<NativePreview>,
 }
 
-#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+#[cfg(all(desktop_rtengine, feature = "rtengine"))]
 struct NativePreview {
     adjustments: advanced_explorer_rtengine::Adjustments,
     source_size: u64,
@@ -72,7 +72,7 @@ impl PreviewRenderer {
     pub fn new(working: WorkingImage) -> Self {
         Self {
             working,
-            #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+            #[cfg(all(desktop_rtengine, feature = "rtengine"))]
             native_preview: None,
         }
     }
@@ -86,7 +86,7 @@ impl PreviewRenderer {
         settings: &Settings,
         cancelled: &(dyn Fn() -> bool + Sync),
     ) -> Result<RenderedImage> {
-        #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+        #[cfg(all(desktop_rtengine, feature = "rtengine"))]
         if self
             .working
             .pixels
@@ -144,7 +144,7 @@ pub struct RenderedImage {
     pub info: RenderInfo,
 }
 
-#[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+#[cfg(all(desktop_rtengine, feature = "rtengine"))]
 pub fn is_native_raw(source: &Path) -> bool {
     rtengine::is_raw(source)
 }
@@ -152,7 +152,7 @@ pub fn is_native_raw(source: &Path) -> bool {
 /// Decode only once per source/preview size. RAW always uses sensor data.
 pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
     ensure!(bound == 0 || bound <= 4096, "Invalid working image bound");
-    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+    #[cfg(all(desktop_rtengine, feature = "rtengine"))]
     if rtengine::is_raw(source) {
         return rtengine::prepare_raw(source, bound);
     }
@@ -210,7 +210,7 @@ pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
     });
     let has_raw_color = photo.raw.is_some();
     let raster_wb_temperature = None;
-    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+    #[cfg(all(desktop_rtengine, feature = "rtengine"))]
     let raster_wb_temperature = if !is_raw {
         advanced_explorer_rtengine::raster_temperature(source).unwrap_or(None)
     } else {
@@ -222,7 +222,7 @@ pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: if cfg!(all(
-                any(target_os = "macos", target_os = "windows"),
+                desktop_rtengine,
                 feature = "rtengine"
             )) {
                 Some(source.canonicalize()?)
@@ -597,7 +597,7 @@ fn process(
     settings: &Settings,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<Rgba32FImage> {
-    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+    #[cfg(all(desktop_rtengine, feature = "rtengine"))]
     if rtengine::required(&working, settings) {
         settings.validate()?;
         ensure!(!cancelled(), "現像対象が変更されました。");
@@ -901,7 +901,7 @@ pub fn export_source_with_options(
     settings.validate()?;
     options.validate()?;
     ensure!(!destination.exists(), "Destination already exists");
-    #[cfg(all(any(target_os = "macos", target_os = "windows"), feature = "rtengine"))]
+    #[cfg(all(desktop_rtengine, feature = "rtengine"))]
     if rtengine::is_raw(source) {
         let working = rtengine::prepare_export(source, settings)?;
         return export_working(

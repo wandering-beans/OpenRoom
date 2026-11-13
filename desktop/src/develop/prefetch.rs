@@ -166,7 +166,7 @@ fn start(state: AppState, prefetch: Arc<Prefetch>, ids: Vec<i64>) -> Reply<()> {
     };
     tauri::async_runtime::spawn(async move {
         let _job = prefetch.job.lock().await;
-        #[cfg(any(target_os = "macos", target_os = "windows"))]
+        #[cfg(desktop_rtengine)]
         let selected = ids.first().copied();
         for id in ids {
             loop {
@@ -205,7 +205,7 @@ fn start(state: AppState, prefetch: Arc<Prefetch>, ids: Vec<i64>) -> Reply<()> {
                     let display_needed =
                         cache.get(id, &request).is_none() && cached(&request).is_none();
                     std::thread::scope(|_scope| {
-                        #[cfg(any(target_os = "macos", target_os = "windows"))]
+                        #[cfg(desktop_rtengine)]
                         if Some(id) == selected
                             && engine::is_native_raw(&request.source)
                             && (!cfg!(test) || std::env::var_os("AE_TEST_EXECUTABLE").is_some())

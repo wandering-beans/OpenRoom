@@ -30,8 +30,8 @@ def main():
         parser.error('--prepare-only requires OpenRoom.app')
     if not args.prepare_only and not args.notes:
         parser.error('--notes is required when signing')
-    if app.suffix.lower() == '.exe':
-        package_windows(app, args, root, config)
+    if app.suffix.lower() in ('.exe', '.appimage'):
+        package_installer(app, args, root, config)
         return
     if args.output.exists():
         raise ValueError('Output already exists; preserve existing releases')
@@ -103,14 +103,25 @@ def prepare_macos_archive(app, archive, root):
         output.add(app, arcname='OpenRoom.app', filter=anonymous_metadata)
 
 
-def package_windows(installer, args, root, config):
+def package_installer(installer, args, root, config):
     version = config['version']
-    expected = f'OpenRoom-{version}-windows-x64-setup.exe'
-    if installer.name != expected or installer.read_bytes()[:2] != b'MZ':
+    linux = installer.suffix.lower() == '.appimage'
+    platform = 'linux' if linux else 'windows'
+    target = f'{platform}-x86_64'
+    expected = f'OpenRoom-{version}-linux-x86_64.AppImage' if linux else f'OpenRoom-{version}-windows-x64-setup.exe'
+    with installer.open('rb') as file:
+        header = file.read(64)
+    if linux:
+        if (installer.name != expected or len(header) != 64 or not header.startswith(b'\x7fELF\x02\x01\x01')
+                or header[8:11] != b'AI\x02' or header[18:20] != b'\x3e\x00'):
+            raise ValueError('Expected the versioned x86_64 Linux AppImage')
+        if (installer.parent / 'SHA256SUMS.txt').read_text().strip() != checksum_line(installer).strip():
+            raise ValueError('Prepared AppImage checksum mismatch')
+    elif installer.name != expected or not header.startswith(b'MZ'):
         raise ValueError('Expected the versioned Windows x64 NSIS installer from build-windows.py')
     key = Path(os.environ['TAURI_SIGNING_PRIVATE_KEY_PATH']).resolve(strict=True)
-    windows = json.loads((root / 'desktop/tauri.windows.conf.json').read_text(encoding='utf-8'))
-    public_key = windows['plugins']['updater'].get('pubkey', config['plugins']['updater']['pubkey'])
+    platform_config = json.loads((root / f'desktop/tauri.{platform}.conf.json').read_text(encoding='utf-8'))
+    public_key = platform_config['plugins']['updater']['pubkey']
     if Path(str(key) + '.pub').read_text().strip() != public_key:
         raise ValueError('Signing key does not match the app public key')
     if args.output.exists():
@@ -125,16 +136,16 @@ def package_windows(installer, args, root, config):
                         'signer', 'sign', '--app-version', version, str(artifact)],
                        check=True, stdout=subprocess.DEVNULL)
         signature = Path(str(artifact) + '.sig').read_text().strip()
+        tag = f'ubuntu-v{version}' if linux else f'v{version}'
         manifest = {'version': version, 'notes': args.notes.read_text(encoding='utf-8').strip(),
-                    'platforms': {'windows-x86_64': {
-                        'url': f'https://github.com/wandering-beans/OpenRoom/releases/download/v{version}/{expected}',
+                    'platforms': {target: {
+                        'url': f'https://github.com/wandering-beans/OpenRoom/releases/download/{tag}/{expected}',
                         'signature': signature}}}
-        (staging / 'windows-x86_64.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-        checksum = hashlib.sha256(artifact.read_bytes()).hexdigest()
-        (staging / 'SHA256SUMS.txt').write_text(f'{checksum}  {expected}\n', encoding='utf-8')
+        (staging / f'{target}.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        (staging / 'SHA256SUMS.txt').write_text(checksum_line(artifact), encoding='utf-8')
         staging.rename(args.output)
-    print(f'Prepared signed Windows update {version}: {args.output}')
-    print('Publish assets before promoting windows-x86_64.json; never replace the macOS feed.')
+    print(f'Prepared signed {platform} update {version}: {args.output}')
+    print(f'Publish assets before promoting {target}.json.')
 
 
 if __name__ == '__main__':

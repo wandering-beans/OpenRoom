@@ -1,0 +1,24 @@
+{
+  "bundle": {
+    "targets": [
+      "appimage"
+    ],
+    "linux": {
+      "appimage": {
+        "files": {
+          "usr/lib/libopenroom_rtengine.so": "../.tools/rtengine/build-linux/libopenroom_rtengine.so",
+          "usr/share/openroom/rtengine": "../.tools/rtengine/data",
+          "usr/share/doc/openroom": "../.tools/linux-notices"
+        }
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY3OTZCNjcxMENBQUVCNDYKUldSRzY2b01jYmFXWjZDUEIwaUE3YW11b3VVRERRd00rTWtVMFdmc09BRTZ0SkxWREsvWEhKeHkK",
+      "endpoints": [
+        "https://raw.githubusercontent.com/wandering-beans/OpenRoom/main/updates/linux-x86_64.json"
+      ]
+    }
+  }
+}

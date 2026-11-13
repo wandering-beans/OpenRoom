@@ -1209,7 +1209,7 @@ fn prepare_batch(
                 let pending = &pending;
                 let stopped = &stopped;
                 scope.spawn(move || {
-                    #[cfg(any(target_os = "macos", target_os = "windows"))]
+                    #[cfg(desktop_rtengine)]
                     crate::rtengine_worker::begin_batch();
                     let cancelled =
                         || state.cancel.load(Ordering::SeqCst) || stopped.load(Ordering::SeqCst);

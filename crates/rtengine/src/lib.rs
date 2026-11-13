@@ -134,6 +134,8 @@ fn initialize() -> Result<()> {
         .context("Missing executable directory")?
         .join(if cfg!(target_os = "windows") {
             "rtengine"
+        } else if cfg!(target_os = "linux") {
+            "../share/openroom/rtengine"
         } else {
             "../Resources/rtengine"
         });

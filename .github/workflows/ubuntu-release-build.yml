@@ -1,0 +1,83 @@
+name: Ubuntu AppImage
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/ubuntu-release-build.yml
+      - scripts/build-ubuntu.sh
+      - desktop/tauri.linux.conf.json
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_RELEASE_LTO: thin
+      LD_LIBRARY_PATH: ${{ github.workspace }}/.tools/rtengine/build-linux
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y ninja-build cmake libgtkmm-3.0-dev libfftw3-dev libiptcdata0-dev liblensfun-dev libexiv2-dev liblcms2-dev librsvg2-dev libfmt-dev libraw-dev libheif-dev libaom-dev libdav1d-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev libssl-dev libdbus-1-dev patchelf libfuse2t64 libtool automake nasm
+          df -h .
+      - run: npm ci --prefix desktop
+      - run: npm --prefix desktop run test:unit
+      - run: python3 scripts/test-package-update.py
+      - name: Build AppImage
+        run: bash scripts/build-ubuntu.sh
+      - name: Test shared development pipeline
+        run: |
+          cargo test --locked --manifest-path crates/develop-core/Cargo.toml
+          xvfb-run -a cargo test --locked --manifest-path desktop/Cargo.toml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-appimage
+          path: dist/ubuntu/
+          if-no-files-found: error
+  smoke:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        ubuntu: ['24.04', '26.04']
+    container: ubuntu:${{ matrix.ubuntu }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ubuntu-appimage
+      - name: Install desktop runtime and headless display
+        run: |
+          apt-get update -q
+          DEBIAN_FRONTEND=noninteractive apt-get install -y xvfb xauth dbus-x11 libgtk-3-0t64 libwebkit2gtk-4.1-0 libgl1-mesa-dri ca-certificates curl python3
+      - name: Test the shipped binary without a build tree
+        shell: bash
+        run: |
+          sha256sum -c SHA256SUMS.txt
+          chmod +x *.AppImage
+          image=$(realpath *.AppImage)
+          "$image" --appimage-extract >/dev/null
+          test -s squashfs-root/usr/share/openroom/rtengine/camconst.json
+          test -s squashfs-root/usr/share/doc/openroom/LICENSE
+          test -s squashfs-root/usr/lib/libopenroom_rtengine.so
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          mkdir -p /tmp/写真
+          curl -fLsS --retry 3 "$NEF_URL" -o /tmp/写真/nikon.nef
+          echo "$NEF_SHA  /tmp/写真/nikon.nef" | sha256sum -c -
+          "$image" --develop-base /tmp/写真/nikon.nef /tmp/base.tif 1600 > /tmp/base.json
+          python3 -c 'import json; d=json.load(open("/tmp/base.json")); assert d["source_kind"] == "raw-rtengine-linear" and max(d["width"], d["height"]) == 1600, d'
+          export AE_DATA_DIR=/tmp/openroom-catalog
+          xvfb-run -a dbus-run-session -- bash -c '"$1" & pid=$!; sleep 12; kill -0 "$pid" && kill "$pid"' -- "$image"
+        env:
+          NEF_URL: https://raw.pixls.us/getfile.php/5227/nice/Nikon%20-%20D2H%20-%2012bit%2012bit%20compressed%20%28Lossy%20%28type%201%29%29%20%283:2%29.NEF
+          NEF_SHA: 155edb938f884ea7372ce98d4ff5f965c3e413b43b95bc9923da6e92082cf914

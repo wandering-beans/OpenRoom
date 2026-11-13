@@ -447,3 +447,18 @@ fn startup_update_check_runs_once_per_process_only_when_enabled_and_installed() 
         assert!(!state.claim_startup_check(true, true));
     }
 }
+
+#[test]
+fn linux_updates_require_a_64_bit_x86_type_two_appimage() {
+    let mut bytes = [0; 64];
+    bytes[..7].copy_from_slice(b"\x7fELF\x02\x01\x01");
+    bytes[8..11].copy_from_slice(b"AI\x02");
+    bytes[18] = 62;
+    assert!(linux_appimage_header(&bytes));
+    assert!(!linux_appimage_header(&bytes[..32]));
+    bytes[18] = 183;
+    assert!(!linux_appimage_header(&bytes));
+    bytes[18] = 62;
+    bytes[10] = 0;
+    assert!(!linux_appimage_header(&bytes));
+}

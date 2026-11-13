@@ -33,11 +33,11 @@ fn render_frame(
     bound: u32,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<engine::RenderedImage> {
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(desktop_rtengine)]
     {
         crate::rtengine_worker::render(base, settings, bound, cancelled)
     }
-    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    #[cfg(not(desktop_rtengine))]
     {
         let _ = bound;
         engine::render(base, settings, cancelled)
@@ -399,7 +399,7 @@ fn load_base_into(
     if let Some(image) = cached_base(request, bound, resident, retain, cancelled)? {
         return Ok(image);
     }
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(desktop_rtengine)]
     if engine::is_native_raw(&request.source) {
         let image = crate::rtengine_worker::prepare(&request.source, bound, cancelled)?;
         return remember_base(image, request, bound, resident, retain, cancelled);
@@ -632,7 +632,7 @@ pub fn library_pixels(
         settings,
         1600,
     )?;
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(desktop_rtengine)]
     if let Some(result) = crate::rtengine_worker::library(&request.source, settings, cancelled) {
         return result;
     }
@@ -797,7 +797,7 @@ pub fn run_worker() -> bool {
     let Some(flag) = args.first().and_then(|value| value.to_str()) else {
         return false;
     };
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(desktop_rtengine)]
     if matches!(flag, "--rtengine-resident" | "--rtengine-import") {
         if let Err(error) = crate::rtengine_worker::run(flag == "--rtengine-import") {
             eprintln!("{error:#}");
@@ -817,7 +817,7 @@ pub fn run_worker() -> bool {
         return false;
     }
     let result = (|| -> Result<()> {
-        let threads = if cfg!(any(target_os = "macos", target_os = "windows"))
+        let threads = if cfg!(desktop_rtengine)
             && flag == "--develop-export"
         {
             std::thread::available_parallelism().map_or(4, |n| n.get().min(8))
