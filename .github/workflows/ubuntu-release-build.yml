@@ -57,6 +57,7 @@ jobs:
           python3 scripts/test-highlight-recovery.py target/release/advanced-explorer-desktop
           cargo test --locked --manifest-path crates/develop-core/Cargo.toml
           xvfb-run -a cargo test --locked --manifest-path desktop/Cargo.toml
+          AE_TEST_EXECUTABLE="$PWD/target/release/advanced-explorer-desktop" cargo test --locked --manifest-path desktop/Cargo.toml resident_worker_recovers_after_exit_and_cancellation -- --ignored
           cargo test --locked --manifest-path desktop/Cargo.toml --no-run --message-format=json |
             jq -rs '[.[] | select(.profile.test and .target.name == "advanced-explorer-desktop") | .executable] | unique | select(length == 1) | first' |
             xargs -I{} cp {} dist/check-updater
@@ -101,11 +102,18 @@ jobs:
           echo "$NEF_SHA  /tmp/写真/nikon.nef" | sha256sum -c -
           "$image" --develop-base /tmp/写真/nikon.nef /tmp/base.tif 1600 > /tmp/base.json
           python3 -c 'import json; d=json.load(open("/tmp/base.json")); assert d["source_kind"] == "raw-rtengine-linear" and max(d["width"], d["height"]) == 1600, d'
+          sha256sum -c - <<< "$NEF_SHA  /tmp/写真/nikon.nef"
           export AE_DATA_DIR=/tmp/openroom-catalog
           xvfb-run -a dbus-run-session -- bash -c '"$1" & pid=$!; sleep 12; kill -0 "$pid" && kill "$pid"' -- "$image"
         env:
           NEF_URL: https://raw.pixls.us/getfile.php/5227/nice/Nikon%20-%20D2H%20-%2012bit%2012bit%20compressed%20%28Lossy%20%28type%201%29%29%20%283:2%29.NEF
           NEF_SHA: 155edb938f884ea7372ce98d4ff5f965c3e413b43b95bc9923da6e92082cf914
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nikon-d2h-${{ matrix.ubuntu }}
+          path: /tmp/base.tif
+          if-no-files-found: error
 
   verify-signed:
     if: ${{ inputs.signed_run }}
@@ -136,5 +144,5 @@ jobs:
       - name: Verify signature, replace an isolated installation and compare every installed byte
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y libwebkit2gtk-4.1-0 libgtkmm-3.0-1t64
+          sudo apt-get install -y libwebkit2gtk-4.1-0
           OPENROOM_UPDATE_PACKAGE="$PWD/signed" LD_LIBRARY_PATH="$PWD/signed/squashfs-root/usr/lib" xvfb-run -a ./test/check-updater --ignored packaged_release_verifies_and_installs_with_the_production_public_key

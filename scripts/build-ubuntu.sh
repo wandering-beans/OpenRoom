@@ -25,7 +25,7 @@ notices=.tools/linux-notices
 mkdir -p "$notices" dist/ubuntu
 mkdir -p .tools/linux-heif "$notices/ubuntu"
 for pkg in libheif-plugin-aomenc libheif-plugin-dav1d libheif-plugin-libde265; do
-  plugin=$(dpkg-query -L "$pkg" | grep -E '/libheif/[^/]+\.so$')
+  plugin=$(dpkg-query -L "$pkg" | grep -E '/libheif/plugins/[^/]+\.so$')
   cp "$plugin" .tools/linux-heif/
   cp -L "/usr/share/doc/$pkg/copyright" "$notices/ubuntu/$pkg-copyright"
 done
