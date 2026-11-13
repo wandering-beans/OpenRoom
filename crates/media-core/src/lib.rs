@@ -427,3 +427,16 @@ mod tests {
         }
     }
 }
+
+/// Keep the bundled codecs registered for the lifetime of the desktop process or worker.
+#[cfg(target_os = "linux")]
+pub fn load_bundled_heif_plugins() -> anyhow::Result<Option<libheif_rs::LibHeif>> {
+    let executable = std::env::current_exe()?;
+    let directory = executable.parent().unwrap().join("../lib/openroom-heif");
+    if !directory.is_dir() {
+        return Ok(None);
+    }
+    let library = libheif_rs::LibHeif::new();
+    anyhow::ensure!(library.load_plugins(directory)? > 0, "No bundled HEIF codecs could be loaded");
+    Ok(Some(library))
+}

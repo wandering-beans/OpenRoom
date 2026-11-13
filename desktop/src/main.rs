@@ -594,6 +594,9 @@ fn initialize_workspace(app: &tauri::AppHandle, data: PathBuf) -> anyhow::Result
 }
 
 fn main() {
+    #[cfg(target_os = "linux")]
+    let _codecs = advanced_explorer_media::load_bundled_heif_plugins()
+        .expect("Could not initialize bundled HEIF/AVIF codecs");
     if develop::run_worker() {
         return;
     }

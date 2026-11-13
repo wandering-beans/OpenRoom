@@ -8,7 +8,8 @@
         "files": {
           "usr/lib/libopenroom_rtengine.so": "../.tools/rtengine/build-linux/libopenroom_rtengine.so",
           "usr/share/openroom/rtengine": "../.tools/rtengine/data",
-          "usr/share/doc/openroom": "../.tools/linux-notices"
+          "usr/share/doc/openroom": "../.tools/linux-notices",
+          "usr/lib/openroom-heif": "../.tools/linux-heif"
         }
       }
     }

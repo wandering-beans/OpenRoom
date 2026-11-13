@@ -3,10 +3,32 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 [[ $(uname -sm) == 'Linux x86_64' ]]
+# Match the metadata reader used by the macOS release (notably Fuji MakerNotes).
+deps="$PWD/.tools/linux-deps"
+mkdir -p "$deps"
+if [[ ! -f "$deps/lib/pkgconfig/exiv2.pc" ]]; then
+  archive="$deps/exiv2-0.28.9.tar.gz"
+  curl -fLsS --retry 3 https://github.com/Exiv2/exiv2/archive/refs/tags/v0.28.9.tar.gz -o "$archive"
+  echo "700b76b97695b2fab4ef8c79619c68ae57d09e0c130724791cafbd39e0eb4aef  $archive" | sha256sum -c -
+  tar -xf "$archive" -C "$deps"
+  cmake -S "$deps/exiv2-0.28.9" -B "$deps/build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$deps" -DCMAKE_INSTALL_LIBDIR=lib -DEXIV2_BUILD_EXIV2_COMMAND=OFF \
+    -DEXIV2_BUILD_SAMPLES=OFF -DEXIV2_BUILD_UNIT_TESTS=OFF
+  cmake --build "$deps/build" --parallel 4
+  cmake --install "$deps/build"
+fi
+export PKG_CONFIG_PATH="$deps/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+export LD_LIBRARY_PATH="$deps/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 python3 scripts/build-rtengine.py
 export LD_LIBRARY_PATH="$PWD/.tools/rtengine/build-linux${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 notices=.tools/linux-notices
 mkdir -p "$notices" dist/ubuntu
+mkdir -p .tools/linux-heif "$notices/ubuntu"
+for pkg in libheif-plugin-aomenc libheif-plugin-dav1d libheif-plugin-libde265; do
+  plugin=$(dpkg-query -L "$pkg" | grep -E '/libheif/[^/]+\.so$')
+  cp "$plugin" .tools/linux-heif/
+  cp -L "/usr/share/doc/$pkg/copyright" "$notices/ubuntu/$pkg-copyright"
+done
 cp .tools/rtengine/fmt/LICENSE "$notices/fmt-LICENSE.txt"
 cp LICENSE COPYRIGHT.md DISCLAIMER.md TERMS.md THIRD_PARTY.md "$notices/"
 cp -R licenses "$notices/"
