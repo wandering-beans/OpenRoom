@@ -34,6 +34,7 @@ unsafe extern "C" {
         transfer_bytes: usize,
         source: *const u8,
         source_bytes: usize,
+        #[cfg(target_os = "linux")] allow_test_cpu_device: bool,
     ) -> bool;
 }
 fn padded(v: [f32; 3]) -> [f32; 4] {
@@ -119,7 +120,7 @@ impl ColorTransform {
                 .map(|i| linear(i as f32 / 4096.))
                 .chain((0..=65536).map(|i| srgb(i as f32 / 65536.)))
                 .collect::<Vec<_>>();
-            #[cfg(target_os = "windows")]
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
             {
                 // D3D's approximate pow loses color precision when HDR channels nearly cancel.
                 // Sample the CPU transfer above white as well; keep the Metal table unchanged.
@@ -140,6 +141,11 @@ impl ColorTransform {
         let shader = include_str!("../native/color.metal");
         #[cfg(target_os = "windows")]
         let shader = include_str!("../native/color.hlsl");
+        #[cfg(target_os = "linux")]
+        let shader = include_bytes!(concat!(env!("OUT_DIR"), "/color.spv"));
+        #[cfg(target_os = "linux")]
+        let allow_test_cpu_device =
+            cfg!(test) && std::env::var("OPENROOM_TEST_VULKAN_CPU").as_deref() == Ok("1");
         // SAFETY: the bridge is synchronous, validates allocation sizes, and commits only a completed
         // command. The mutable pixel slice is exclusive; every other pointer lives through the call.
         unsafe {
@@ -156,6 +162,8 @@ impl ColorTransform {
                 transfer.len() * 4,
                 shader.as_ptr(),
                 shader.len(),
+                #[cfg(target_os = "linux")]
+                allow_test_cpu_device,
             )
         }
     }
@@ -203,6 +211,32 @@ mod tests {
             ..Default::default()
         };
         let mut pixels = Rgba32FImage::from_pixel(1021, 683, Rgba([0.2, 0.4, 0.6, 0.5]));
+        let original = pixels.clone();
+        assert!(!ColorTransform::new(&settings).apply_gpu(&mut pixels, &settings));
+        assert_eq!(pixels, original);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn missing_vulkan_driver_preserves_input_for_cpu_fallback() {
+        const NO_DRIVER: &str = "/nonexistent/openroom-no-vulkan-driver.json";
+        if std::env::var("VK_ICD_FILENAMES").as_deref() != Ok(NO_DRIVER) {
+            // Use a fresh process because the loader and color backend cache device discovery.
+            let status = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "color::gpu::tests::missing_vulkan_driver_preserves_input_for_cpu_fallback",
+                ])
+                .env_remove("OPENROOM_DISABLE_GPU")
+                .env("VK_ICD_FILENAMES", NO_DRIVER)
+                .env("VK_DRIVER_FILES", NO_DRIVER)
+                .status()
+                .unwrap();
+            assert!(status.success());
+            return;
+        }
+        let settings = Settings::default();
+        let mut pixels = Rgba32FImage::from_pixel(512, 512, Rgba([0.1, 0.3, 1.4, 0.5]));
         let original = pixels.clone();
         assert!(!ColorTransform::new(&settings).apply_gpu(&mut pixels, &settings));
         assert_eq!(pixels, original);

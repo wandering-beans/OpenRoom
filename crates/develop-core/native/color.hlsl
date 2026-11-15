@@ -1,6 +1,12 @@
 // Same color equations and CPU-generated tables as color.metal.
 // Compile with IEEE strictness; fast math changes calibrated photo colors.
 
+#ifdef OPENROOM_VULKAN
+#define VK_BINDING(n) [[vk::binding(n, 0)]]
+#else
+#define VK_BINDING(n)
+#endif
+
 // Matches Parameters in gpu.rs. All vectors occupy sixteen bytes.
 struct Parameters {
     uint4 dimensions_flags;
@@ -88,17 +94,22 @@ float grain_noise(float x, float y) {
     float bottom = hash_noise(ix, iy+1) * (1.f-fx) + hash_noise(ix+1, iy+1) * fx;
     return top * (1.f-fy) + bottom * fy;
 }
-RWStructuredBuffer<float4> pixels : register(u0);
-cbuffer ColorParameters : register(b0) { Parameters p; };
-StructuredBuffer<float> tone : register(t0);
-StructuredBuffer<float> curves : register(t1);
-StructuredBuffer<float> transfer : register(t2);
+VK_BINDING(0) RWStructuredBuffer<float4> pixels : register(u0);
+VK_BINDING(1) cbuffer ColorParameters : register(b0) { Parameters p; };
+VK_BINDING(2) StructuredBuffer<float> tone : register(t0);
+VK_BINDING(3) StructuredBuffer<float> curves : register(t1);
+VK_BINDING(4) StructuredBuffer<float> transfer : register(t2);
 [numthreads(256, 1, 1)]
 void correct_color(uint3 thread : SV_DispatchThreadID) {
     uint index = thread.x + thread.y * (65535u * 256u);
+    uint localIndex = index;
+#ifdef OPENROOM_VULKAN
+    // Bounded Vulkan tiles retain full-image coordinates for vignette and grain.
+    index += p.dimensions_flags.w;
+#endif
     uint width = p.dimensions_flags.x, height = p.dimensions_flags.y, flags = p.dimensions_flags.z;
     if (index >= width * height) return;
-    precise float3 rgb = pixels[index].rgb;
+    precise float3 rgb = pixels[localIndex].rgb;
     if (flags & 2u) rgb = multiply(p.white_balance, rgb);
     if (flags & 1024u) {
         // The CPU JPEG calibration packs three WB tables and one tone table after the curves.
@@ -195,5 +206,5 @@ void correct_color(uint3 thread : SV_DispatchThreadID) {
         float strength = p.grain.x/100.f*0.14f*(0.3f+(1.f-abs(luminance(rgb)*2.f-1.f))*0.7f);
         rgb += noise*strength;
     }
-    pixels[index] = float4(rgb,pixels[index].a);
+    pixels[localIndex] = float4(rgb,pixels[localIndex].a);
 }

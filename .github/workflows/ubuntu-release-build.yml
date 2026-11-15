@@ -11,6 +11,7 @@ on:
   push:
     paths:
       - .github/workflows/ubuntu-release-build.yml
+      - crates/develop-core/**
       - scripts/build-ubuntu.sh
       - desktop/tauri.linux.conf.json
 permissions:
@@ -38,7 +39,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y ninja-build cmake libgtkmm-3.0-dev libfftw3-dev libiptcdata0-dev liblensfun-dev libinih-dev libbrotli-dev gettext libexpat1-dev liblcms2-dev librsvg2-dev libraw-dev libheif-dev libheif-plugin-aomenc libheif-plugin-dav1d libheif-plugin-libde265 libaom-dev libdav1d-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev libssl-dev libdbus-1-dev patchelf libfuse2t64 libtool automake nasm
+          sudo apt-get install -y ninja-build cmake libgtkmm-3.0-dev libfftw3-dev libiptcdata0-dev liblensfun-dev libinih-dev libbrotli-dev gettext libexpat1-dev liblcms2-dev librsvg2-dev libraw-dev libheif-dev libheif-plugin-aomenc libheif-plugin-dav1d libheif-plugin-libde265 libaom-dev libdav1d-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev libssl-dev libdbus-1-dev patchelf libfuse2t64 libtool automake nasm glslang-tools libvulkan-dev mesa-vulkan-drivers
           df -h .
       - uses: actions/cache@v4
         with:
@@ -46,6 +47,14 @@ jobs:
             .tools/rtengine
             .tools/linux-deps
           key: ubuntu24-rtengine-${{ hashFiles('scripts/build-ubuntu.sh', 'scripts/build-rtengine.py', 'native/rtengine/**') }}
+      - name: Verify Vulkan color output against the shared CPU renderer
+        run: |
+          shader="$RUNNER_TEMP/color.spv"
+          glslangValidator -D -DOPENROOM_VULKAN=1 -V --target-env vulkan1.0 -S comp -e correct_color -o "$shader" crates/develop-core/native/color.hlsl
+          spirv-val --target-env vulkan1.0 "$shader"
+          export VK_ICD_FILENAMES="$(find /usr/share/vulkan/icd.d -name 'lvp_icd*.json' -print -quit)"
+          test -f "$VK_ICD_FILENAMES"
+          OPENROOM_TEST_VULKAN_CPU=1 cargo test --release --locked --manifest-path crates/develop-core/Cargo.toml --no-default-features --features vulkan --lib color::gpu::tests -- --include-ignored --test-threads=1 --nocapture
       - run: npm ci --prefix desktop
       - run: npm --prefix desktop run test:unit
       - run: python3 scripts/test-package-update.py

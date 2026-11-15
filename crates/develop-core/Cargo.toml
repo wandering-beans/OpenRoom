@@ -5,8 +5,9 @@ edition = "2024"
 license = "GPL-3.0-or-later"
 
 [features]
-default = ["rtengine", "metal", "direct3d"]
+default = ["rtengine", "metal", "direct3d", "vulkan"]
 direct3d = []
+vulkan = []
 metal = []
 rtengine = ["dep:advanced-explorer-rtengine"]
 

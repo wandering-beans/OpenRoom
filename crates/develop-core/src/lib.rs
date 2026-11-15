@@ -698,12 +698,14 @@ fn process(
     let (width, height) = pixels.dimensions();
     #[cfg(any(
         all(target_os = "macos", feature = "metal"),
-        all(target_os = "windows", feature = "direct3d")
+        all(target_os = "windows", feature = "direct3d"),
+        all(target_os = "linux", feature = "vulkan")
     ))]
     let gpu_applied = use_gpu && transform.apply_gpu(&mut pixels, settings);
     #[cfg(not(any(
         all(target_os = "macos", feature = "metal"),
-        all(target_os = "windows", feature = "direct3d")
+        all(target_os = "windows", feature = "direct3d"),
+        all(target_os = "linux", feature = "vulkan")
     )))]
     let gpu_applied = {
         let _ = use_gpu;

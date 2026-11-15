@@ -24,6 +24,8 @@ export LD_LIBRARY_PATH="$PWD/.tools/rtengine/build-linux${LD_LIBRARY_PATH:+:$LD_
 notices=.tools/linux-notices
 mkdir -p "$notices" dist/ubuntu
 mkdir -p .tools/linux-heif "$notices/ubuntu"
+# Vulkan-Hpp is compiled into the color renderer; the loader and driver come from the host.
+cp -L /usr/share/doc/libvulkan-dev/copyright "$notices/ubuntu/libvulkan-dev-copyright"
 for pkg in libheif-plugin-aomenc libheif-plugin-dav1d libheif-plugin-libde265; do
   plugin=$(dpkg-query -L "$pkg" | grep -E '/libheif/plugins/[^/]+\.so$')
   cp "$plugin" .tools/linux-heif/
