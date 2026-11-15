@@ -20,9 +20,9 @@ OpenRoomは写真の整理とRAW現像ができるデスクトップアプリで
 
 ### Ubuntu 24.04・26.04 LTS（x86_64）
 
-1. Ubuntu版のリリースから `OpenRoom-0.7.19-linux-x86_64.AppImage` をダウンロードし、ホームフォルダーなど、自分が書き込める場所に保存します。[Ubuntu版のダウンロード](https://github.com/wandering-beans/OpenRoom/releases/tag/ubuntu-v0.7.19)
-2. 保存したフォルダーで端末を開き、`chmod +x OpenRoom-0.7.19-linux-x86_64.AppImage` を実行します。
-3. `./OpenRoom-0.7.19-linux-x86_64.AppImage` で起動します。以降の更新は「環境設定」の「更新を確認」からも確認できます。
+1. Ubuntu版のリリースから `OpenRoom-0.7.20-linux-x86_64.AppImage` をダウンロードし、ホームフォルダーなど、自分が書き込める場所に保存します。[Ubuntu版のダウンロード](https://github.com/wandering-beans/OpenRoom/releases/tag/ubuntu-v0.7.20)
+2. 保存したフォルダーで端末を開き、`chmod +x OpenRoom-0.7.20-linux-x86_64.AppImage` を実行します。
+3. `./OpenRoom-0.7.20-linux-x86_64.AppImage` で起動します。以降の更新は「環境設定」の「更新を確認」からも確認できます。
 
 ## 写真を開いて書き出す
 
