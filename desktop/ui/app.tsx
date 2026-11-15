@@ -1092,7 +1092,8 @@ async function highQuality() {
 function setPreviewImage(preview: Preview, libraryKey: string | null = null) {
   libraryImageKey = libraryKey;
   const image = $('full-image');
-  const anchor = pendingPhotoAnchor || zoomAnchor;
+  // Read the visible point before replacing the image. A pan can happen while decoding.
+  const anchor = pendingPhotoAnchor || capturePhotoAnchor(zoomAnchor);
   pendingPhotoAnchor = null;
   // Reserve the correct aspect ratio before decoding either preview resolution.
   image.width = preview.render_width;
@@ -1170,7 +1171,7 @@ function chooseZoom(value: number) {
   if (review.comparing) review.zoom(value);
   else { zoom = value; applyZoom(); }
 }
-function capturePhotoAnchor() {
+function capturePhotoAnchor(at: Anchor | null = null) {
   if (!zoom || viewMode !== 'loupe') return null;
   const image = $('full-image');
   const rect = image.getBoundingClientRect();
@@ -1178,8 +1179,8 @@ function capturePhotoAnchor() {
   if (image.hidden || !rect.width || !rect.height) return pendingPhotoAnchor;
   const area = $('image-area');
   const viewport = area.getBoundingClientRect();
-  const clientX = viewport.left + area.clientLeft + area.clientWidth / 2;
-  const clientY = viewport.top + area.clientTop + area.clientHeight / 2;
+  const clientX = at?.clientX ?? (viewport.left + area.clientLeft + area.clientWidth / 2);
+  const clientY = at?.clientY ?? (viewport.top + area.clientTop + area.clientHeight / 2);
   return { x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height, clientX, clientY };
 }
 function positionZoomAnchor(anchor: Anchor) {

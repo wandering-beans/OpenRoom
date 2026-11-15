@@ -958,19 +958,19 @@ async function run() {
       await page.waitForFunction(() => document.querySelector('#navigator-viewport').hidden);
       if (collapsed) await page.click('#toggle-sidebar');
     }
+    const photoFocus = () => page.evaluate(() => {
+      const image = document.querySelector('#full-image'), area = document.querySelector('#image-area');
+      const rect = image.getBoundingClientRect(), viewport = area.getBoundingClientRect();
+      return { x:(viewport.left+area.clientLeft+area.clientWidth/2-rect.left)/rect.width,
+        y:(viewport.top+area.clientTop+area.clientHeight/2-rect.top)/rect.height,
+        scale:rect.width/Number(image.getAttribute('width')) };
+    });
     async function checkNavigationFocus(module) {
       const ready = () => page.waitForFunction(() => {
         const image = document.querySelector('#full-image');
         return !image.hidden && image.complete && image.naturalWidth > 0
           && image.alt === document.querySelector('#view-title').textContent
           && document.querySelector('#view-message').hidden;
-      });
-      const focus = () => page.evaluate(() => {
-        const image = document.querySelector('#full-image'), area = document.querySelector('#image-area');
-        const rect = image.getBoundingClientRect(), viewport = area.getBoundingClientRect();
-        return { x:(viewport.left+area.clientLeft+area.clientWidth/2-rect.left)/rect.width,
-          y:(viewport.top+area.clientTop+area.clientHeight/2-rect.top)/rect.height,
-          scale:rect.width/Number(image.getAttribute('width')) };
       });
       await ready();
       await page.locator('#navigator-100').evaluate(button => button.click());
@@ -984,7 +984,7 @@ async function run() {
           area.scrollTop += rect.top + point.y*rect.height - viewport.top - area.clientTop - area.clientHeight/2;
           document.activeElement.blur();
         }, point);
-        const before = await focus();
+        const before = await photoFocus();
         for (const [key, count] of [['ArrowRight', 1], ['ArrowLeft', 1], ['ArrowRight', 2], ['ArrowLeft', 2]]) {
           for (let step = 0; step < count; step++) {
             const title = await page.textContent('#view-title');
@@ -992,7 +992,7 @@ async function run() {
             await page.waitForFunction(title => document.querySelector('#view-title').textContent !== title, title);
           }
           await ready();
-          const after = await focus();
+          const after = await photoFocus();
           closeTo(after.x, before.x, `${module}: ${key} must preserve horizontal photo focus`, .003);
           closeTo(after.y, before.y, `${module}: ${key} must preserve vertical photo focus`, .003);
           closeTo(after.scale, before.scale, `${module}: ${key} must preserve zoom`, .001);
@@ -1128,9 +1128,21 @@ async function run() {
     assert.equal(await page.locator('#full-image').isVisible(),true,'keep the current library image while development loads');
     assert.equal(await page.locator('#develop-exposure').isEnabled(), true, 'exposure is usable when settings arrive');
     assert.match(await page.textContent('#develop-status'),/原本/);
+    // Pan the library placeholder before allowing the differently sized developed image to arrive.
+    await page.locator('#viewer').evaluate(viewer => {
+      const rect = document.querySelector('#full-image').getBoundingClientRect();
+      viewer.dispatchEvent(new WheelEvent('wheel', {ctrlKey:true, deltaY:-100,
+        clientX:rect.left + rect.width / 2, clientY:rect.top + rect.height / 2, bubbles:true, cancelable:true}));
+      viewer.dispatchEvent(new WheelEvent('wheel', {deltaX:143, deltaY:79, bubbles:true, cancelable:true}));
+    });
+    const placeholderFocus = await photoFocus();
     await page.evaluate(() => {window.holdOriginalLoad = false;window.releaseOriginalLoad();});
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-'));
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-1-0-1600'));
+    const developedFocus = await photoFocus();
+    closeTo(developedFocus.x, placeholderFocus.x, 'placeholder replacement preserves panned horizontal focus', .003);
+    closeTo(developedFocus.y, placeholderFocus.y, 'placeholder replacement preserves panned vertical focus', .003);
+    await page.locator('#navigator-fit').evaluate(button => button.click());
     assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), [1, 2, 3, 4], 'at the beginning, prefetch only the three available successors');
     for (const [number, ids] of [[4, [4,5,3,6,2,7,1]], [8, [8,9,7,10,6,11,5]], [1, [1,2,3,4]]]) {
       await page.locator('.film-tile').filter({has:page.locator('.film-number', {hasText:new RegExp(`^${number}$`)})}).click();

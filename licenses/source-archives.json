@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "scope": "Source-package inventory for macOS arm64 OpenRoom 0.7.19. Hashes identify the release dependency source archives; they do not certify license clearance or a successful offline rebuild.",
+  "scope": "Source-package inventory for macOS arm64 OpenRoom 0.7.20. Hashes identify the release dependency source archives; they do not certify license clearance or a successful offline rebuild.",
   "records": [
     {
       "ecosystem": "cargo",
@@ -5890,7 +5890,7 @@
       "verification": "Archive from gitHead declared by the exact npm package version metadata; upstream tree includes original source."
     }
   ],
-  "app_version": "0.7.19",
+  "app_version": "0.7.20",
   "inputs": {
     "Cargo.lock": "9f9a120ff83833f1cd5604669f7e81a4ac001cc903ce336cbb3d6b8bd8d14deb",
     "desktop/Cargo.lock": "8b4d63c00e96314287065f3fdd5425c03b5dad73da535faeea110b189d65baa1",
@@ -5901,5 +5901,5 @@
     "native/rtengine/source.json": "8af41792cbf40a3099af47cfc625413dcac609320332b063f497ee350b1e0c07"
   },
   "archive_directory": "archives",
-  "app_source_tag": "v0.7.19"
+  "app_source_tag": "v0.7.20"
 }
