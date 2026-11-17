@@ -543,6 +543,7 @@ async function run() {
     if (process.argv.includes('--copy-settings')) { await require('./test-copy-settings.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--lens')) { await require('./test-lens-correction.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--grading')) { await require('./test-color-grading.cjs')(page); assert.deepEqual(failures, []); return; }
+    if (process.argv.includes('--alignment')) { await require('./test-ui-alignment.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--slider-benchmark')) { await require('./benchmark-slider-controls.cjs')(page); assert.deepEqual(failures, []); return; }
     if (process.env.AE_DEVELOP_ENDPOINT) {
       if (process.env.AE_RESPONSE_BENCH) {
@@ -2178,6 +2179,7 @@ async function run() {
       const strip = await page.locator('#filmstrip').boundingBox();
       await page.screenshot({path:process.env.AE_UI_SCREENSHOT.replace('.png', '-photo-status.png'), clip:{x:strip.x,y:strip.y,width:249,height:83}});
     }
+    await require('./test-ui-alignment.cjs')(page);
     await require('./test-color-grading.cjs')(page);
     await require('./test-lens-correction.cjs')(page);
     await require('./test-catalog-removal.cjs')(page);

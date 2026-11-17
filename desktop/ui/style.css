@@ -381,7 +381,7 @@ body:not(.develop-mode) .develop-left { display: none; }
 #curve-point-controls button { border: 1px solid #555; padding: 3px; }
 @media(max-width:1050px){#filter-summary{display:none}.filter-heading strong{font-size:11px}#filter-tabs button{padding:0 5px}.develop-slider{grid-template-columns:85px minmax(30px,1fr) 40px}.develop-panel{width:290px}}
 #curve-channel-buttons { display: flex; justify-content: center; gap: 6px; padding-top: 8px; }
-#curve-channel-buttons button { border: 1px solid transparent; padding: 1px 4px; font-size: 15px; border-radius: 50%; }
+#curve-channel-buttons button { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid transparent; padding: 2px; border-radius: 50%; }
 #curve-channel-buttons [data-channel="1"] { color: #c65b5b; } #curve-channel-buttons [data-channel="2"] { color: #69a866; } #curve-channel-buttons [data-channel="3"] { color: #6388c9; }
 #curve-channel-buttons [aria-pressed="true"] { border-color: #aaa; }
 #photo-flags button[aria-pressed="true"] { color: #eee; }
@@ -455,7 +455,7 @@ body:not(.develop-mode) .develop-left { display: none; }
 .crop-aspect-row { display: flex; align-items: center; gap: 7px; padding: 12px 9px; border-bottom: 1px solid #555; }
 .crop-aspect-row .crop-ratio-row { flex: 1; min-width: 0; font-size: 12px; }
 .crop-ratio-row select { width: 85px; background: transparent; border-color: transparent; text-align: right; }
-.crop-icon { flex: none; width: 28px; height: 29px; padding: 3px; font-size: 23px; }
+.crop-icon { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; font-size: 23px; }
 .crop-icon .ui-icon { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.7; }
 #crop-lock[aria-pressed=true] { color: #e3cb77; }
 #crop-lock[aria-pressed=false] .lock-shackle { transform: translateY(-3px) rotate(-20deg); transform-origin: 7px 10px; }
@@ -519,7 +519,7 @@ html[lang=en] .develop-slider{grid-template-columns:minmax(105px,1.15fr) minmax(
 .color-grading { padding: 8px 10px 12px; }
 .grading-modes { display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 12px; }
 .grading-modes > span { font-size: 11px; color: #bbb; margin-right: 4px; }
-.grading-modes button { width: 26px; height: 28px; padding: 2px; border: 1px solid transparent; background: none; color: #999; }
+.grading-modes button { display: grid; place-items: center; flex: none; width: 26px; height: 28px; padding: 0; border: 1px solid transparent; background: none; color: #999; }
 .grading-modes button[aria-pressed=true] { color: #eee; border-bottom-color: #ddd; }
 .grading-modes svg { width: 22px; height: 22px; }
 .grading-wheels { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px 18px; }
