@@ -6,8 +6,21 @@ import type { Photo, Preview, Root, PhotoMetadata } from '../models';
 export interface ThumbnailLoader {
   (photo: Photo, complete: (preview: Preview) => void, failed: (error: unknown) => void, alive: () => boolean, repair: boolean): void;
 }
+export function PhotoRotationButtons({ grid, disabled, rotate }: {
+  grid?: boolean; disabled?: boolean; rotate?(turns: number): void;
+}) {
+  return ([-1, 1] as const).map(turns => {
+    const label = turns < 0 ? t('反時計回りに90度回転') : t('時計回りに90度回転');
+    return <button key={turns} id={`${grid ? 'grid' : 'photo'}-rotate-${turns < 0 ? 'left' : 'right'}`}
+      title={label} aria-label={label} disabled={disabled} onClick={rotate && (() => rotate(turns))}>
+      <svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path transform={turns > 0 ? 'translate(24 0) scale(-1 1)' : undefined} d="M4 10a8 8 0 1 1 1 7M4 4v6h6" />
+      </svg>
+    </button>;
+  });
+}
 interface TileProps {
-  photo: Photo; index: number; film: boolean; selected: boolean; active: boolean; adjusted: boolean; style: CSSProperties;
+  photo: Photo; index: number; film: boolean; selected: boolean; active: boolean; adjusted: boolean; style?: CSSProperties;
   source(path: string): string; load: ThumbnailLoader; sizeLabel: string;
   select(event?: { metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean }): Promise<boolean>;
   menu(event: MouseEvent | KeyboardEvent): void; open(): Promise<void>;
@@ -51,8 +64,8 @@ export function PhotoTile({ photo, index, film, selected, active, adjusted, styl
     <span className="tile-heading">
       {flagLabel && <svg className={`photo-flag ${photo.flag === -1 ? 'flag-rejected' : 'flag-picked'}`} viewBox="0 0 24 24" role="img" aria-label={flagLabel}>
         <title>{flagLabel}</title>
-        <path d="M5 21V3m0 1c5-4 9 4 14 0v10c-5 4-9-4-14 0" />
-        {photo.flag === -1 && <path className="flag-cross" d="m9 6 6 6m0-6-6 6" />}
+        <path d={photo.flag === -1 ? 'M3 23V2h16v12H3' : 'M5 21V3m0 1c5-4 9 4 14 0v10c-5 4-9-4-14 0'} />
+        {photo.flag === -1 && <path className="flag-cross" d="m8 5 6 6m0-6-6 6" />}
       </svg>}
       <span className={film ? 'film-number' : 'grid-number'}>{index + 1}</span>
     </span>

@@ -1,4 +1,5 @@
 import { WarningBanner } from './WarningBanner';
+import { PhotoRotationButtons } from './Library';
 
 export function Workspace() {
   return <>
@@ -77,7 +78,7 @@ export function Workspace() {
           <span className="tool-divider library-tool"></span>
           <div id="develop-view-tools" className="develop-actions"><button id="develop-before" aria-pressed="false" title="変更前と比較">変更前と比較</button><button id="develop-undo" aria-label="取り消し" title="取り消し"><svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4-5 5 5 5M3 9h10a7 7 0 0 1 7 7v4" /></svg></button><button id="develop-redo" aria-label="やり直し" title="やり直し"><svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m16 4 5 5-5 5m5-5H11a7 7 0 0 0-7 7v4" /></svg></button></div>
           <div id="loupe-tools" className="loupe-tools"><button id="zoom-out" aria-label="縮小"><svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /></svg></button><span id="zoom-level" aria-label="表示倍率"></span><button id="zoom-in" aria-label="拡大"><svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14" /></svg></button><button id="high-quality" title="現像画面を開いて原本を読み込む">現像で原本を表示</button></div>
-          <div id="photo-rotation" className="loupe-tools" aria-label="写真の回転"><button id="photo-rotate-left" aria-label="反時計回りに90度回転" title="反時計回りに90度回転"><svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6" /></svg></button><button id="photo-rotate-right" aria-label="時計回りに90度回転" title="時計回りに90度回転"><svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10a8 8 0 1 0-1 7M20 4v6h-6" /></svg></button></div>
+          <div id="photo-rotation" className="loupe-tools" aria-label="写真の回転"><PhotoRotationButtons /></div>
           <div id="grid-tools" className="grid-tools" hidden><select id="sort" aria-label="並び順"><option value="name">名前順</option><option value="added">登録日順</option><option value="modified">更新日順</option><option value="size">サイズ順</option></select><button id="descending" aria-label="昇順・降順" aria-pressed="false">↑</button><label className="thumbnail-size">サムネール<input id="tile-size" type="range" min="150" max="500" defaultValue="400" step="10" aria-label="サムネイルの大きさ" /></label></div>
           <div className="develop-save-tools"><p id="develop-status" role="status">写真を選択してください</p><button id="develop-save">今すぐ保存</button></div>
           <button id="toggle-filters" className="toolbar-end" aria-label="ライブラリフィルターを切り替え" aria-expanded="false" title={"ライブラリフィルター (\\\\)"}><svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg></button>

@@ -2163,17 +2163,34 @@ async function run() {
       assert.equal(await rejected.locator('.flag-rejected .flag-cross').count(), 1);
       assert.equal(await rated.locator('.tile-rating').textContent(), '★★★★★');
       assert.match(await rated.getAttribute('aria-label'), /評価 5\/5/);
-      assert.equal(await picked.evaluate(tile => {
+      assert.equal(await rejected.evaluate(tile => {
         const flag = tile.querySelector('.photo-flag').getBoundingClientRect();
         const number = tile.querySelector('.film-number, .grid-number').getBoundingClientRect();
         const thumb = tile.querySelector('.thumb').getBoundingClientRect();
+        if (tile.matches('.tile')) {
+          const cell = tile.getBoundingClientRect();
+          return flag.left < cell.left + 8 && flag.top < cell.top + 8
+            && number.left < cell.left + 8 && number.height > cell.width / 4 && number.bottom > thumb.top;
+        }
         return flag.right <= number.left && flag.bottom <= thumb.top;
-      }), true, 'flag belongs before the number and above the photo');
+      }), true, 'grid has a large background number and corner flag; filmstrip has a compact heading');
       assert.equal(await rated.evaluate(tile => {
         const stars = tile.querySelector('.tile-rating').getBoundingClientRect();
         const thumb = tile.querySelector('.thumb').getBoundingClientRect();
         return stars.top >= thumb.bottom && stars.bottom <= tile.getBoundingClientRect().bottom;
       }), true, 'five stars must fit below the photo without clipping');
+    }
+    const active = page.locator('.tile.active-photo');
+    const title = await active.getAttribute('title');
+    for (const [direction, turns] of [['left', 3], ['right', 0]]) {
+      const oldThumb = await active.locator('img').getAttribute('src');
+      await page.click(`#grid-rotate-${direction}`);
+      await page.waitForFunction(old => {
+        const img = document.querySelector('.tile.active-photo img');
+        return !document.querySelector('#grid-rotate-right')?.disabled && img?.complete && img.getAttribute('src') !== old;
+      }, oldThumb);
+      assert.equal(await active.getAttribute('title'), title);
+      assert.equal(await page.evaluate(async () => (await __TAURI__.core.invoke('get_develop', {id:3})).settings.quarter_turns), turns);
     }
     if (process.env.AE_UI_SCREENSHOT) {
       const strip = await page.locator('#filmstrip').boundingBox();

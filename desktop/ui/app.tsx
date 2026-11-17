@@ -1,6 +1,6 @@
 import { createView } from './components/view';
 import { bindWarningBanner } from './components/WarningBanner';
-import { PhotoTile, FolderTree, Properties, displayFolderPath, folderLabel, type FolderNode, type ThumbnailLoader } from './components/Library';
+import { PhotoTile, PhotoRotationButtons, FolderTree, Properties, displayFolderPath, folderLabel, type FolderNode, type ThumbnailLoader } from './components/Library';
 import type { ReactNode, CSSProperties } from 'react';
 import type { CatalogRemoval, Commands, TrashPlan } from './backend';
 import type { Detail, Photo, Root, Folder, Cursor, Preview, PhotoMetadata, ViewMode, Module, Focus, Query, UiState, PreviewProgress, ScanProgress, Recipe } from './models';
@@ -151,11 +151,11 @@ function invalidatePhotoPreview(id: number) {
   scheduleDraw();
 }
 let rotating = false;
-async function rotatePhoto(turns: number) {
-  const item = items[selected];
+async function rotatePhoto(turns: number, item = items[selected]) {
   if (!item || rotating || !await allowChange()) return;
   if (develop.active) { develop.rotate(turns); return; }
   rotating = true;
+  if (viewMode === 'grid') drawGrid();
   for (const button of $('photo-rotation').querySelectorAll('button')) button.disabled = true;
   let saved = false;
   try {
@@ -182,6 +182,7 @@ async function rotatePhoto(turns: number) {
     showError(saved ? t("回転は保存済みですが、表示を更新できませんでした。{0}", failure) : failure);
   } finally {
     rotating = false;
+    if (viewMode === 'grid') drawGrid();
     for (const button of $('photo-rotation').querySelectorAll('button')) button.disabled = false;
   }
 }
@@ -618,12 +619,19 @@ const loadThumbnail: ThumbnailLoader = (item, complete, failed, alive, repair) =
 };
 function photoTile(index: number, film: boolean, style: CSSProperties) {
   const item = items[index], tiles = film ? filmTiles : gridTiles;
-  return <PhotoTile key={itemKey(item)} photo={item} index={index} film={film} selected={selectedPhotos.has(item.id)} active={selected === index}
+  const tile = <PhotoTile key={itemKey(item)} photo={item} index={index} film={film} selected={selectedPhotos.has(item.id)} active={selected === index}
     adjusted={adjustedPhotos.has(item.id)}
-    style={style} source={convertFileSrc} load={loadThumbnail} sizeLabel={bytes(item.size)}
+    style={film ? style : undefined} source={convertFileSrc} load={loadThumbnail} sizeLabel={bytes(item.size)}
     element={node => { if (node) tiles.set(index, node); else tiles.delete(index); }}
     select={event => selectPhoto(index, event)} menu={event => { photoMenu(index, event).catch(showError); }}
     open={async () => { if (await selectPhoto(index)) await setViewMode('loupe'); }} />;
+  if (film) return tile;
+  return <div key={item.id} className="grid-cell" style={style}>
+    {tile}
+    {selected === index && <div className="grid-rotation" role="group" aria-label={t('写真の回転')}>
+      <PhotoRotationButtons grid disabled={rotating} rotate={turns => rotatePhoto(turns, item)} />
+    </div>}
+  </div>;
 }
 function drawGrid() {
   const size = Number($('tile-size').value);
