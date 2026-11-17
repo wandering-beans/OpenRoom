@@ -1,11 +1,11 @@
 {
-  "version": "0.7.20",
-  "notes": "拡大した写真の表示位置を動かしたあと、現像プレビューに切り替わると見ていた位置がずれる不具合を修正しました。",
+  "version": "0.7.21",
+  "notes": "トーンカーブのチャンネル選択ボタンで、外枠と内側の円の中心がずれる表示を修正しました。カラーホイールの切替ボタンと切り抜きツールのアイコンも中央に揃えました。",
   "minimum_macos": "26.0",
   "platforms": {
     "darwin-aarch64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.20/OpenRoom-0.7.20-macos-arm64.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTako4RXNXcFFUNlJJVUxWL05wU1hSVU5vR1FTTlJOcFRtSWh3QkMrQm90RWROUVZ4VExMOWtMeWNsVnJFYnl0dzluRmxLdlNhQmlteFpSVndIVDJrS2ZnNXRielNqUkFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NzI0MDY1CWZpbGU6T3BlblJvb20tMC43LjIwLW1hY29zLWFybTY0LmFwcC50YXIuZ3oJdmVyc2lvbjowLjcuMjAKcDcwYlJib1M2UVExeWc5M3c2UzEyUW1hclB0VHRIamd0c2ZDNnEwQ0xNWmFqNTcrbFlRMjBHRTFkVTlqOXZwUnpPSTBlclZQd3AvaW15VDZqbkk2Q2c9PQo="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.21/OpenRoom-0.7.21-macos-arm64.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTako4RXNXcFFUNlRUZC9JSGlqcmJaaHBBYVk5c0lnazMzbzhEOVpLVUhKcmw0MjJlZXZxc3Z3d2VWVER3WGQ4VUJMN1cvK3oyRyttYlNIRlFsL2UzVTFVRW10ZDNxY1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTA1MjE0CWZpbGU6T3BlblJvb20tMC43LjIxLW1hY29zLWFybTY0LmFwcC50YXIuZ3oJdmVyc2lvbjowLjcuMjEKR1hhV0czeTdER3dsQTc2aVgwZldQMlRlTmJpRDJMUDZWSVUxa1ZqODVvSkd4ZWVYTHQzYjRCVk1ZbFUwZnpUcXJYbmlaMFhEdEJ5RGRZdTA2SFBrQVE9PQo="
     }
   }
 }

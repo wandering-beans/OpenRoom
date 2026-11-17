@@ -1,10 +1,10 @@
 {
-  "version": "0.7.20",
-  "notes": "拡大した写真の表示位置を動かしたあと、現像プレビューに切り替わると見ていた位置がずれる不具合を修正しました。\n\nUbuntu版では、Vulkanに対応したGPUで現像プレビューの色を処理できるようになりました。",
+  "version": "0.7.21",
+  "notes": "トーンカーブのチャンネル選択ボタンで、外枠と内側の円の中心がずれる表示を修正しました。カラーホイールの切替ボタンと切り抜きツールのアイコンも中央に揃えました。",
   "platforms": {
     "linux-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/ubuntu-v0.7.20/OpenRoom-0.7.20-linux-x86_64.AppImage",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRzY2b01jYmFXWnpHcGtsRXFzRnNWVHFQZWsrYTZlTHAzSklGQUZNUGxKSDNDWWNSUXVDc3VobGhHaW91ZVloSzdMNTNZNGdwSGFpd05Rd3hmVnBVWVpRY1ZLVlNDTFFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NzIzOTQ0CWZpbGU6T3BlblJvb20tMC43LjIwLWxpbnV4LXg4Nl82NC5BcHBJbWFnZQl2ZXJzaW9uOjAuNy4yMApkOERhSmJVV1p2RVlCaW9MYmpldUJVTGtwdXNpMjc0bVJ1ZFBFUWV5S1ZySTNybk9jczVIN2FQLzM1K1RyZWgxTWNlRGNzeGYveU5OUmlENDdiWTREQT09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/ubuntu-v0.7.21/OpenRoom-0.7.21-linux-x86_64.AppImage",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRzY2b01jYmFXWnhUOWRMUWpIMWl1TmN0T0RIZ0hsWGhnbnZKbWN5aE1zaVc0VW9WVkNZT1YxWUZlUXppRGo4TjVQNlcyQlBoWklBZXAyaDZUUWEwRXc5cTNONkJ3OGdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTA1MTc5CWZpbGU6T3BlblJvb20tMC43LjIxLWxpbnV4LXg4Nl82NC5BcHBJbWFnZQl2ZXJzaW9uOjAuNy4yMQprcE5odVh5YVg1d2lZbzI3dzh5ak5iMzJad0I0ZkRPaUEzMHNZcHhCT3A2UjRoZ0ZxNEtkYU00TlJ6MXc1OFdValhyTEEveXdVT2VXTHErTFMxdDNDQT09Cg=="
     }
   }
 }
