@@ -198,12 +198,6 @@ export function createDevelop({
     $('develop-flip-v').checked = settings.flip_v;
     rawReset.hidden = !whiteBalanceReady;
     rawProfile.hidden = !rawInfo;
-    rawStatus.hidden = !whiteBalanceReady;
-    rawStatus.textContent = settings[wbField('raw_temperature')] != null ? t("カスタムWB")
-      : settings.temperature || settings.tint ? t("旧設定のWB（K値は目安。入力するとK指定に切替）") : t("撮影時のホワイトバランス");
-    if (!rawInfo) rawStatus.textContent += rasterTemperature != null
-      ? t("。撮影時 {0}K（メタデータ取得）", Math.round(rasterTemperature).toLocaleString())
-      : t("。推定基準 6,504K（撮影時のK値は不明）");
     drawCurve();
     tools.sync();
     buttons();
@@ -278,14 +272,14 @@ export function createDevelop({
     const headings: Partial<Record<SettingKey, string>> = { raw_temperature: t('ホワイトバランス'), exposure: t('階調'), texture: t('外観') };
     for (const [key, label, min, max, step] of rows) {
       if (group === 'basic' && headings[key]) content.push(<h3 key={`heading-${key}`} className="adjustment-heading">{headings[key]}</h3>);
-      if (key === 'raw_temperature') content.push(<p key="profile" id="raw-profile" className="develop-profile" hidden />, <p key="status" id="raw-status" className="develop-profile" hidden />, <button key="reset" id="raw-reset" type="button" className="develop-wb-reset" hidden onClick={resetRawWb}>{t('撮影時')}</button>);
+      if (key === 'raw_temperature') content.push(<p key="profile" id="raw-profile" className="develop-profile" hidden />, <button key="reset" id="raw-reset" type="button" className="develop-wb-reset" hidden onClick={resetRawWb}>{t('撮影時')}</button>);
       const control = slider([key], label, min, max, step);
       if (key === 'angle') createView($('straighten-adjustments')).render(control);
       else content.push(control);
     }
     createView($(`develop-${group}`)).render(content);
   }
-  const rawProfile = $('raw-profile'), rawStatus = $('raw-status'), rawReset = $('raw-reset');
+  const rawProfile = $('raw-profile'), rawReset = $('raw-reset');
   createView($('local-adjustments')).render(fields.basic.map(([key, label, min, max, step]) => {
     const wb = key.startsWith('raw_');
     return slider(['local', key.replace('raw_', '')], key === 'raw_temperature' ? t('色温度（相対）') : label, wb ? -100 : min, wb ? 100 : max, step);

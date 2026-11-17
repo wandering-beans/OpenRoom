@@ -102,7 +102,8 @@ module.exports = async function testAllSliders(page) {
   await page.locator('[data-tool=""]').click();
   await page.evaluate(() => { window.rawFixture = false; });
   await page.click('#film-next'); await page.click('#film-previous');
-  await page.locator('#raw-status').filter({hasText:'6,504'}).waitFor();
+  await page.waitForFunction(() => document.querySelector('#develop-raw_temperature-value').value === '6504'
+    && !document.querySelector('#raw-reset').hidden);
   for (const control of standard.filter(c => c.id.startsWith('develop-raw_'))) await check(control, true);
 
   await page.click('[data-tool="brush"]');
