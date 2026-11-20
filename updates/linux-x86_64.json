@@ -1,10 +1,10 @@
 {
-  "version": "0.7.21",
-  "notes": "トーンカーブのチャンネル選択ボタンで、外枠と内側の円の中心がずれる表示を修正しました。カラーホイールの切替ボタンと切り抜きツールのアイコンも中央に揃えました。",
+  "version": "0.7.22",
+  "notes": "プレビューの生成中でも、別のフォルダーから写真を追加で読み込めるようになりました。先に読み込んだ写真のプレビューはそのまま生成を続けます。\n\nライブラリに、写真を左右に90度回転するボタンを追加しました。現像画面では、ホワイトバランスの状態を示す説明文を削除しました。",
   "platforms": {
     "linux-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/ubuntu-v0.7.21/OpenRoom-0.7.21-linux-x86_64.AppImage",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRzY2b01jYmFXWnhUOWRMUWpIMWl1TmN0T0RIZ0hsWGhnbnZKbWN5aE1zaVc0VW9WVkNZT1YxWUZlUXppRGo4TjVQNlcyQlBoWklBZXAyaDZUUWEwRXc5cTNONkJ3OGdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTA1MTc5CWZpbGU6T3BlblJvb20tMC43LjIxLWxpbnV4LXg4Nl82NC5BcHBJbWFnZQl2ZXJzaW9uOjAuNy4yMQprcE5odVh5YVg1d2lZbzI3dzh5ak5iMzJad0I0ZkRPaUEzMHNZcHhCT3A2UjRoZ0ZxNEtkYU00TlJ6MXc1OFdValhyTEEveXdVT2VXTHErTFMxdDNDQT09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/ubuntu-v0.7.22/OpenRoom-0.7.22-linux-x86_64.AppImage",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRzY2b01jYmFXWjlrQXJLaXRaNDdpd3ozaVFpcm94VDRmaW83UUllb255U1o3QXUyNFZxdWZRbTA1YTFTUTkySElvOGlML1ZPQWtWUHpKZUZrUTFxanNVR0hwQ3g5Y1FjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MTY1NDY3CWZpbGU6T3BlblJvb20tMC43LjIyLWxpbnV4LXg4Nl82NC5BcHBJbWFnZQl2ZXJzaW9uOjAuNy4yMgpOQVR3Y3U5bjJNYnRLZXVTVnpLbkgrNldBWll1S3VjNXNGL2lWYXExaklhZzA4T2lBRlhBWGMrZm1DM1V1Z01TVnZLVndHSkJ6N2g0OXk4S2ZyZjFEUT09Cg=="
     }
   }
 }

@@ -1,11 +1,11 @@
 {
-  "version": "0.7.21",
-  "notes": "トーンカーブのチャンネル選択ボタンで、外枠と内側の円の中心がずれる表示を修正しました。カラーホイールの切替ボタンと切り抜きツールのアイコンも中央に揃えました。",
+  "version": "0.7.22",
+  "notes": "プレビューの生成中でも、別のフォルダーから写真を追加で読み込めるようになりました。先に読み込んだ写真のプレビューはそのまま生成を続けます。\n\nライブラリに、写真を左右に90度回転するボタンを追加しました。現像画面では、ホワイトバランスの状態を示す説明文を削除しました。",
   "minimum_macos": "26.0",
   "platforms": {
     "darwin-aarch64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.21/OpenRoom-0.7.21-macos-arm64.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTako4RXNXcFFUNlRUZC9JSGlqcmJaaHBBYVk5c0lnazMzbzhEOVpLVUhKcmw0MjJlZXZxc3Z3d2VWVER3WGQ4VUJMN1cvK3oyRyttYlNIRlFsL2UzVTFVRW10ZDNxY1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0OTA1MjE0CWZpbGU6T3BlblJvb20tMC43LjIxLW1hY29zLWFybTY0LmFwcC50YXIuZ3oJdmVyc2lvbjowLjcuMjEKR1hhV0czeTdER3dsQTc2aVgwZldQMlRlTmJpRDJMUDZWSVUxa1ZqODVvSkd4ZWVYTHQzYjRCVk1ZbFUwZnpUcXJYbmlaMFhEdEJ5RGRZdTA2SFBrQVE9PQo="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.22/OpenRoom-0.7.22-macos-arm64.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTako4RXNXcFFUNlJ4VE1CUVNXMXdSMGhYUFJPNFYzV3hZcDFKVFJiUHQ2YUcvcDBBdm9EMWNtVFoyOU5BdG4zcms2VUdONzhHRmUyM2RRWVBzd2k1a3BEc1d2bUZFTUE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MTY1ODIxCWZpbGU6T3BlblJvb20tMC43LjIyLW1hY29zLWFybTY0LmFwcC50YXIuZ3oJdmVyc2lvbjowLjcuMjIKY2JxZzJrOGVGVHdVTENnT3JVOVV1cEhmWDRQVnpzVUlPMU83L1lqVE9QaWFKSXN2NTNsajRWaStGY2R5M2gzQjhFNHM0R0xhU3hnZkJHSmJGd2U0Qmc9PQo="
     }
   }
 }
