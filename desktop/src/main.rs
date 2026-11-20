@@ -214,38 +214,25 @@ async fn scan(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
     root_id: Option<i64>,
-) -> Reply<ImportReport> {
+) -> Reply<ScanReport> {
     if state.scanning.swap(true, Ordering::SeqCst) {
         return Err("フォルダを読み込み中です。".into());
     }
     state.cancel.store(false, Ordering::SeqCst);
     let db = state.db.clone();
     let cancel = state.cancel.clone();
-    let scanning = state.scanning.clone();
-    let preview_state = (*state).clone();
     let result = work(move || {
         let mut catalog = Catalog::open(db)?;
         let progress = |report: &ScanReport| {
             let _ = app.emit("scan-progress", report);
         };
-        let report = match root_id {
+        match root_id {
             Some(id) => catalog.scan_root(id, &cancel, progress),
             None => catalog.scan(&cancel, progress),
-        }?;
-        let previews = if report.cancelled {
-            library_previews::Progress::default()
-        } else {
-            library_previews::prepare_import(&preview_state, root_id, |report| {
-                let _ = app.emit("preview-progress", report);
-            })?
-        };
-        Ok(ImportReport {
-            scan: report,
-            previews,
-        })
+        }
     })
     .await;
-    scanning.store(false, Ordering::SeqCst);
+    state.scanning.store(false, Ordering::SeqCst);
     result
 }
 #[derive(Serialize)]
@@ -259,25 +246,35 @@ async fn prepare_library_previews(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
     avif_supported: bool,
+    pending_only: bool,
+    root_id: Option<i64>,
 ) -> Reply<library_previews::Progress> {
-    if state.scanning.swap(true, Ordering::SeqCst) {
-        return Err("読み込みが進行中です。".into());
+    let generation = state.library.batch_generation.load(Ordering::SeqCst);
+    let _batch = state.library.batch.clone().lock_owned().await;
+    let mut copied = (*state).clone();
+    copied.cancel = state.library.batch_cancel.clone();
+    copied.cancel.store(false, Ordering::SeqCst);
+    if generation != state.library.batch_generation.load(Ordering::SeqCst) {
+        return Ok(library_previews::Progress { cancelled: true, ..Default::default() });
     }
-    state.cancel.store(false, Ordering::SeqCst);
-    state.library.set_avif_supported(avif_supported);
-    let copied = (*state).clone();
-    let result = work(move || {
-        library_previews::prepare_pending(&copied, |report| {
+    copied.library.set_avif_supported(avif_supported);
+    work(move || {
+        let publish = |report: &library_previews::Progress| {
             let _ = app.emit("preview-progress", report);
-        })
+        };
+        if pending_only {
+            library_previews::prepare_pending(&copied, publish)
+        } else {
+            library_previews::prepare_import(&copied, root_id, publish)
+        }
     })
-    .await;
-    state.scanning.store(false, Ordering::SeqCst);
-    result
+    .await
 }
 #[tauri::command]
 fn cancel_scan(state: State<'_, AppState>) {
-    state.cancel.store(true, Ordering::SeqCst)
+    state.cancel.store(true, Ordering::SeqCst);
+    state.library.batch_generation.fetch_add(1, Ordering::SeqCst);
+    state.library.batch_cancel.store(true, Ordering::SeqCst);
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Preview {

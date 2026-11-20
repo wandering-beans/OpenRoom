@@ -494,7 +494,7 @@ pub async fn stop_for_exit(app: &tauri::AppHandle) -> Reply<()> {
             .iter()
             .any(|job| job.kind == "scan" && job.status == "running")
         {
-            server.operations.state.cancel.store(true, Ordering::SeqCst);
+            server.operations.state.library.batch_cancel.store(true, Ordering::SeqCst);
         }
     }
     state.jobs.cancel_all();

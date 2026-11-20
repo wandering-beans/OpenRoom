@@ -241,7 +241,8 @@ pub async fn check_app_update(
 }
 
 fn ensure_idle(app: &tauri::AppHandle) -> Reply<()> {
-    if app.state::<AppState>().scanning.load(Ordering::SeqCst)
+    let state = app.state::<AppState>();
+    if state.scanning.load(Ordering::SeqCst) || state.library.batch.try_lock().is_err()
         || app.state::<crate::batch_export::ExportState>().is_busy()
         || app.state::<crate::mcp::McpState>().has_running_jobs()
     {

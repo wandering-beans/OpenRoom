@@ -1,4 +1,4 @@
-import type { Photo, Root, Folder, Query, Page, Cursor, Detail, Preview, PhotoMetadata, Settings, SettingsPatch, Recipe, DevelopedPreview, HistoryRow, ImportReport, PreviewProgress, IndexProgress, Facet, WorkflowRequest, WorkflowResult, SavedRecipe, McpRequest, McpResult } from './models';
+import type { Photo, Root, Folder, Query, Page, Cursor, Detail, Preview, PhotoMetadata, Settings, SettingsPatch, Recipe, DevelopedPreview, HistoryRow, ScanProgress, PreviewProgress, IndexProgress, Facet, WorkflowRequest, WorkflowResult, SavedRecipe, McpRequest, McpResult } from './models';
 export type Language = 'ja' | 'en';
 export interface TrashPlan { ids: number[]; generation: number }
 export interface AvailableUpdate { version: string; notes: string }
@@ -61,9 +61,9 @@ export interface Commands {
   reveal_catalog: { args: undefined; result: void };
   save_catalog_copy: { args: undefined; result: string | null };
   choose_folder: { args: undefined; result: Root[] };
-  scan: { args: { rootId: number | null }; result: ImportReport };
+  scan: { args: { rootId: number | null }; result: ScanProgress };
   cancel_scan: { args: undefined; result: void };
-  prepare_library_previews: { args: { avifSupported: boolean }; result: PreviewProgress };
+  prepare_library_previews: { args: { avifSupported: boolean; pendingOnly: boolean; rootId: number | null }; result: PreviewProgress };
   set_preview_photo: { args: { id: number | null }; result: void };
   preview: { args: { id: number; large: boolean; bound?: number }; result: Preview };
   cancel_preview: { args: undefined; result: void };

@@ -51,7 +51,11 @@ const largePreviews = new Map<string, Preview>(), photoMetadata = new Map<string
 const gridTiles = new Map<number, HTMLButtonElement>(), filmTiles = new Map<number, HTMLButtonElement>();
 const thumbnailJobs: ThumbnailJob[] = [];
 let thumbnailWorkers = 0;
-let scanViewPending = false;
+let preparingPreviews = false;
+const previewBatches: { rootId: number | null; pendingOnly: boolean }[] = [];
+let previewProgress = '';
+let avifSupport: Promise<boolean>;
+const importBusy = () => scanning || preparingPreviews;
 let scanCancelled = false;
 const developVersions = new Map<number, number>();
 const itemKey = (item: Photo) => `${item.id}:${item.root_id}:${item.path}:${item.modified}:${item.size}:${developVersions.get(item.id) || 0}`;
@@ -361,7 +365,7 @@ $('module-library').onclick = () => setModule('library');
 $('module-develop').onclick = () => setModule('develop');
 $('catalog-location').onclick = () => invoke('reveal_catalog').catch(showError);
 $('catalog-copy').onclick = async () => {
-  if (scanning || !await allowChange()) return;
+  if (importBusy() || !await allowChange()) return;
   $('catalog-copy').disabled = true;
   try {
     const path = await invoke('save_catalog_copy');
@@ -371,7 +375,7 @@ $('catalog-copy').onclick = async () => {
 };
 
 async function switchCatalog(create: boolean) {
-  if (scanning || document.body.dataset.catalogBusy) return;
+  if (importBusy() || document.body.dataset.catalogBusy) return;
   if (!await allowChange()) return;
   document.body.dataset.catalogBusy = 'true';
   $('workspace').inert = true; $('module-bar').inert = true; $('filmstrip').inert = true;
@@ -789,10 +793,9 @@ async function addFolder() {
   } catch (error) { showError(error); }
 }
 async function scan(scanRootIds: (number | null)[] = [null]) {
-  if (scanning || !await allowChange()) return;
+  if (!await allowChange() || scanning) return;
   scanning = true;
   scanCancelled = false;
-  scanViewPending = true;
   $('scan').disabled = true;
   for (const id of ['add', 'add-small', 'empty-add'] as const) $(id).disabled = true;
   $('progress').hidden = false;
@@ -800,24 +803,22 @@ async function scan(scanRootIds: (number | null)[] = [null]) {
   try {
     for (const id of scanRootIds) {
       const result = await invoke('scan', { rootId: id });
-      if (result.indexed || result.missing || result.previews?.generated) {
+      if (!result.cancelled && !scanCancelled) void preparePreviews(id, false);
+      if (result.indexed || result.missing) {
         libraryImageKey = null; thumbnailRequests.clear(); readyThumbnails.clear(); largePreviews.clear(); photoMetadata.clear();
       }
       await loadFolders();
       await refresh(items[selected]?.id);
-      $('status').textContent = result.cancelled ? t("読み込みを中止しました") : t("{0}枚を追加・更新／読み込み済み{1}枚をスキップ{2}", result.indexed, result.unchanged, result.previews?.generated ? t("・プレビュー {0}/{1}枚を準備{2}", result.previews.ready, result.previews.total, result.previews.retained ? t("・{0}枚は一覧のみ保持", result.previews.retained) : '') : '');
-      if (result.previews?.cancelled) $('status').textContent += t("・プレビュー生成を中止しました");
-      if (result.previews?.error) showError(result.previews.error);
+      $('status').textContent = result.cancelled ? t("読み込みを中止しました") : t("{0}枚を追加・更新／読み込み済み{1}枚をスキップ{2}", result.indexed, result.unchanged, '');
       if (result.errors.length) showError(t("{0}件を読み込めませんでした。\n{1}", result.errors.length, result.errors.slice(0, 5).join('\n')));
-      if (scanCancelled || result.cancelled || result.previews?.cancelled) break;
+      if (scanCancelled || result.cancelled) break;
     }
   } catch (error) { showError(error); }
   finally {
     scanning = false;
-    scanViewPending = false;
     $('scan').disabled = false;
     for (const id of ['add', 'add-small', 'empty-add'] as const) $(id).disabled = false;
-    $('progress').hidden = true;
+    showPreviewProgress();
   }
 }
 
@@ -1283,6 +1284,7 @@ $('folder-search').oninput = renderFolders;
 $('scan').onclick = () => scan([rootId]);
 $('cancel').onclick = () => {
   scanCancelled = true;
+  previewBatches.length = 0;
   invoke('cancel_scan').catch(showError);
 };
 $('search').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(refresh, 120); };
@@ -1453,15 +1455,15 @@ document.addEventListener('keydown', event => {
     saveAnnotation();
   }
 });
+function showPreviewProgress() {
+  if (scanning) return;
+  $('progress').hidden = !preparingPreviews || !previewProgress;
+  $('progress-text').textContent = previewProgress;
+}
 await listen<PreviewProgress>('preview-progress', event => {
   const report = event.payload;
-  if (report.total === 0) { $('progress').hidden = true; return; }
-  $('progress').hidden = false;
-  $('progress-text').textContent = t("プレビュー {0}/{1}枚を準備・{2}枚失敗", report.ready.toLocaleString(), report.total.toLocaleString(), report.failed.toLocaleString());
-  if (scanViewPending && report.ready > 0) {
-    scanViewPending = false;
-    loadFolders().then(() => refresh(report.last_ready_id)).catch(showError);
-  }
+  previewProgress = !report.total ? '' : t("プレビュー {0}/{1}枚を準備・{2}枚失敗", report.ready.toLocaleString(), report.total.toLocaleString(), report.failed.toLocaleString());
+  showPreviewProgress();
 });
 await listen('library-preview-failed', event => showError(event.payload));
 await listen<number>('library-preview-updated', event => {
@@ -1469,24 +1471,35 @@ await listen<number>('library-preview-updated', event => {
   invalidatePhotoPreview(id); syncReview();
   if (!develop.active && items[selected]?.id === id) displayPhoto();
 });
-async function prepareExistingPreviews() {
-  scanning = true;
-  $('scan').disabled = true;
-  for (const id of ['add', 'add-small', 'empty-add'] as const) $(id).disabled = true;
+function checkAvifSupport() {
+  return new Promise<boolean>(resolve => {
+    const image = new Image();
+    image.onload = () => resolve(image.naturalWidth === 2);
+    image.onerror = () => resolve(false);
+    image.src = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUEAAADrbWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAAAAAAAOcGl0bQAAAAAAAQAAAB5pbG9jAAAAAEQAAAEAAQAAAAEAAAETAAAAFgAAAChpaW5mAAAAAAABAAAAGmluZmUCAAAAAAEAAGF2MDFDb2xvcgAAAABqaXBycAAAAEtpcGNvAAAAFGlzcGUAAAAAAAAAAgAAAAIAAAAQcGl4aQAAAAADCAgIAAAADGF2MUOBIAAAAAAAE2NvbHJuY2x4AAEADQAGgAAAABdpcG1hAAAAAAAAAAEAAQQBAoMEAAAAHm1kYXQSAAoEOAA2CTIMFwAIIIIEAAVAvMFA';
+  });
+}
+
+async function preparePreviews(rootId: number | null, pendingOnly: boolean) {
+  if (!previewBatches.some(batch => batch.rootId === rootId && batch.pendingOnly === pendingOnly))
+    previewBatches.push({ rootId, pendingOnly });
+  if (preparingPreviews) return;
+  preparingPreviews = true;
   try {
-    const avifSupported = await new Promise<boolean>(resolve => {
-      const image = new Image();
-      image.onload = () => resolve(image.naturalWidth === 2);
-      image.onerror = () => resolve(false);
-      image.src = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUEAAADrbWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAAAAAAAOcGl0bQAAAAAAAQAAAB5pbG9jAAAAAEQAAAEAAQAAAAEAAAETAAAAFgAAAChpaW5mAAAAAAABAAAAGmluZmUCAAAAAAEAAGF2MDFDb2xvcgAAAABqaXBycAAAAEtpcGNvAAAAFGlzcGUAAAAAAAAAAgAAAAIAAAAQcGl4aQAAAAADCAgIAAAADGF2MUOBIAAAAAAAE2NvbHJuY2x4AAEADQAGgAAAABdpcG1hAAAAAAAAAAEAAQQBAoMEAAAAHm1kYXQSAAoEOAA2CTIMFwAIIIIEAAVAvMFA';
-    });
-    const report = await invoke('prepare_library_previews',{avifSupported});
-    if (report?.error) showError(report.error);
-  } catch (failure) { showError(failure); }
-  finally {
-    scanning = false; $('scan').disabled = false;
-    for (const id of ['add', 'add-small', 'empty-add'] as const) $(id).disabled = false;
-    $('progress').hidden = true;
+    const avifSupported = await (avifSupport ??= checkAvifSupport());
+    while (previewBatches.length) {
+      const batch = previewBatches.shift()!;
+      previewProgress = t("プレビュー {0}/{1}枚を準備・{2}枚失敗", 0, '…', 0);
+      showPreviewProgress();
+      try {
+        const report = await invoke('prepare_library_previews', { ...batch, avifSupported });
+        if (report.error && !report.cancelled) showError(report.error);
+        if (report.retained && !scanning) $('status').textContent += t("・{0}枚は一覧のみ保持", report.retained);
+      } catch (failure) { showError(failure); }
+    }
+  } finally {
+    preparingPreviews = false;
+    showPreviewProgress();
   }
 }
 document.querySelector('.search kbd')!.textContent = /Mac/.test(navigator.platform) ? '⌘ F' : 'Ctrl F';
@@ -1511,7 +1524,7 @@ try {
     $('catalog-name').title = catalogPath;
     await loadFolders(); await refresh(null, true);
     catalogReady = true;
-    prepareExistingPreviews();
+    void preparePreviews(null, true);
   }
 }
 catch (error) { showError(error); $('status').textContent = t("カタログを開けませんでした"); }
@@ -1529,7 +1542,7 @@ function mcpUiState(): UiState {
 }
 async function prepareMcpChange() {
   if (metadataDirty) throw Error(t("未保存のタグ・評価・メモがあります。画面で保存してください。"));
-  if (photoExport.busy || saving || confirmingChange || scanning || document.body.dataset.catalogBusy) throw Error(t("画面が処理中です。完了後に再試行してください。"));
+  if (photoExport.busy || saving || confirmingChange || importBusy() || document.body.dataset.catalogBusy) throw Error(t("画面が処理中です。完了後に再試行してください。"));
   await developSelectionTask;
   if (!await develop.allowChange()) throw Error(t("現像設定を保存できません。画面の編集内容を保持しています。"));
 }
@@ -1547,17 +1560,17 @@ async function refreshMcpPhotos(ids: number[]) {
 }
 const preferences = createPreferences({
   error: showError,
-  canAutoUpdate: () => !scanning && !saving && !rotating && !confirmingChange && !photoExport.busy
+  canAutoUpdate: () => !importBusy() && !saving && !rotating && !confirmingChange && !photoExport.busy
     && !metadataDirty && !develop.dirty && !develop.busy && !document.body.dataset.catalogBusy,
   async prepareUpdate() {
-    if (scanning || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから更新してください。"));
+    if (importBusy() || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから更新してください。"));
     await developSelectionTask;
     if (metadataDirty) await saveAnnotation();
     if (metadataDirty) throw Error(t("保存できませんでした。編集内容を保持しています。"));
     if (!await develop.allowChange()) throw Error(t("現像設定を保存できません。画面の編集内容を保持しています。"));
   },
   async changeLanguage(value) {
-    if (scanning || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから言語を変更してください。"));
+    if (importBusy() || saving || rotating || confirmingChange || photoExport.busy || document.body.dataset.catalogBusy) throw Error(t("処理が終わってから言語を変更してください。"));
     await developSelectionTask;
     if (metadataDirty) await saveAnnotation();
     if (metadataDirty) throw Error(t("保存できませんでした。編集内容を保持しています。"));
@@ -1568,7 +1581,7 @@ const preferences = createPreferences({
 });
 try {
   if (!needsCatalog) await startMcp({ invoke, listen, preferences, ready: catalogReady, state: mcpUiState, prepare: prepareMcpChange,
-    busy: () => photoExport.busy || metadataDirty || saving || confirmingChange || scanning || develop.busy || Boolean(document.body.dataset.catalogBusy),
+    busy: () => photoExport.busy || metadataDirty || saving || confirmingChange || importBusy() || develop.busy || Boolean(document.body.dataset.catalogBusy),
     async select(ids) {
       allFoldersSelected = false; selectionTarget = 'photos';
       aiIds = [...ids]; rootId = null; folderPath = null;

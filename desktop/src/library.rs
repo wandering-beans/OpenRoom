@@ -91,6 +91,7 @@ async fn remove_with_guards<T: Send + 'static>(
     develop: &crate::develop::DevelopState,
     remove: impl FnOnce(&AppState) -> anyhow::Result<T> + Send + 'static,
 ) -> Reply<T> {
+    let _batch = state.library.batch.clone().try_lock_owned().map_err(|_| "プレビュー生成が終わってから操作してください。")?;
     if state.scanning.swap(true, Ordering::SeqCst) {
         return Err("読み込みを中止するか、完了してからカタログから削除してください。".into());
     }
@@ -116,6 +117,7 @@ pub async fn relink_folder(
     root_id: i64,
     folder: String,
 ) -> Reply<Option<advanced_explorer::relink::RelinkReport>> {
+    let _batch = state.library.batch.clone().try_lock_owned().map_err(|_| "プレビュー生成が終わってから操作してください。")?;
     if state.scanning.swap(true, Ordering::SeqCst) {
         return Err("フォルダを読み込み中です。".into());
     }

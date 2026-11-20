@@ -391,7 +391,7 @@ impl Operations {
                 let input: JobInput = serde_json::from_value(args)?;
                 let job = self.jobs.cancel(&input.job_id)?;
                 if job.kind == "scan" && job.status == "running" {
-                    self.state.cancel.store(true, Ordering::SeqCst);
+                    self.state.library.batch_cancel.store(true, Ordering::SeqCst);
                 }
                 Ok(serde_json::to_value(job)?)
             }
@@ -403,19 +403,23 @@ impl Operations {
         let job = match name {
             "start_scan" => {
                 let input: ScanInput = serde_json::from_value(args)?;
+                let batch = self.state.library.batch.clone().try_lock_owned().context("Library previews are in progress")?;
                 ensure!(
                     !self.state.scanning.swap(true, Ordering::SeqCst),
                     "A folder scan is already running"
                 );
                 let scan_busy = self.state.scanning.clone();
-                self.state.cancel.store(false, Ordering::SeqCst);
+                self.state.library.batch_cancel.store(false, Ordering::SeqCst);
                 let result = self
                     .jobs
                     .start("scan", self.app.clone(), move |cancel, id| {
-                        let _guard = BusyGuard(operations.state.scanning.clone());
+                        let _batch = batch;
+                        let scan_guard = BusyGuard(operations.state.scanning.clone());
                         let mut catalog = Catalog::open(&operations.state.db)?;
                         // GUI cancellation and server shutdown stop this scan as well.
-                        let shared_cancel = operations.state.cancel.clone();
+                        let mut preview_state = (*operations.state).clone();
+                        preview_state.cancel = operations.state.library.batch_cancel.clone();
+                        let shared_cancel = preview_state.cancel.clone();
                         let progress = |progress: &advanced_explorer::ScanReport| {
                             if cancel.load(Ordering::SeqCst) || operations.stop.is_cancelled() {
                                 shared_cancel.store(true, Ordering::SeqCst);
@@ -430,10 +434,11 @@ impl Operations {
                             }
                             None => catalog.scan(&shared_cancel, progress)?,
                         };
+                        drop(scan_guard);
                         let previews = if report.cancelled {
                             crate::library_previews::Progress::default()
                         } else {
-                            crate::library_previews::prepare_import(&operations.state, input.root_id, |preview| {
+                            crate::library_previews::prepare_import(&preview_state, input.root_id, |preview| {
                                 if cancel.load(Ordering::SeqCst) || operations.stop.is_cancelled() {
                                     shared_cancel.store(true, Ordering::SeqCst);
                                 }

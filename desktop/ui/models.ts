@@ -86,7 +86,6 @@ export interface HistoryRow { id: number; label: string; created: number }
 export interface SavedRecipe { id: number; name: string; recipe: string }
 export interface PreviewProgress { total: number; ready: number; generated: number; retained: number; failed: number; cancelled: boolean; paused: boolean; error: string | null; last_ready_id: number | null }
 export interface ScanProgress { visited: number; indexed: number; unchanged: number; missing: number; errors: string[]; cancelled: boolean }
-export interface ImportReport extends ScanProgress { previews: PreviewProgress }
 export interface IndexProgress { processed: number; failed: number; remaining: boolean }
 export interface Facet { value: string; count: number }
 export type WorkflowRequest = { action: 'list'; item_id: number | null } | { action: 'store'; item_id: number | null; name: string; settings: Settings; fields: string[] } | { action: 'rename'; id: number; name: string } | { action: 'delete'; id: number } | { action: 'rename_history'; item_id: number; id: number; name: string } | { action: 'apply'; ids: number[]; settings: Settings; fields: string[] };

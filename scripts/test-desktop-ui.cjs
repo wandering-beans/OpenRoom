@@ -223,6 +223,9 @@ async function run() {
               return selected;
             }
             if (command === 'prepare_library_previews') {
+              if (window.holdPreviewBatch || (args.pendingOnly && new URL(location.href).searchParams.has('holdPreviews'))) {
+                await new Promise(resolve => { window.releasePreviewBatch = resolve; });
+              }
               window.listeners['preview-progress']?.({payload:{total:items.length,ready:items.length,failed:0}});
               return {total:items.length,ready:items.length,generated:items.length,failed:0};
             }
@@ -232,8 +235,7 @@ async function run() {
               if (args.rootId >= 2 && !items.some(item => item.root_id === args.rootId)) {
                 for (let i = 0; i < 42; i++) items.push({...items[0],id:args.rootId*3000+i,root_id:args.rootId,path:`IMGP${i}.JPG`,name:`IMGP${i}.JPG`,extension:'jpg',rating:0});
               }
-              window.listeners['preview-progress']?.({payload:{total:42,ready:42,failed:0}});
-              return {indexed:existing ? 0 : 42,unchanged:existing,missing:0,visited:existing || 42,errors:[],cancelled:Boolean(window.cancelledScan),previews:{total:existing || 42,ready:existing || 42,generated:existing ? 0 : 42,failed:0}};
+              return {indexed:existing ? 0 : 42,unchanged:existing,missing:0,visited:existing || 42,errors:[],cancelled:Boolean(window.cancelledScan)};
             }
             if (command === 'cancel_scan') {window.cancelledScan = true;window.releaseScan?.();return;}
             if (command === 'catalog_needs_creation') return new URL(location.href).searchParams.get('startup') === 'new';
@@ -447,6 +449,45 @@ async function run() {
       await require('./test-language-ui.cjs')(page, `http://127.0.0.1:${server.address().port}`);
       assert.deepEqual(failures, []); return;
     }
+    // Hold startup generation and then the first import batch while registering two folders.
+    await page.goto(`http://127.0.0.1:${server.address().port}?holdPreviews`);
+    await page.waitForFunction(() => window.releasePreviewBatch);
+    await page.evaluate(() => window.listeners['preview-progress']({payload:{total:0,ready:0,failed:0}}));
+    assert.equal(await page.locator('#progress').isVisible(), false, 'no startup work must not show a progress banner');
+    await page.evaluate(() => window.listeners['preview-progress']({payload:{total:2,ready:1,failed:0}}));
+    assert.equal(await page.locator('#progress').isVisible(), true);
+    assert.match(await page.locator('#progress-text').textContent(), /1\/2/, 'progress counts only pending photos');
+    await page.click('#add-small');
+    await page.waitForFunction(() => document.querySelector('#result-count').textContent === '42枚の写真' && !document.querySelector('#add-small').disabled);
+    assert.equal(await page.evaluate(() => calls.filter(c => c.command === 'prepare_library_previews').length), 1);
+    await page.evaluate(() => {
+      window.holdPreviewBatch = true;
+      window.releasePreviewBatch();
+      window.releasePreviewBatch = null;
+      window.folderChoices = [{id:3,path:'/more-photos'}];
+    });
+    await page.waitForFunction(() => window.releasePreviewBatch);
+    await page.click('#add-small');
+    await page.waitForFunction(() => calls.some(c => c.command === 'scan' && c.args.rootId === 3) && !document.querySelector('#add-small').disabled);
+    assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'prepare_library_previews').map(c => c.args.rootId)), [null, 2]);
+    await page.evaluate(() => { window.holdPreviewBatch = false; window.releasePreviewBatch(); });
+    await page.waitForFunction(() => document.querySelector('#progress').hidden);
+    assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'prepare_library_previews').map(c => c.args.rootId)), [null, 2, 3]);
+    // Cancelling drops unstarted batches. A later import can generate again.
+    await page.evaluate(() => { window.holdPreviewBatch = true; window.releasePreviewBatch = null; });
+    await page.click('#add-small');
+    await page.waitForFunction(() => window.releasePreviewBatch && !document.querySelector('#scan').disabled);
+    await page.evaluate(() => { window.folderChoices = [{id:4,path:'/last-photos'}]; });
+    await page.click('#add-small');
+    await page.waitForFunction(() => calls.some(c => c.command === 'scan' && c.args.rootId === 4) && !document.querySelector('#scan').disabled);
+    await page.click('#cancel');
+    await page.evaluate(() => { window.holdPreviewBatch = false; window.releasePreviewBatch(); });
+    await page.waitForFunction(() => document.querySelector('#progress').hidden);
+    assert.equal(await page.evaluate(() => calls.some(c => c.command === 'prepare_library_previews' && c.args.rootId === 4)), false);
+    await page.evaluate(() => { window.cancelledScan = false; });
+    await page.click('#add-small');
+    await page.waitForFunction(() => calls.some(c => c.command === 'prepare_library_previews' && c.args.rootId === 4) && document.querySelector('#progress').hidden);
+    if (process.argv.includes('--import')) { assert.deepEqual(failures, []); return; }
     await page.goto(`http://127.0.0.1:${server.address().port}?startup=new`);
     await page.locator('#catalog-setup').waitFor();
     assert.equal(await page.locator('#startup-screen').evaluate(el => el.dispatchEvent(
@@ -520,12 +561,7 @@ async function run() {
     }));
     await checkAdjustmentBadge('.film-tile[title="photo-0004.tif"]');
     if (process.env.AE_UI_SCREENSHOT) await page.screenshot({ path: process.env.AE_UI_SCREENSHOT });
-    await page.evaluate(() => window.listeners['preview-progress']({payload:{total:0,ready:0,failed:0}}));
-    assert.equal(await page.locator('#progress').isVisible(), false, 'no startup work must not show a progress banner');
-    await page.evaluate(() => window.listeners['preview-progress']({payload:{total:2,ready:1,failed:0}}));
-    assert.equal(await page.locator('#progress').isVisible(), true);
-    assert.match(await page.locator('#progress-text').textContent(), /1\/2/, 'progress counts only pending photos');
-    await page.evaluate(() => {document.getElementById('progress').hidden = true;});
+    assert.equal(await page.locator('#progress').isVisible(), false, 'completed preview work hides the progress banner');
     if (process.argv.includes('--startup-previews')) { assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--export-defaults')) { await require('./test-export-defaults.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }
     if (process.argv.includes('--crop-pan')) { await require('./test-crop-pan.cjs')(page, `http://127.0.0.1:${server.address().port}`); assert.deepEqual(failures, []); return; }

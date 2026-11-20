@@ -78,7 +78,7 @@ pub async fn choose_catalog(
     selection: State<'_, CatalogSelection>,
     create: bool,
 ) -> Reply<Option<String>> {
-    if state.scanning.load(Ordering::SeqCst) {
+    if state.scanning.load(Ordering::SeqCst) || state.library.batch.try_lock().is_err() {
         return Err("読み込みが終わってから切り替えてください。".into());
     }
     let data = selection.data.clone();
