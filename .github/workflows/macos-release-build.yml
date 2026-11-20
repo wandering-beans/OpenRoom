@@ -42,6 +42,13 @@ jobs:
           fi
           git -C "$core" fetch --depth=1 origin 543e7034a78b2d4aa344685f89cffeb15d210ca5
           git -C "$core" checkout --detach FETCH_HEAD
+      - name: Use the recorded Little CMS version on the hosted runner
+        run: |
+          expected=$(jq -er '.packages[] | select(.name == "little-cms2") | .version' licenses/manifest.json)
+          prefix=$(brew --prefix little-cms2)
+          if [[ -d "$prefix" && "$(basename "$(cd "$prefix" && pwd -P)")" != "$expected" ]]; then
+            brew uninstall --force --ignore-dependencies little-cms2
+          fi
       - run: brew install aom inih jpeg-turbo libheif pkgconf cmake ninja gtkmm3 fftw libiptcdata lensfun exiv2 little-cms2 libomp librsvg fmt libraw
       - run: python3 scripts/audit-macos-dependencies.py
       - uses: actions/upload-artifact@v4
