@@ -1,11 +1,11 @@
 {
-  "version": "0.7.22",
-  "notes": "プレビューの生成中でも、別のフォルダーから写真を追加で読み込めるようになりました。先に読み込んだ写真のプレビューはそのまま生成を続けます。\n\nライブラリに、写真を左右に90度回転するボタンを追加しました。現像画面では、ホワイトバランスの状態を示す説明文を削除しました。",
+  "version": "0.7.23",
+  "notes": "ライブラリに「色検索」を追加しました。フィルターで色を選ぶと、その色に近い主要色を持つ写真が、色の近い順に並びます。登録済みの写真は、初めて「色検索」を開いたときに一覧画像から主要色を読み取ります。\n\n0.7.23で開いたカタログは、0.7.22以前の公開版では開けません。同じカタログを複数のPCで使う場合は、各PCのOpenRoomを更新してください。",
   "minimum_macos": "26.0",
   "platforms": {
     "darwin-aarch64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.22/OpenRoom-0.7.22-macos-arm64.app.tar.gz",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTako4RXNXcFFUNlJ4VE1CUVNXMXdSMGhYUFJPNFYzV3hZcDFKVFJiUHQ2YUcvcDBBdm9EMWNtVFoyOU5BdG4zcms2VUdONzhHRmUyM2RRWVBzd2k1a3BEc1d2bUZFTUE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MTY1ODIxCWZpbGU6T3BlblJvb20tMC43LjIyLW1hY29zLWFybTY0LmFwcC50YXIuZ3oJdmVyc2lvbjowLjcuMjIKY2JxZzJrOGVGVHdVTENnT3JVOVV1cEhmWDRQVnpzVUlPMU83L1lqVE9QaWFKSXN2NTNsajRWaStGY2R5M2gzQjhFNHM0R0xhU3hnZkJHSmJGd2U0Qmc9PQo="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.23/OpenRoom-0.7.23-macos-arm64.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTako4RXNXcFFUNlRwQUwwWGNSWWhmV281TWV0b1pHbFVwV3dZd0txcDN6Vm10enhpeUdvWW90TlJMaXRseUZJTGg5bzlYYWs1YTl5Z2lpWVg5elVYWG90SkxlUXlQVXdBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NDM5ODM0CWZpbGU6T3BlblJvb20tMC43LjIzLW1hY29zLWFybTY0LmFwcC50YXIuZ3oJdmVyc2lvbjowLjcuMjMKNExsWU40Sm9mcTFxNXpBdmxnRm5IdjdXK2xGQTBTSkIrREU0YXh1cWFPWWFhSEZwekpTckpVTUFUVGtBYnk4bGxLQVRUWHE4TE8wRHZLdjhvV1NIQlE9PQo="
     }
   }
 }

@@ -1,10 +1,10 @@
 {
-  "version": "0.7.22",
-  "notes": "プレビューの生成中でも、別のフォルダーから写真を追加で読み込めるようになりました。先に読み込んだ写真のプレビューはそのまま生成を続けます。\n\nライブラリに、写真を左右に90度回転するボタンを追加しました。現像画面では、ホワイトバランスの状態を示す説明文を削除しました。",
+  "version": "0.7.23",
+  "notes": "ライブラリに「色検索」を追加しました。フィルターで色を選ぶと、その色に近い主要色を持つ写真が、色の近い順に並びます。登録済みの写真は、初めて「色検索」を開いたときに一覧画像から主要色を読み取ります。\n\n0.7.23で開いたカタログは、0.7.22以前の公開版では開けません。同じカタログを複数のPCで使う場合は、各PCのOpenRoomを更新してください。",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.22/OpenRoom-0.7.22-windows-x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbW5ESzNSeWM0bHJrZVBpeWJOcVlSellWSVlTYVoxVnNDaFhIdlRkVjRjaWY2aVc5b0xqRjZFS0l1cml0SEJRVVJOaWhneWMzU01vN1pxeUlSMzN4MlFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MTY0MTgyCWZpbGU6T3BlblJvb20tMC43LjIyLXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4yMgovWjBaMjNGK0V3MUNaUHBwN3g1Y1V0ZWZscGQ0Uk1LaStLeS9qeVp1SkZvalVET2YweVpGL2VXSnpZWUkyTGtGYnpkU3YwVnJxRVQvRktYbHAwd29EZz09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/v0.7.23/OpenRoom-0.7.23-windows-x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVURGNDSTRWQUZKbXRYc0dOWHE4TFAxdmpyTGRURzZCL0xOblZvc1pnQUMrTXNzUHM3Mkc0Kzloa1hlS2tFN3JsK2dBalh5VEEzWW1LSEczMm1ybkd2ZVVCRzhZR1UydmdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NDM4OTk1CWZpbGU6T3BlblJvb20tMC43LjIzLXdpbmRvd3MteDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuNy4yMwpSYWlmaWxaYThGazdEVXo3ZlhtNzRXNXJQS0ZqVldmNFEzeEVoUkUxK0h0QXE2VnhQNmErNnNWTWxjSEZFVlFGT3hUWmM3N015K3F3TnlYV0lpek9EZz09Cg=="
     }
   }
 }

@@ -1,10 +1,10 @@
 {
-  "version": "0.7.22",
-  "notes": "プレビューの生成中でも、別のフォルダーから写真を追加で読み込めるようになりました。先に読み込んだ写真のプレビューはそのまま生成を続けます。\n\nライブラリに、写真を左右に90度回転するボタンを追加しました。現像画面では、ホワイトバランスの状態を示す説明文を削除しました。",
+  "version": "0.7.23",
+  "notes": "ライブラリに「色検索」を追加しました。フィルターで色を選ぶと、その色に近い主要色を持つ写真が、色の近い順に並びます。登録済みの写真は、初めて「色検索」を開いたときに一覧画像から主要色を読み取ります。\n\n0.7.23で開いたカタログは、0.7.22以前の公開版では開けません。同じカタログを複数のPCで使う場合は、各PCのOpenRoomを更新してください。",
   "platforms": {
     "linux-x86_64": {
-      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/ubuntu-v0.7.22/OpenRoom-0.7.22-linux-x86_64.AppImage",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRzY2b01jYmFXWjlrQXJLaXRaNDdpd3ozaVFpcm94VDRmaW83UUllb255U1o3QXUyNFZxdWZRbTA1YTFTUTkySElvOGlML1ZPQWtWUHpKZUZrUTFxanNVR0hwQ3g5Y1FjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1MTY1NDY3CWZpbGU6T3BlblJvb20tMC43LjIyLWxpbnV4LXg4Nl82NC5BcHBJbWFnZQl2ZXJzaW9uOjAuNy4yMgpOQVR3Y3U5bjJNYnRLZXVTVnpLbkgrNldBWll1S3VjNXNGL2lWYXExaklhZzA4T2lBRlhBWGMrZm1DM1V1Z01TVnZLVndHSkJ6N2g0OXk4S2ZyZjFEUT09Cg=="
+      "url": "https://github.com/wandering-beans/OpenRoom/releases/download/ubuntu-v0.7.23/OpenRoom-0.7.23-linux-x86_64.AppImage",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRzY2b01jYmFXWjVIYWtzVmNTcERpUTd4UVoyTXBUcHdMdG85ak9rOSs1TGFSQUo5RTV5RTZCRGtmSFlIOUZGcm1aTDdPVnpqSm80Q2tESkIreEtITi80RE1YWmhqb3c0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk1NDQwNDMyCWZpbGU6T3BlblJvb20tMC43LjIzLWxpbnV4LXg4Nl82NC5BcHBJbWFnZQl2ZXJzaW9uOjAuNy4yMwpLTkxvWGlianFJaUl6M3IyWlVNM1M3OTBSOUYrZmkvTDROR2lYZHdVN3FlQWpDbGxLNFh4L05lVXA0RjZSbVJMSW8wQ0d2OXVNM012VlpUOGpGL1JBUT09Cg=="
     }
   }
 }
