@@ -2,7 +2,7 @@ import { createView } from './components/view';
 import type { ReactNode } from 'react';
 import type { Invoke } from './backend';
 import type { Query, ErrorHandler, Facet } from './models';
-export interface LibraryFilterState { flags: number[]; labels: string[]; extensions: string[]; metadata: Record<string,string[]>; rating_mode: string }
+export interface LibraryFilterState { photo_color?: [number, number, number]; flags: number[]; labels: string[]; extensions: string[]; metadata: Record<string,string[]>; rating_mode: string }
 export interface LibraryFilterSnapshot { mode: string; filters: LibraryFilterState; columns: string[] }
 import { element as $ } from './dom';
 import { t } from './i18n';
@@ -30,7 +30,8 @@ export function createLibraryFilters({
   refresh,
   error,
   resize,
-}: { invoke: Invoke; query(): Query; refresh(): Promise<void>; error: ErrorHandler; resize(): void }) {
+  colorsUpdated,
+}: { invoke: Invoke; colorsUpdated(): void; query(): Query; refresh(): Promise<void>; error: ErrorHandler; resize(): void }) {
   let filters: LibraryFilterState = { flags: [], labels: [], extensions: [], metadata: {}, rating_mode: "gte" };
   let mode = "none",
     serial = 0,
@@ -41,6 +42,51 @@ export function createLibraryFilters({
   function currentScope() {
     const { root_id, folder } = query();
     return { root_id, folder };
+  }
+  const colorPanel = $('photo-color-filters');
+  const colorView = createView(colorPanel);
+  const colorNames = [t('レッド'),t('オレンジ'),t('イエロー'),t('グリーン'),t('シアン'),t('ブルー'),t('パープル'),t('ピンク'),t('黒'),t('グレー'),t('白')];
+  const swatches = ['#d83636','#ed842c','#ecd333','#4c9c45','#36abb3','#3972c9','#9056ad','#db84aa','#171717','#888888','#f2f2f2'];
+  let indexingColors = false;
+  let colorStatus = '';
+  function chooseColor(hex?: string) {
+    if (hex) filters.photo_color = [1,3,5].map(i => parseInt(hex.slice(i,i+2),16)) as [number,number,number];
+    else delete filters.photo_color;
+    changed();
+  }
+  function renderColors() {
+    const hex = filters.photo_color && '#' + filters.photo_color.map(v => v.toString(16).padStart(2,'0')).join('');
+    colorView.render(<>
+      <label>{t('主要色')} <input type="color" aria-label={t('検索する色')} value={hex || '#808080'} onChange={e => chooseColor(e.currentTarget.value)} /></label>
+      {swatches.map((color,index) => <button key={color} type="button" className="photo-color-swatch" style={{backgroundColor:color}} aria-label={t('写真の色 {0}',colorNames[index])} title={color} aria-pressed={color===hex} onClick={() => chooseColor(color)} />)}
+      <button type="button" disabled={!hex} onClick={() => chooseColor()}>{t('解除')}</button>
+      <span role="status">{colorStatus}</span>
+    </>);
+  }
+  async function indexColors() {
+    if (indexingColors) return;
+    indexingColors = true;
+    let after = 0, updated = 0, failed = 0, displayed = 0;
+    let lastRefresh = performance.now();
+    colorStatus = t('一覧画像から主要色を登録中…');
+    renderColors();
+    try {
+      while (mode === 'color' || filters.photo_color) {
+        const batch = await invoke('index_photo_colors', {after});
+        after = batch.after; updated += batch.updated; failed += batch.failed;
+        if (!batch.more) break;
+        if (filters.photo_color && updated > displayed && performance.now() - lastRefresh > 2000) {
+          colorsUpdated();
+          lastRefresh = performance.now();
+          displayed = updated;
+        }
+        colorStatus = t('主要色を{0}枚登録',updated);
+        renderColors();
+      }
+      colorStatus = failed ? t('{0}枚の一覧画像を読み込めませんでした',failed) : '';
+      if (updated > displayed && filters.photo_color) colorsUpdated();
+    } catch (failure) { colorStatus = ''; error(failure); }
+    finally { indexingColors = false; renderColors(); }
   }
   const header = document.querySelector<HTMLElement>(".filter-heading")!;
   const text = $('filter-text'), attributes = $('attribute-filters'), metadata = $('metadata-filters');
@@ -60,10 +106,10 @@ export function createLibraryFilters({
     <div className="metadata-values" ref={node => { if (node && !column.view) column.view = createView(node); }} />
   </section>));
   function renderHeader() {
-    const custom = Object.values(filters.metadata).some(values => values.length) || filters.flags.length || filters.labels.length || filters.extensions.length || $('rating-filter').value !== '' || $('search').value;
+    const custom = filters.photo_color || Object.values(filters.metadata).some(values => values.length) || filters.flags.length || filters.labels.length || filters.extensions.length || $('rating-filter').value !== '' || $('search').value;
     headerView.render(<>
       <strong>{t('ライブラリフィルター：')}</strong><nav id="filter-tabs" aria-label={t('フィルターの種類')}>
-        {(['text', 'attribute', 'metadata', 'none'] as const).map((key, index) => <button key={key} data-mode={key} aria-pressed={mode === key} onClick={() => setMode(key)}>{[t('テキスト'), t('属性'), t('メタデータ'), t('なし')][index]}</button>)}
+        {(['text', 'attribute', 'metadata', 'color', 'none'] as const).map((key, index) => <button key={key} data-mode={key} aria-pressed={mode === key} onClick={() => setMode(key)}>{[t('テキスト'), t('属性'), t('メタデータ'), t('写真の色'), t('なし')][index]}</button>)}
       </nav><span id="filter-summary">{custom ? t('カスタムフィルター') : t('フィルターなし')}</span>
       <div id="metadata-index-status" hidden={mode !== 'metadata'}><span id="metadata-index-message" />
         <button id="metadata-index" aria-label={t('メタデータを更新')} title={t('メタデータを更新')} onClick={() => { void index(); }}>↻</button>
@@ -93,7 +139,10 @@ export function createLibraryFilters({
     else list.splice(at, 1);
   }
   function sync() {
-    renderHeader(); renderAttributes();
+    renderHeader(); renderAttributes(); renderColors();
+    colorPanel.hidden = mode !== 'color';
+    $('sort').hidden = $('descending').hidden = Boolean(filters.photo_color);
+    $('similar-color-order').hidden = !filters.photo_color;
     text.hidden = mode !== 'text'; attributes.hidden = mode !== 'attribute'; metadata.hidden = mode !== 'metadata';
     resize();
   }
@@ -108,6 +157,7 @@ export function createLibraryFilters({
       refresh();
     }
     sync();
+    if (value === "color") void indexColors();
     if (value === "metadata") {
       loadFacets();
       index();

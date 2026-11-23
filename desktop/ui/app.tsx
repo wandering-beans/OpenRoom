@@ -63,7 +63,7 @@ const bytes = (size: number) => size >= 1048576 ? `${(size / 1048576).toFixed(1)
 
 const workspaceWarning = bindWarningBanner($('error'));
 const setupWarning = bindWarningBanner($('catalog-setup-error'));
-const libraryFilters = createLibraryFilters({invoke, query, refresh, error:showError, resize:scheduleDraw});
+const libraryFilters = createLibraryFilters({invoke, query, refresh, colorsUpdated: refreshColorResults, error:showError, resize:scheduleDraw});
 async function setPhotoAttributes(attributes: Partial<Pick<Photo, 'rating' | 'flag' | 'label'>>) {
   const item=items[selected];
   if (!item || !await allowChange()) return;
@@ -435,6 +435,16 @@ async function allowChange() {
     return true;
   } catch (error) { showError(error); return false; }
   finally { confirmingChange = false; }
+}
+
+let colorRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+function refreshColorResults() {
+  if (!libraryFilters.query().photo_color || colorRefreshTimer !== undefined) return;
+  colorRefreshTimer = setTimeout(() => {
+    colorRefreshTimer = undefined;
+    if (libraryFilters.query().photo_color && !develop.active && !develop.dirty && !metadataDirty && !saving && !confirmingChange)
+      void refresh(items[selected]?.id);
+  }, 250);
 }
 
 function query(): Query {
@@ -1469,6 +1479,7 @@ await listen('library-preview-failed', event => showError(event.payload));
 await listen<number>('library-preview-updated', event => {
   const id = event.payload;
   invalidatePhotoPreview(id); syncReview();
+  refreshColorResults();
   if (!develop.active && items[selected]?.id === id) displayPhoto();
 });
 function checkAvifSupport() {
@@ -1499,6 +1510,7 @@ async function preparePreviews(rootId: number | null, pendingOnly: boolean) {
     }
   } finally {
     preparingPreviews = false;
+    refreshColorResults();
     showPreviewProgress();
   }
 }

@@ -68,6 +68,26 @@ struct Images {
     thumbnail_bytes: u64,
 }
 
+fn dominant_colors(image: &image::RgbImage) -> Vec<u8> {
+    let (w, h) = image.dimensions();
+    let (nx, ny) = (w.min(64), h.min(64));
+    advanced_explorer::photo_colors::extract((0..ny).flat_map(|y| {
+        (0..nx).map(move |x| {
+            image
+                .get_pixel((2 * x + 1) * w / (2 * nx), (2 * y + 1) * h / (2 * ny))
+                .0
+        })
+    }))
+}
+
+#[derive(Default, Serialize)]
+pub struct ColorBatch {
+    after: i64,
+    updated: usize,
+    failed: usize,
+    more: bool,
+}
+
 impl Images {
     fn disk_stamp<'a>(&'a self, fallback: &'a str) -> &'a str {
         self.binding.as_ref().map_or(fallback, |binding| &binding.storage_stamp)
@@ -313,6 +333,41 @@ impl Store {
             }
         }
         Ok(store)
+    }
+
+    pub fn index_colors(&self, catalog: &Catalog, after: i64) -> Result<ColorBatch> {
+        let candidates = catalog.unindexed_colors(after)?;
+        let mut batch = ColorBatch {
+            after,
+            more: candidates.len() == 32,
+            ..Default::default()
+        };
+        for (id, stamp, data) in candidates {
+            batch.after = id;
+            let update = || -> Result<bool> {
+                let images: Images = serde_json::from_str(&data)?;
+                ensure!(
+                    images.version == VERSION
+                        && matches!(images.extension.as_str(), "jpg" | "avif")
+                        && images.thumbnail_bytes > 0,
+                    "Unsupported thumbnail"
+                );
+                let path = self.path(
+                    images.disk_stamp(&stamp),
+                    &images.extension,
+                    384,
+                    &images.render_version,
+                );
+                let pixels = advanced_explorer_media::preview::read_thumbnail(&path)?;
+                catalog.backfill_colors(id, &stamp, &data, &dominant_colors(&pixels))
+            };
+            match update() {
+                Ok(true) => batch.updated += 1,
+                Err(_) => batch.failed += 1,
+                _ => {}
+            }
+        }
+        Ok(batch)
     }
 
     pub fn set_avif_supported(&self, supported: bool) {
@@ -947,6 +1002,7 @@ impl Store {
             };
             let pixels = image::DynamicImage::ImageRgb8(pixels);
             let small = pixels.thumbnail(384, 384).into_rgb8();
+            let palette = dominant_colors(&small);
             let pixels = pixels.into_rgb8();
             if let Some(request) = &request {
                 let after = crate::prepare_render(
@@ -1050,9 +1106,14 @@ impl Store {
                 if old.is_none() && bound == 384 {
                     let _catalog = advanced_explorer_develop::timing::start("catalog-update");
                     ensure!(
-                        !cancelled() && catalog.save_library_preview(
-                            id, &stamp, Some(&serde_json::to_string(&images)?), None
-                        )?,
+                        !cancelled()
+                            && catalog.save_library_preview_with_colors(
+                                id,
+                                &stamp,
+                                Some(&serde_json::to_string(&images)?),
+                                None,
+                                Some(&palette)
+                            )?,
                         "生成中に写真の編集設定が変更されました。"
                     );
                     self.ready.notify_waiters();
@@ -1075,11 +1136,12 @@ impl Store {
             let _catalog = advanced_explorer_develop::timing::start("catalog-update");
             ensure!(
                 !cancelled()
-                    && catalog.save_library_preview(
+                    && catalog.save_library_preview_with_colors(
                         id,
                         &stamp,
                         Some(&serde_json::to_string(&images)?),
-                        None
+                        None,
+                        Some(&palette)
                     )?,
                 "生成中に写真の編集設定が変更されました。"
             );
@@ -1433,6 +1495,92 @@ mod tests {
             metadata_version: Arc::new(AtomicUsize::new(0)),
         };
         (dir, state, root)
+    }
+
+    #[test]
+    fn crop_replaces_colors_with_those_of_the_visible_area() {
+        let (_dir, state, root) = fixture();
+        let mut catalog = Catalog::open(&state.db).unwrap();
+        let path = root.join("two-colors.png");
+        let red = [185, 40, 50];
+        let blue = [35, 70, 190];
+        image::RgbImage::from_fn(320, 200, |x, _| {
+            image::Rgb(if x < 160 { red } else { blue })
+        })
+        .save(&path)
+        .unwrap();
+        catalog.scan(&AtomicBool::new(false), |_| {}).unwrap();
+        let id = catalog
+            .page(
+                &advanced_explorer::Query {
+                    text: "two-colors".into(),
+                    ..Default::default()
+                },
+                1,
+                None,
+            )
+            .unwrap()
+            .items[0]
+            .id;
+        let matches = |c: &Catalog, rgb| {
+            c.count(&advanced_explorer::Query {
+                ids: vec![id],
+                photo_color: Some(rgb),
+                ..Default::default()
+            })
+            .unwrap()
+        };
+        assert!(state.library.generate_explicit(&state, id).unwrap());
+        assert_eq!((matches(&catalog, red), matches(&catalog, blue)), (1, 1));
+        let settings = advanced_explorer_develop::Settings {
+            crop: [0.02, 0.02, 0.40, 0.95],
+            ..Default::default()
+        };
+        catalog
+            .save_develop_recipe(id, &settings.catalog_recipe().unwrap(), 0)
+            .unwrap();
+        assert!(state.library.generate_explicit(&state, id).unwrap());
+        assert_eq!((matches(&catalog, red), matches(&catalog, blue)), (1, 0));
+    }
+
+    #[test]
+    fn existing_thumbnails_supply_colors_with_originals_offline() {
+        let (_dir, state, root) = fixture();
+        let catalog = Catalog::open(&state.db).unwrap();
+        let ids = catalog.preview_items(None, 0).unwrap();
+        let color = [200, 25, 45];
+        let pixels = image::RgbImage::from_pixel(100, 64, image::Rgb(color));
+        for (&id, extension) in ids.iter().zip(["jpg", "avif"]) {
+            if extension == "avif" && !advanced_explorer_media::preview::avif_available() {
+                continue;
+            }
+            let stamp = catalog.preview_stamp(id).unwrap();
+            let bytes =
+                advanced_explorer_media::preview::encode(&pixels, true, extension == "avif")
+                    .unwrap();
+            let file = state.library.path(&stamp, extension, 384, "");
+            std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+            std::fs::write(file, &bytes).unwrap();
+            let data=serde_json::json!({"version":VERSION,"extension":extension,"width":100,"height":64,"large":[100,64],"thumbnail":[100,64],"large_bytes":0,"thumbnail_bytes":bytes.len()}).to_string();
+            catalog
+                .save_library_preview(id, &stamp, Some(&data), None)
+                .unwrap();
+        }
+        std::fs::rename(&root, root.with_extension("offline")).unwrap();
+        let expected = catalog.unindexed_colors(0).unwrap().len();
+        assert!(expected >= 1);
+        let batch = state.library.index_colors(&catalog, 0).unwrap();
+        assert_eq!((batch.updated, batch.failed), (expected, 0));
+        assert_eq!(state.library.index_colors(&catalog, 0).unwrap().updated, 0);
+        assert_eq!(
+            catalog
+                .count(&advanced_explorer::Query {
+                    photo_color: Some(color),
+                    ..Default::default()
+                })
+                .unwrap(),
+            expected as i64
+        );
     }
 
     #[test]

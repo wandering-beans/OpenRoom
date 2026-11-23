@@ -95,6 +95,17 @@ impl Catalog {
         data: Option<&str>,
         error: Option<&str>,
     ) -> Result<bool> {
+        self.save_library_preview_with_colors(id, stamp, data, error, None)
+    }
+
+    pub fn save_library_preview_with_colors(
+        &self,
+        id: i64,
+        stamp: &str,
+        data: Option<&str>,
+        error: Option<&str>,
+        palette: Option<&[u8]>,
+    ) -> Result<bool> {
         // Reserve the writer before reading the revision; WAL read upgrades cannot wait.
         let tx = Transaction::new_unchecked(&self.conn, TransactionBehavior::Immediate)?;
         if self.preview_stamp(id)? != stamp {
@@ -104,6 +115,12 @@ impl Catalog {
             "INSERT INTO library_previews(item_id,stamp,data,error,updated) VALUES(?,?,?,?,?) ON CONFLICT(item_id) DO UPDATE SET stamp=excluded.stamp,data=excluded.data,error=excluded.error,updated=excluded.updated",
             params![id,stamp,data,error,now()],
         )?;
+        if let Some(colors) = palette {
+            tx.execute(
+                "UPDATE library_previews SET palette=?1 WHERE item_id=?2 AND palette IS NOT ?1",
+                params![colors, id],
+            )?;
+        }
         tx.commit()?;
         Ok(true)
     }
@@ -261,7 +278,7 @@ mod tests {
         catalog
             .conn
             .execute(
-                "INSERT INTO library_previews VALUES(?,'stamp','{}',NULL,0)",
+                "INSERT INTO library_previews(item_id,stamp,data,error,updated) VALUES(?,'stamp','{}',NULL,0)",
                 [id],
             )
             .unwrap();

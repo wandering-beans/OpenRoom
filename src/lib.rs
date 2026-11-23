@@ -1,4 +1,5 @@
 pub mod library;
+pub mod photo_colors;
 pub mod previews;
 pub mod removal;
 pub mod relink;
@@ -90,6 +91,8 @@ pub struct Query {
     pub rating_mode: String,
     pub flags: Vec<i8>,
     pub labels: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub photo_color: Option<[u8; 3]>,
     pub metadata: std::collections::BTreeMap<String, Vec<String>>,
     pub root_id: Option<i64>,
     pub folder: Option<String>,
@@ -208,7 +211,7 @@ impl Catalog {
             "This is not an OpenRoom catalog"
         );
         ensure!(
-            (0..=9).contains(&version),
+            (0..=10).contains(&version),
             "unsupported database schema {version}"
         );
         if version == 0 {
@@ -343,6 +346,10 @@ DELETE FROM develop_history WHERE id IN (SELECT id FROM (SELECT id,row_number() 
 CREATE TABLE IF NOT EXISTS develop_preview_updates(item_id INTEGER PRIMARY KEY REFERENCES items(id) ON DELETE CASCADE,revision INTEGER NOT NULL,ready INTEGER NOT NULL DEFAULT 0);
 PRAGMA user_version=9; COMMIT;")?;
         }
+        if version < 10 {
+            photo_colors::migrate(&conn)?;
+        }
+        photo_colors::register(&conn)?;
         Ok(Self { conn })
     }
     /// A consistent, compact, standalone snapshot, including committed WAL changes.
@@ -897,17 +904,26 @@ PRAGMA user_version=9; COMMIT;")?;
     pub fn page(&self, q: &Query, limit: usize, cursor: Option<&Cursor>) -> Result<Page> {
         ensure!((1..=500).contains(&limit), "page size must be 1..500");
         let tx = self.conn.unchecked_transaction()?;
-        let generation: i64 =
-            tx.query_row("SELECT generation FROM state WHERE id=1", [], |r| r.get(0))?;
+        let color_score = q.photo_color.map(photo_colors::score_sql);
+        let generation_sql = if color_score.is_some() {
+            "SELECT state.generation + color_index_state.generation FROM state, color_index_state WHERE state.id=1"
+        } else {
+            "SELECT generation FROM state WHERE id=1"
+        };
+        let generation: i64 = tx.query_row(generation_sql, [], |r| r.get(0))?;
         let (mut sql, mut args) = filter(q)?;
-        let col = q.sort.column();
-        let direction = if q.descending { "DESC" } else { "ASC" };
+        let col = color_score.as_deref().unwrap_or(q.sort.column());
+        let descending = color_score.is_none() && q.descending;
+        let direction = if descending { "DESC" } else { "ASC" };
         if let Some(c) = cursor {
             ensure!(
                 c.generation == generation && c.query == *q,
                 "stale or incompatible cursor; restart pagination"
             );
             let key = match q.sort {
+                _ if color_score.is_some() => {
+                    Value::Integer(c.key.as_i64().context("invalid color cursor")?)
+                }
                 Sort::Name => Value::Text(
                     c.key
                         .as_str()
@@ -925,13 +941,27 @@ PRAGMA user_version=9; COMMIT;")?;
             };
             sql.push_str(&format!(
                 " AND ({col},id) {} (?,?)",
-                if q.descending { "<" } else { ">" }
+                if descending { "<" } else { ">" }
             ));
             args.push(key);
             args.push(Value::Integer(c.id));
         }
         args.push(Value::Integer((limit + 1) as i64));
-        let mut items:Vec<Item>=tx.prepare(&format!("SELECT {COLUMNS} FROM items WHERE {sql} ORDER BY {col} {direction},id {direction} LIMIT ?"))?.query_map(params_from_iter(args),read_item)?.collect::<rusqlite::Result<_>>()?;
+        let statement = format!(
+            "SELECT {COLUMNS}, {col} AS sort_key FROM items WHERE {sql} ORDER BY sort_key {direction},id {direction} LIMIT ?"
+        );
+        let mut color_key = None;
+        let mut items = Vec::new();
+        {
+            let mut stmt = tx.prepare(&statement)?;
+            let mut rows = stmt.query(params_from_iter(args))?;
+            while let Some(row) = rows.next()? {
+                items.push(read_item(row)?);
+                if items.len() == limit && color_score.is_some() {
+                    color_key = Some(row.get::<_, i64>("sort_key")?);
+                }
+            }
+        }
         let more = items.len() > limit;
         items.truncate(limit);
         let next = if more {
@@ -940,6 +970,7 @@ PRAGMA user_version=9; COMMIT;")?;
                 generation,
                 query: q.clone(),
                 key: match q.sort {
+                    _ if color_key.is_some() => color_key.into(),
                     Sort::Name => normalize(&i.name).into(),
                     Sort::Added => i.added.into(),
                     // Nanosecond timestamps must survive a JavaScript JSON round trip.
@@ -1004,6 +1035,9 @@ fn filter(q: &Query) -> Result<(String, Vec<Value>)> {
         "extension IN ({})",
         vec!["?"; SUPPORTED_EXTENSIONS.len()].join(",")
     ));
+    if let Some(rgb) = q.photo_color {
+        conditions.push(format!("{} IS NOT NULL", photo_colors::score_sql(rgb)));
+    }
     let mut args: Vec<Value> = SUPPORTED_EXTENSIONS
         .iter()
         .map(|ext| Value::Text((*ext).into()))
@@ -1335,7 +1369,7 @@ mod development_tests {
                 .conn
                 .query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
                 .unwrap(),
-            9
+            10
         );
     }
 

@@ -8,7 +8,7 @@ export type ViewMode = 'grid' | 'loupe' | 'compare' | 'survey';
 export interface Photo { id: number; root_id: number; path: string; name: string; extension: string; size: number; modified: number; added: number; missing: boolean; rating: number; flag: number; label: string }
 export interface Root { id: number; path: string }
 export interface Folder { root_id: number; path: string; count: number }
-export interface Query { ids: number[]; text: string; root_id: number | null; folder: string | null; rating: number | null; rating_mode: string; flags: number[]; labels: string[]; metadata: Record<string, string[]>; extensions?: string[]; tags?: string[]; added_from?: number | null; added_to?: number | null; include_missing?: boolean; sort: string; descending: boolean }
+export interface Query { photo_color?: [number, number, number]; ids: number[]; text: string; root_id: number | null; folder: string | null; rating: number | null; rating_mode: string; flags: number[]; labels: string[]; metadata: Record<string, string[]>; extensions?: string[]; tags?: string[]; added_from?: number | null; added_to?: number | null; include_missing?: boolean; sort: string; descending: boolean }
 export interface Cursor { generation: number; query: Query; key: Json; id: number }
 export interface Page { items: Photo[]; next: Cursor | null; generation: number; adjusted_ids: number[] }
 export interface Detail { item: Photo; tags: string[]; memo: string }

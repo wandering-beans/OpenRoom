@@ -89,6 +89,15 @@ async fn search(
     work(move || library::photo_page(&Catalog::open(db)?, &query, cursor.as_ref())).await
 }
 #[tauri::command]
+async fn index_photo_colors(
+    state: State<'_, AppState>,
+    after: i64,
+) -> Reply<library_previews::ColorBatch> {
+    let db = state.db.clone();
+    let store = state.library.clone();
+    work(move || store.index_colors(&Catalog::open(db)?, after)).await
+}
+#[tauri::command]
 async fn count(state: State<'_, AppState>, query: Query) -> Reply<i64> {
     let db = state.db.clone();
     work(move || Catalog::open(db)?.count(&query)).await
@@ -726,6 +735,7 @@ fn main() {
             folders,
             search,
             count,
+            index_photo_colors,
             detail,
             annotate,
             catalog_path,

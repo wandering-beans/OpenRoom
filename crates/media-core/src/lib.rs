@@ -43,7 +43,7 @@ pub fn render(source: &Path, destination: &Path, bound: u32) -> Result<RenderInf
     let (image, kind) = match ext.as_str() {
         ext if RAW_EXTENSIONS.contains(&ext) => raw(source, bound, true)?,
         "heic" | "heif" | "hif" | "avif" => {
-            (heif(source, bound)?, "heif-avif-primary-or-thumbnail")
+            (heif(source, bound, None)?, "heif-avif-primary-or-thumbnail")
         }
         "tif" | "tiff" => (raster(source)?, "raster-first-image"),
         "psd" | "psb" => (photoshop(source)?, "photoshop-saved-composite"),
@@ -285,7 +285,7 @@ fn raw(path: &Path, bound: u32, allow_develop: bool) -> Result<(DynamicImage, &'
     Ok((image, kind))
 }
 
-fn heif(path: &Path, bound: u32) -> Result<DynamicImage> {
+fn heif(path: &Path, bound: u32, max_edge: Option<u32>) -> Result<DynamicImage> {
     use libheif_rs::{ColorSpace, HeifContext, LibHeif, RgbChroma};
     let lib = LibHeif::new();
     // File-backed reader supports Unicode paths on Windows without narrow C filename APIs.
@@ -306,6 +306,13 @@ fn heif(path: &Path, bound: u32) -> Result<DynamicImage> {
         None
     };
     let handle = thumbnail.as_ref().unwrap_or(&primary);
+    if let Some(limit) = max_edge {
+        ensure!(
+            primary.width().max(primary.height()) <= limit
+                && handle.width().max(handle.height()) <= limit,
+            "Oversized cached thumbnail"
+        );
+    }
     let decoded = lib
         .decode(handle, ColorSpace::Rgb(RgbChroma::Rgba), None)
         .context("HEIF/AVIF decoding failed; libheif requires HEVC/AV1 decoder plugins")?;

@@ -1,5 +1,18 @@
 // UI text only. User filenames, tags, notes, and custom names are never translated.
 export const english = {
+  "白": "White",
+  "グレー": "Gray",
+  "黒": "Black",
+  "ピンク": "Pink",
+  "シアン": "Cyan",
+  "色が近い順": "Closest color first",
+  "写真の色": "Photo color",
+  "写真の色 {0}": "Photo color {0}",
+  "主要色": "Dominant color",
+  "検索する色": "Search color",
+  "一覧画像から主要色を登録中…": "Indexing colors from thumbnails…",
+  "主要色を{0}枚登録": "Indexed colors for {0} photos",
+  "{0}枚の一覧画像を読み込めませんでした": "Could not read {0} thumbnails",
   "起動時に更新を確認": "Check for updates at startup",
   "オンの場合、起動時に更新が見つかると自動で適用し、再起動します。初期設定はオンです。": "When enabled, available updates are installed automatically at startup and the app restarts. Enabled by default.",
   "処理や編集が終わると自動更新します。": "The update will install automatically when processing and editing have finished.",

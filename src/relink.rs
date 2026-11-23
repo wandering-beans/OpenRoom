@@ -185,7 +185,7 @@ impl Catalog {
             } else {
                 // A different file can reappear at precisely the old path with the same size and time.
                 tx.execute(
-                    "UPDATE library_previews SET data=json_set(data,'$.version','')
+                    "UPDATE library_previews SET palette=NULL,data=json_set(data,'$.version','')
                     WHERE item_id=? AND stamp=? AND json_valid(data)",
                     params![original.id, new_stamp],
                 )?;

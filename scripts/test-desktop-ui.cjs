@@ -311,6 +311,7 @@ async function run() {
               const item = items.find(item => item.id === args.id);
               return { item: { ...item }, tags: annotations.get(item.id)?.tags || [], memo: annotations.get(item.id)?.memo || '' };
             }
+            if (command === 'index_photo_colors') return {after:0, updated:0, failed:0, more:false};
             if (command === 'index_metadata_batch') {
               if (window.holdMetadataIndex) await new Promise(resolve => { window.releaseMetadataIndex = resolve; });
               return {processed:0,failed:0,remaining:false};
@@ -1923,6 +1924,13 @@ async function run() {
     await page.keyboard.press('x');
     await page.waitForFunction(()=>calls.some(c=>c.command==='set_photo_attributes'&&c.args.flag===-1));
     if (!await page.locator('#filter-panel').isVisible()) await page.keyboard.press('\\');
+    await page.click('#filter-tabs [data-mode="color"]');
+    await page.click('#photo-color-filters [title="#3972c9"]');
+    await page.waitForFunction(() => calls.filter(c=>c.command==='search').at(-1)?.args.query.photo_color?.join() === '57,114,201');
+    await page.locator('#photo-color-filters input').fill('#882240');
+    await page.waitForFunction(() => calls.filter(c=>c.command==='search').at(-1)?.args.query.photo_color?.join() === '136,34,64');
+    await page.click('#photo-color-filters button:last-of-type');
+    await page.waitForFunction(() => !calls.filter(c=>c.command==='search').at(-1)?.args.query.photo_color);
     await page.click('#filter-tabs [data-mode="attribute"]');
     await page.click('#flag-filters [data-flag="-1"]');
     await page.waitForFunction(()=>calls.filter(c=>c.command==='search').at(-1).args.query.flags.includes(-1));

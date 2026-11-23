@@ -12,6 +12,20 @@ pub fn avif_available() -> bool {
         .is_ok()
 }
 
+pub fn read_thumbnail(path: &std::path::Path) -> Result<RgbImage> {
+    ensure!(
+        std::fs::metadata(path)?.len() <= 4 * 1024 * 1024,
+        "Oversized cached thumbnail"
+    );
+    if path.extension().and_then(|v| v.to_str()) == Some("avif") {
+        return Ok(super::heif(path, 384, Some(384))?.into_rgb8());
+    }
+    let decoder = image::ImageReader::open(path)?.into_decoder()?;
+    let (w, h) = decoder.dimensions();
+    ensure!(w.max(h) <= 384, "Oversized cached thumbnail");
+    Ok(image::DynamicImage::from_decoder(decoder)?.into_rgb8())
+}
+
 pub fn read_srgb(path: &std::path::Path) -> Result<RgbImage> {
     let mut decoder = image::ImageReader::open(path)?
         .with_guessed_format()?

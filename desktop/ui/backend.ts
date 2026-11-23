@@ -82,6 +82,7 @@ export interface Commands {
   set_develop_prefetch: { args: { ids: number[] }; result: void };
   develop_workflow: { args: { request: WorkflowRequest }; result: SavedRecipe[] | number | null };
   preset_file: { args: { write: boolean; value: SettingsPatch | null }; result: SettingsPatch | null };
+  index_photo_colors: { args: { after: number }; result: { after: number; updated: number; failed: number; more: boolean } };
   metadata_facets: { args: { query: Partial<Query>; field: string }; result: Facet[] };
   index_metadata_batch: { args: { query: Partial<Query> }; result: IndexProgress };
   cancel_metadata_index: { args: undefined; result: void };
