@@ -6,7 +6,7 @@ export const english = {
   "ピンク": "Pink",
   "シアン": "Cyan",
   "色が近い順": "Closest color first",
-  "写真の色": "Photo color",
+  "色検索": "Color search",
   "写真の色 {0}": "Photo color {0}",
   "主要色": "Dominant color",
   "検索する色": "Search color",

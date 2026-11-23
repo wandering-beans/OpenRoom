@@ -109,7 +109,7 @@ export function createLibraryFilters({
     const custom = filters.photo_color || Object.values(filters.metadata).some(values => values.length) || filters.flags.length || filters.labels.length || filters.extensions.length || $('rating-filter').value !== '' || $('search').value;
     headerView.render(<>
       <strong>{t('ライブラリフィルター：')}</strong><nav id="filter-tabs" aria-label={t('フィルターの種類')}>
-        {(['text', 'attribute', 'metadata', 'color', 'none'] as const).map((key, index) => <button key={key} data-mode={key} aria-pressed={mode === key} onClick={() => setMode(key)}>{[t('テキスト'), t('属性'), t('メタデータ'), t('写真の色'), t('なし')][index]}</button>)}
+        {(['text', 'attribute', 'metadata', 'color', 'none'] as const).map((key, index) => <button key={key} data-mode={key} aria-pressed={mode === key} onClick={() => setMode(key)}>{[t('テキスト'), t('属性'), t('メタデータ'), t('色検索'), t('なし')][index]}</button>)}
       </nav><span id="filter-summary">{custom ? t('カスタムフィルター') : t('フィルターなし')}</span>
       <div id="metadata-index-status" hidden={mode !== 'metadata'}><span id="metadata-index-message" />
         <button id="metadata-index" aria-label={t('メタデータを更新')} title={t('メタデータを更新')} onClick={() => { void index(); }}>↻</button>
