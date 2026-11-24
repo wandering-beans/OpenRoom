@@ -137,3 +137,7 @@ credentials.json
 secrets.json
 secrets.*
 !.env.*.example
+
+/scripts/build-black-calibration.py
+/scripts/build-raster-calibration.py
+/scripts/build-raw-calibration.py
