@@ -1160,7 +1160,7 @@ function updateNavigatorViewport() {
 function applyZoom() {
   zoomAnchor = null;
   const image = $('full-image');
-  image.classList.toggle('can-pan', Boolean(zoom) && !develop.active && viewMode === 'loupe');
+  image.classList.toggle('can-pan', Boolean(zoom) && viewMode === 'loupe');
   const area = $('image-area');
   const style = getComputedStyle(area);
   let width = area.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
@@ -1359,7 +1359,7 @@ let draggedPhoto = false;
 loupeImage.onpointerdown = event => {
   if (event.button !== 0 || !event.isPrimary) return;
   draggedPhoto = false;
-  if (event.pointerType === 'touch' || !zoom || develop.active || viewMode !== 'loupe') return;
+  if (event.pointerType === 'touch' || !zoom || viewMode !== 'loupe') return;
   photoPan = { pointer:event.pointerId, x:event.clientX, y:event.clientY, left:loupeArea.scrollLeft, top:loupeArea.scrollTop, view:viewEpoch };
   loupeImage.setPointerCapture(event.pointerId);
 };
