@@ -34,10 +34,6 @@ struct Request {
 }
 #[derive(Serialize, Deserialize)]
 struct Header {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    camera_saturation: Option<f32>,
-    #[serde(default)]
-    source_size: [u32; 2],
     #[serde(default)]
     base: Option<BaseInfo>,
     info: Option<RenderInfo>,
@@ -46,7 +42,7 @@ struct Header {
 }
 enum Response {
     Prepared(Box<WorkingImage>),
-    Rendered(RenderedImage, [u32; 2], Option<f32>),
+    Rendered(RenderedImage, Box<BaseInfo>),
 }
 type Frame = Result<Response>;
 struct Worker {
@@ -76,12 +72,11 @@ fn read_frame(reader: &mut impl BufRead) -> Frame {
     if let Some(error) = header.error {
         anyhow::bail!("{error}");
     }
-    if let Some(info) = header.base {
-        ensure!(header.info.is_none(), "Conflicting rtengine frame metadata");
-        return read_base(reader, info, header.bytes)
+    let base = header.base.context("Missing rtengine source metadata")?;
+    let Some(info) = header.info else {
+        return read_base(reader, base, header.bytes)
             .map(|base| Response::Prepared(Box::new(base)));
-    }
-    let info = header.info.context("Missing rtengine frame metadata")?;
+    };
     let pixels = u64::from(info.width) * u64::from(info.height);
     ensure!(
         pixels > 0 && pixels <= 64_000_000 && header.bytes as u64 == pixels * 4,
@@ -93,8 +88,7 @@ fn read_frame(reader: &mut impl BufRead) -> Frame {
         .context("Invalid rtengine frame")?;
     Ok(Response::Rendered(
         RenderedImage { image, info },
-        header.source_size,
-        header.camera_saturation,
+        Box::new(base),
     ))
 }
 fn read_base(reader: &mut impl Read, info: BaseInfo, bytes: usize) -> Result<WorkingImage> {
@@ -294,7 +288,7 @@ pub fn render(
         Some(working),
         cancelled,
     )? {
-        Response::Rendered(frame, _, _) => Ok(frame),
+        Response::Rendered(frame, _) => Ok(frame),
         Response::Prepared(_) => anyhow::bail!("Unexpected prepared frame"),
     }
 }
@@ -329,7 +323,7 @@ pub fn prepare(
             );
             Ok(*base)
         }
-        Response::Rendered(_, _, _) => anyhow::bail!("Unexpected rendered frame"),
+        Response::Rendered(_, _) => anyhow::bail!("Unexpected rendered frame"),
     }
 }
 
@@ -394,7 +388,13 @@ pub(super) fn warm_interactive(
     if worker.as_ref().and_then(|worker| worker.loaded.as_ref()) == Some(&key) {
         return Ok(());
     }
-    let mut warmup = Request {
+    let mut warmup = interactive_request(source, camera_saturation, settings);
+    exchange(&mut worker, &mut warmup, None, cancelled)?;
+    Ok(())
+}
+
+fn interactive_request(source: PathBuf, camera_saturation: Option<f32>, settings: &Settings) -> Request {
+    Request {
         camera_saturation,
         prepare: false,
         source,
@@ -402,9 +402,23 @@ pub(super) fn warm_interactive(
         settings: settings.clone(),
         base: None,
         bytes: 0,
-    };
-    exchange(&mut worker, &mut warmup, None, cancelled)?;
-    Ok(())
+    }
+}
+
+pub(super) fn interactive(
+    source: &Path,
+    camera_saturation: Option<f32>,
+    settings: &Settings,
+    cancelled: &(dyn Fn() -> bool + Sync),
+) -> Result<(RenderedImage, BaseInfo)> {
+    let mut input = interactive_request(source.canonicalize()?, camera_saturation, settings);
+    match request(&mut input, None, cancelled)? {
+        Response::Rendered(frame, base) => {
+            ensure!(base.native_source.as_ref() == Some(&input.source), "Unexpected RAW source");
+            Ok((frame, *base))
+        }
+        Response::Prepared(_) => anyhow::bail!("Expected interactive RAW frame"),
+    }
 }
 
 // Each batch thread owns its decoder and drops it when the batch ends.
@@ -447,8 +461,8 @@ pub fn library(
             None,
             cancelled,
         );
-        let (frame, size, gain) = match reply {
-            Ok(Response::Rendered(frame, size, gain)) => (frame, size, gain),
+        let (frame, base) = match reply {
+            Ok(Response::Rendered(frame, base)) => (frame, base),
             other => {
                 *slot = None;
                 return Err(other
@@ -457,20 +471,20 @@ pub fn library(
             }
         };
         ensure!(
-            size[0] > 0 && size[1] > 0 && frame.info.width.max(frame.info.height) <= 1600,
+            base.source_width > 0 && base.source_height > 0 && frame.info.width.max(frame.info.height) <= 1600,
             "Invalid library preview dimensions"
         );
         let preview = crate::Preview {
             path: String::new(),
-            width: size[0] as usize,
-            height: size[1] as usize,
+            width: base.source_width as usize,
+            height: base.source_height as usize,
             render_width: frame.info.width as usize,
             render_height: frame.info.height as usize,
         };
         Ok((
             image::DynamicImage::ImageRgba8(frame.image).into_rgb8(),
             preview,
-            gain,
+            base.camera_saturation,
         ))
     }))
 }
@@ -564,8 +578,6 @@ pub fn run(import: bool) -> Result<()> {
                 serde_json::to_writer(
                     &mut output,
                     &Header {
-                        source_size: [0, 0],
-                        camera_saturation: None,
                         base: Some(base.info.clone()),
                         info: None,
                         error: None,
@@ -582,12 +594,7 @@ pub fn run(import: bool) -> Result<()> {
             }
             Ok(Some(frame)) => (
                 Header {
-                    camera_saturation: resident.as_ref().unwrap().1.working().info.camera_saturation,
-                    source_size: {
-                        let base = &resident.as_ref().unwrap().1.working().info;
-                        [base.source_width, base.source_height]
-                    },
-                    base: None,
+                    base: Some(resident.as_ref().unwrap().1.working().info.clone()),
                     bytes: frame.image.as_raw().len(),
                     info: Some(frame.info),
                     error: None,
@@ -596,8 +603,6 @@ pub fn run(import: bool) -> Result<()> {
             ),
             Err(error) => (
                 Header {
-                    source_size: [0, 0],
-                    camera_saturation: None,
                     base: None,
                     bytes: 0,
                     info: None,
@@ -741,16 +746,17 @@ mod tests {
             elapsed_ms: 0.,
         };
         let mut bytes = serde_json::to_vec(&Header {
-            source_size: [1, 1],
-            camera_saturation: None,
-            base: None,
+            base: Some(serde_json::from_value(serde_json::json!({
+                "width": 2, "height": 1, "source_width": 2, "source_height": 1,
+                "source_kind": "test", "color_note": ""
+            })).unwrap()),
             info: Some(info),
             error: None,
             bytes: 8,
         })
         .unwrap();
         bytes.extend_from_slice(b"\n12345678");
-        let Response::Rendered(frame, _, _) = read_frame(&mut std::io::Cursor::new(bytes)).unwrap()
+        let Response::Rendered(frame, _) = read_frame(&mut std::io::Cursor::new(bytes)).unwrap()
         else {
             panic!("Expected rendered frame");
         };

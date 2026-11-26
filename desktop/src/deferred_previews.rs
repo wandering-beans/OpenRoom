@@ -44,7 +44,10 @@ impl Updates {
         self.foreground.load(Ordering::SeqCst) > 0
     }
     pub(crate) fn busy(&self) -> bool {
-        self.rendering() || self.last_input.lock().unwrap().elapsed() < Duration::from_millis(1000)
+        self.busy_for(Duration::from_secs(1))
+    }
+    pub(crate) fn busy_for(&self, quiet: Duration) -> bool {
+        self.rendering() || self.last_input.lock().unwrap().elapsed() < quiet
     }
     pub fn interrupt(&self) {
         self.generation.fetch_add(1, Ordering::SeqCst);
@@ -136,10 +139,14 @@ mod tests {
         let render = updates.foreground();
         *updates.last_input.lock().unwrap() = Instant::now() - Duration::from_secs(2);
         assert!(updates.busy());
+        assert!(updates.busy_for(Duration::from_millis(150)));
         let generation = updates.generation.load(Ordering::SeqCst);
         drop(render);
         assert!(updates.busy());
         assert!(updates.generation.load(Ordering::SeqCst) > generation);
+        *updates.last_input.lock().unwrap() = Instant::now() - Duration::from_millis(300);
+        assert!(!updates.busy_for(Duration::from_millis(150)));
+        assert!(updates.busy());
         *updates.last_input.lock().unwrap() = Instant::now() - Duration::from_secs(2);
         assert!(!updates.busy());
     }

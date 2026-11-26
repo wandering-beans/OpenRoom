@@ -107,6 +107,21 @@ const develop = createDevelop({
       image.removeAttribute('src');
     }
   },
+  async showStored(item, revision, current) {
+    const preview = await invoke('stored_develop_preview', {id:item.id, revision});
+    if (!preview || !current()) return;
+    const src = convertFileSrc(preview.path);
+    const image = $('full-image');
+    if (image.src === src) return;
+    const decoded = new Image();
+    decoded.src = src;
+    await decoded.decode();
+    if (!current()) return;
+    currentPreview = {...preview, bound:1600};
+    setPreviewImage(currentPreview, itemKey(item));
+    image.alt = item.name;
+    $('view-message').hidden = true;
+  },
   async show(result, interactive, current) {
     const decoded = new Image();
     decoded.crossOrigin = 'anonymous';
@@ -899,7 +914,7 @@ async function photoJob(item: Photo) {
   return fields;
 }
 function updateDevelopPrefetch() {
-  const offsets = develop.active ? [0, 1, -1, 2, -2, 3, -3] : [0];
+  const offsets = develop.active ? [0, 1, -1, 2, -2, 3, -3] : [0, 1, -1];
   const ids = items[selected] ? offsets.flatMap(offset => {
     const photo = items[selected + offset];
     return photo && !photo.missing ? [photo.id] : [];

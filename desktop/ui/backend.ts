@@ -78,6 +78,7 @@ export interface Commands {
   develop_history: { args: { id: number; before: number | null }; result: HistoryRow[] };
   history_settings: { args: { id: number; historyId: number }; result: Settings };
   develop_preview: { args: { id: number; settings: Settings; bound: number }; result: DevelopedPreview };
+  stored_develop_preview: { args: { id: number; revision: number }; result: Preview | null };
   cancel_develop_preview: { args: undefined; result: void };
   set_develop_prefetch: { args: { ids: number[] }; result: void };
   develop_workflow: { args: { request: WorkflowRequest }; result: SavedRecipe[] | number | null };

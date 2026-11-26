@@ -435,6 +435,10 @@ impl Store {
 
     // Only viewing a preview should refresh its eviction age, not a background import check.
     fn lookup_stored(&self, catalog: &Catalog, id: i64, bound: u32) -> Result<Option<Preview>> {
+        self.lookup_recipe(catalog, id, bound, None)
+    }
+
+    pub(super) fn lookup_recipe(&self, catalog: &Catalog, id: i64, bound: u32, revision: Option<i64>) -> Result<Option<Preview>> {
         ensure!(
             [384, 1600].contains(&bound),
             "ライブラリの表示サイズが不正です。"
@@ -443,7 +447,7 @@ impl Store {
             return Ok(None);
         };
         if record.stamp != catalog.preview_stamp(id)? {
-            if catalog.preview_update(id)?.is_none() {
+            if revision.is_some() || catalog.preview_update(id)?.is_none() {
                 return Ok(None);
             }
             let mut old: Vec<serde_json::Value> = serde_json::from_str(&record.stamp)?;
@@ -463,6 +467,15 @@ impl Store {
         };
         if images.version != VERSION || !["avif", "jpg"].contains(&images.extension.as_str()) {
             return Ok(None);
+        }
+        if let Some(revision) = revision {
+            if images.camera_fallback || catalog.develop_recipe(id)?.1 != revision {
+                return Ok(None);
+            }
+            let source = catalog.source_path(id)?;
+            if !images.binding.as_ref().is_some_and(|binding| binding.matches(&source)) {
+                return Ok(None);
+            }
         }
         // Keep old RAW previews usable offline, but update their tone before online display.
         let raw_version = format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION);
@@ -1544,6 +1557,9 @@ mod tests {
         assert!(state.library.generate_explicit(&state, id).unwrap());
         let record = catalog.library_preview(id).unwrap().unwrap();
         let mut metadata: serde_json::Value = serde_json::from_str(record.data.as_deref().unwrap()).unwrap();
+        let display = |revision| state.library.lookup_recipe(&catalog, id, 1600, Some(revision)).unwrap();
+        assert!(display(0).is_some());
+        assert!(display(1).is_none());
         metadata["render_version"] = format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION).into();
         metadata["raw_developed"] = true.into();
         let store = |value: &serde_json::Value| {
@@ -1567,6 +1583,7 @@ mod tests {
         metadata["render_version"] = format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION).into();
         store(&metadata);
         assert!(lookup().is_none());
+        assert!(display(0).is_none());
     }
 
     #[test]

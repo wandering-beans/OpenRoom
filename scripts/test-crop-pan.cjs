@@ -78,6 +78,11 @@ module.exports = async function testCropPan(page, url) {
   assert.deepEqual(await savedCrop(), savedBeforeCancel);
   await page.click('#zoom-in');
   await page.waitForFunction(() => document.querySelector('#full-image').src.endsWith('-0'));
+  // Measure the drag after the full-resolution image and its crop overlay share a painted layout.
+  await photo.evaluate(async image => {
+    await image.decode();
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
   await pan(-20, -20);
   await page.click('#toggle-sidebar');
   await page.click('#navigator-fit');

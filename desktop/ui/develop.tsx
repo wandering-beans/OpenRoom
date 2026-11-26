@@ -45,11 +45,12 @@ const fields: Record<string, [NumericSetting, string, number, number, number?][]
   ],
 };
 export function createDevelop({
-  invoke, show, placeholder, selectedKey, compare, saved, error, selectedIds, photoInfo,
+  invoke, show, placeholder, showStored, selectedKey, compare, saved, error, selectedIds, photoInfo,
 }: {
   invoke: Invoke;
   show(result: DevelopedPreview, interactive: boolean, current: () => boolean): Promise<boolean>;
   placeholder(item: Photo | null): void;
+  showStored(item: Photo, revision: number, current: () => boolean): Promise<void>;
   selectedKey(): string | null;
   compare(result: DevelopedPreview | null, mode?: string): void;
   saved(id: number, refreshPreview?: boolean): void;
@@ -425,6 +426,8 @@ export function createDevelop({
       settings = clone(result.settings); defaults = clone(result.defaults); baseline = clone(settings); revision = result.revision;
       undo = (result.undo || []).slice(-10).map(clone);
       loading = false; sync(); schedule(); refreshHistory();
+      const token = renderToken;
+      void showStored(item, revision, () => active && selection === epoch && token === renderToken && !whiteBalanceReady).catch(() => {});
     } catch (failure) { if (selection === epoch) { loading = false; status(t("現像設定を取得できません")); error(failure); buttons(); } }
   }
   function save() {

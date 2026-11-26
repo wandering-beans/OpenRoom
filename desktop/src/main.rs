@@ -728,6 +728,7 @@ fn main() {
             catalogs::catalog_needs_creation,
             catalogs::restart_catalog,
             develop::develop_preview,
+            develop::stored_develop_preview,
             develop::cancel_develop_preview,
             develop::prefetch::set_develop_prefetch,
             develop::export_develop,

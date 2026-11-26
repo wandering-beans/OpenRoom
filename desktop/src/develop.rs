@@ -443,6 +443,37 @@ fn load_base_into(
     }
     remember_base(result?, request, bound, resident, retain, cancelled)
 }
+fn ready_frame(
+    request: &Request,
+    settings: &Settings,
+    bound: u32,
+    resident: &Mutex<Option<Resident>>,
+    cancelled: &(dyn Fn() -> bool + Sync),
+) -> Result<Option<(engine::RenderedImage, BaseInfo)>> {
+    // The RAW drag worker already owns its linear pixels, even on the first input.
+    #[cfg(desktop_rtengine)]
+    if bound == 384
+        && engine::is_native_raw(&request.source)
+        && (!cfg!(test) || std::env::var_os("AE_TEST_EXECUTABLE").is_some())
+    {
+        let matched = request.camera_match();
+        let (frame, base) = crate::rtengine_worker::interactive(
+            &request.source,
+            matched.as_ref().and_then(|m| m.gain),
+            settings,
+            cancelled,
+        )?;
+        if let Some(matched) = matched {
+            matched.remember(&request.db, request.id, &request.source, base.camera_saturation);
+        }
+        return Ok(Some((frame, base)));
+    }
+    let Some(base) = cached_base(request, bound, resident, true, cancelled)? else {
+        return Ok(None);
+    };
+    Ok(Some((render_frame(&base, settings, bound, cancelled)?, base.info.clone())))
+}
+
 async fn preview_inner(
     state: &AppState,
     develop: &DevelopState,
@@ -533,15 +564,12 @@ async fn preview_inner(
         let frame = work(move || {
             pool.install(|| {
                 let cancelled = || generation.load(Ordering::SeqCst) != version;
-                let Some(base) = cached_base(&request, bound, &resident, true, &cancelled)? else {
+                let Some((rendered, mut info)) = ready_frame(&request, &settings, bound, &resident, &cancelled)? else {
                     return Ok(None);
                 };
-                // Display-size updates retain detail without waiting for the disk cache or full renders.
-                let rendered = render_frame(&base, &settings, bound, &cancelled)?;
                 let mut png = Vec::new();
                 advanced_explorer_media::encode_preview(&mut png, &rendered.image)?;
                 ensure!(!cancelled(), "現像対象が変更されました。");
-                let mut info = base.info.clone();
                 engine::refresh_raw_profile(&mut info);
                 Ok(Some(DevelopedPreview {
                     path: String::new(),
@@ -626,6 +654,12 @@ async fn preview_inner(
     })
     .await
 }
+#[tauri::command]
+pub async fn stored_develop_preview(state: State<'_, AppState>, id: i64, revision: i64) -> Reply<Option<Preview>> {
+    let state = (*state).clone();
+    work(move || state.library.lookup_recipe(&Catalog::open(&state.db)?, id, 1600, Some(revision))).await
+}
+
 #[tauri::command]
 pub async fn develop_preview(
     state: State<'_, AppState>,
@@ -1175,6 +1209,17 @@ mod tests {
             error, 0,
             "Library and editor must use identical developed pixels before AVIF encoding"
         );
+        #[cfg(desktop_rtengine)]
+        {
+            let settings = Settings { exposure: 0.5, ..Default::default() };
+            let frame = tauri::async_runtime::block_on(preview_inner(
+                &state, &DevelopState::new().unwrap(), id, settings.clone(), 384,
+            )).unwrap();
+            let base = engine::prepare_with_camera_saturation(&source, 384, gain).unwrap();
+            let expected = engine::render(&base, &settings, &|| false).unwrap();
+            assert_eq!(image::load_from_memory(&preview_bytes(&frame)).unwrap().to_rgba8(), expected.image);
+            assert_eq!(frame.info.histogram, expected.info.histogram);
+        }
         assert_eq!(catalog.develop_recipe(id).unwrap(), (None, 0));
     }
 

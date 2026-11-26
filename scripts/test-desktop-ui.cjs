@@ -365,6 +365,11 @@ async function run() {
               return { path: `preview-${args.id}-${args.bound || 384}${revision ? `-r${revision}` : ''}${jpegPreviews.has(args.id) ? '-jpeg' : ''}`, width: 4000, height: 6000,
                 render_width:size.width, render_height:size.height };
             }
+            if (command === 'stored_develop_preview') {
+              if (window.holdStoredPhoto === args.id) await new Promise(resolve => { window.releaseStored = resolve; });
+              const size = previewSize(args.id, 1600);
+              return {path:`preview-${args.id}-1600`, width:4000, height:6000, render_width:size.width, render_height:size.height};
+            }
             if (command === 'get_develop') return { undo: structuredClone((histories.get(args.id) || []).slice(0,-1).slice(-10).map(row=>row.settings)), settings: structuredClone(recipes.get(args.id)?.settings || defaults), revision: recipes.get(args.id)?.revision || 0, defaults: structuredClone(defaults) };
             if (command === 'save_develop') {
               if (window.failDevelopSave) throw Error('Injected development save failure');
@@ -1152,7 +1157,7 @@ async function run() {
     assert.ok(await page.evaluate(() => !calls.some(call => call.command === 'develop_preview')),
       'library selection and zoom must never start development');
     await page.evaluate(() => {window.holdOriginalLoad = true;});
-    assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), [1], 'library preloads only the selected photo');
+    assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), [1, 2], 'library preloads the selection and its immediate neighbor');
     const interactions = await page.evaluate(() => {
       const menu = id => document.querySelector(id).dispatchEvent(new MouseEvent('contextmenu', { bubbles:true, cancelable:true }));
       return {panel:menu('#viewer'), input:menu('#search'),
@@ -1301,7 +1306,7 @@ async function run() {
     await page.waitForFunction(() => document.querySelector('.film-tile.selected img')?.src.includes('384-r3'));
     assert.equal(await page.evaluate(() => calls.filter(call => call.command === 'preview' && !call.args.large && call.args.id !== 1).length), otherCount, 'saving one recipe must not reload unrelated thumbnails');
     await page.click('#module-library');
-    assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), [1], 'returning to Library discards neighboring development inputs');
+    assert.deepEqual(await page.evaluate(() => calls.filter(c => c.command === 'set_develop_prefetch').at(-1).args.ids), [1, 2], 'returning to Library releases more distant development inputs');
     await page.click('#module-develop');
     await page.waitForFunction(() => document.querySelector('#develop-exposure-value').value === '2');
     await page.waitForFunction(() => document.querySelector('#full-image').alt === document.querySelector('#view-title').textContent);
@@ -2133,12 +2138,12 @@ async function run() {
     await require('./test-masks.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     await require('./test-histogram.cjs')(page, `http://127.0.0.1:${server.address().port}`);
     await page.goto(`http://127.0.0.1:${server.address().port}`);
-    await page.evaluate(() => { window.holdOriginalLoad = true; });
+    await page.evaluate(() => { window.holdOriginalLoad = true; window.holdStoredPhoto = 1; });
     await page.click('#module-develop');
-    await page.waitForFunction(() => window.releaseOriginalLoad);
+    await page.waitForFunction(() => window.releaseOriginalLoad && window.releaseStored);
     await page.click('#film-next');
     await page.waitForFunction(() => document.querySelector('#full-image').src.includes('develop-2-'));
-    await page.evaluate(() => { window.releaseOriginalLoad(); });
+    await page.evaluate(() => { window.releaseStored(); window.releaseOriginalLoad(); });
     await page.waitForFunction(() => completedDevelopPreviews.some(p => p.id === 1));
     assert.match(await page.locator('#full-image').getAttribute('src'), /develop-2-/);
     // Repeated numeric input must not cancel the slow frame or render twice on release.

@@ -166,16 +166,21 @@ fn start(state: AppState, prefetch: Arc<Prefetch>, ids: Vec<i64>) -> Reply<()> {
     };
     tauri::async_runtime::spawn(async move {
         let _job = prefetch.job.lock().await;
-        #[cfg(desktop_rtengine)]
         let selected = ids.first().copied();
         for id in ids {
+            // Prepare the selection as soon as navigation settles. Neighbors can wait.
+            let quiet = if Some(id) == selected {
+                Duration::from_millis(150)
+            } else {
+                Duration::from_secs(1)
+            };
             loop {
                 if prefetch.generation.load(Ordering::SeqCst) != version {
                     return;
                 }
                 // Debounce navigation and give foreground renders/sliders priority.
-                if state.library.updates.busy() {
-                    tokio::time::sleep(Duration::from_millis(100)).await;
+                if state.library.updates.busy_for(quiet) {
+                    tokio::time::sleep(Duration::from_millis(50)).await;
                     continue;
                 }
                 let foreground = state.library.updates.generation.load(Ordering::SeqCst);
