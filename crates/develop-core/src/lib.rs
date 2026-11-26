@@ -151,10 +151,18 @@ pub fn is_native_raw(source: &Path) -> bool {
 
 /// Decode only once per source/preview size. RAW always uses sensor data.
 pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
+    prepare_with_camera_saturation(source, bound, None)
+}
+
+pub fn prepare_with_camera_saturation(
+    source: &Path,
+    bound: u32,
+    _camera_saturation: Option<f32>,
+) -> Result<WorkingImage> {
     ensure!(bound == 0 || bound <= 4096, "Invalid working image bound");
     #[cfg(all(desktop_rtengine, feature = "rtengine"))]
     if rtengine::is_raw(source) {
-        return rtengine::prepare_raw(source, bound);
+        return rtengine::prepare_raw(source, bound, _camera_saturation);
     }
     let mut photo = advanced_explorer_media::develop_input::decode(source)?;
     let is_raw = advanced_explorer_media::is_raw(source);

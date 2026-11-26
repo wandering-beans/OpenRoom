@@ -88,6 +88,15 @@ impl Catalog {
             .optional()?)
     }
 
+    /// Fill older preview metadata only while the originally inspected record is still current.
+    pub fn cache_camera_saturation(&self, id: i64, record: &PreviewRecord, gain: f32) -> Result<()> {
+        self.conn.execute(
+            "UPDATE library_previews SET data=json_set(data,'$.camera_saturation',?1) WHERE item_id=?2 AND stamp=?3 AND data=?4",
+            params![gain, id, record.stamp, record.data],
+        )?;
+        Ok(())
+    }
+
     pub fn save_library_preview(
         &self,
         id: i64,

@@ -49,6 +49,8 @@ pub struct Progress {
 #[derive(Serialize, Deserialize)]
 struct Images {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    camera_saturation: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     binding: Option<Binding>,
     version: String,
     #[serde(default)]
@@ -66,6 +68,36 @@ struct Images {
     thumbnail: [usize; 2],
     large_bytes: u64,
     thumbnail_bytes: u64,
+}
+
+// A source-only value from the neutral RAW render, independent of the editing recipe.
+pub(super) struct CameraMatch {
+    pub(super) gain: Option<f32>,
+    record: advanced_explorer::previews::PreviewRecord,
+    binding: Binding,
+}
+
+impl CameraMatch {
+    pub(super) fn lookup(db: &Path, id: i64, source: &Path) -> Option<Self> {
+        let record = Catalog::open(db).ok()?.library_preview(id).ok()??;
+        let images: Images = serde_json::from_str(record.data.as_deref()?).ok()?;
+        let binding = images.binding?;
+        if !images.raw_developed || images.camera_fallback || images.version != VERSION
+            || images.render_version != format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION)
+            || !binding.matches(source) {
+            return None;
+        }
+        let gain = images.camera_saturation.filter(|v| (0.75..=1.8).contains(v));
+        Some(Self { gain, record, binding })
+    }
+
+    pub(super) fn remember(self, db: &Path, id: i64, source: &Path, computed: Option<f32>) {
+        if self.gain.is_some() { return; }
+        if let Some(gain) = computed.filter(|v| (0.75..=1.8).contains(v))
+            && self.binding.matches(source) && let Ok(catalog) = Catalog::open(db) {
+            let _ = catalog.cache_camera_saturation(id, &self.record, gain);
+        }
+    }
 }
 
 fn dominant_colors(image: &image::RgbImage) -> Vec<u8> {
@@ -958,7 +990,9 @@ impl Store {
                     info,
                 ))
             };
+            let mut camera_saturation = None;
             let (pixels, info) = if let Some(stored) = &stored {
+                camera_saturation = previous.as_ref().and_then(|images| images.camera_saturation);
                 let path = Path::new(&stored.path);
                 let rgb = if path.extension().is_some_and(|ext| ext == "jpg") {
                     // Our JPEG is already oriented and encoded in sRGB.
@@ -984,7 +1018,10 @@ impl Store {
                     .transpose()?
                     .unwrap_or_default();
                 match crate::develop::library_pixels(state, id, &settings, cancelled) {
-                    Ok(result) => result,
+                    Ok((pixels, info, gain)) => {
+                        camera_saturation = gain;
+                        (pixels, info)
+                    }
                     Err(error)
                         if raw
                             && json.is_none()
@@ -1037,6 +1074,7 @@ impl Store {
                 self.ready.notify_waiters();
             }
             let mut images = Images {
+                camera_saturation,
                 binding: binding.clone(),
                 version: VERSION.into(),
                 render_version: render_version.clone(),
@@ -1498,6 +1536,40 @@ mod tests {
     }
 
     #[test]
+    fn camera_match_backfills_only_the_same_source_and_preview_record() {
+        let (_dir, state, _root) = fixture();
+        let catalog = Catalog::open(&state.db).unwrap();
+        let id = catalog.preview_items(None, 0).unwrap()[0];
+        let source = catalog.source_path(id).unwrap();
+        assert!(state.library.generate_explicit(&state, id).unwrap());
+        let record = catalog.library_preview(id).unwrap().unwrap();
+        let mut metadata: serde_json::Value = serde_json::from_str(record.data.as_deref().unwrap()).unwrap();
+        metadata["render_version"] = format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION).into();
+        metadata["raw_developed"] = true.into();
+        let store = |value: &serde_json::Value| {
+            assert!(catalog.save_library_preview(id, &record.stamp, Some(&value.to_string()), None).unwrap());
+        };
+        store(&metadata);
+        let lookup = || CameraMatch::lookup(&state.db, id, &source);
+        let stale = lookup().unwrap();
+        let legacy = lookup().unwrap();
+        assert_eq!(legacy.gain, None);
+        legacy.remember(&state.db, id, &source, Some(1.25));
+        stale.remember(&state.db, id, &source, Some(0.75));
+        assert_eq!(lookup().unwrap().gain, Some(1.25));
+        metadata["camera_saturation"] = 8.into();
+        store(&metadata);
+        assert_eq!(lookup().unwrap().gain, None);
+        metadata["render_version"] = "old".into();
+        store(&metadata);
+        assert!(lookup().is_none());
+        std::fs::write(&source, b"replacement").unwrap();
+        metadata["render_version"] = format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION).into();
+        store(&metadata);
+        assert!(lookup().is_none());
+    }
+
+    #[test]
     fn crop_replaces_colors_with_those_of_the_visible_area() {
         let (_dir, state, root) = fixture();
         let mut catalog = Catalog::open(&state.db).unwrap();
@@ -1800,7 +1872,7 @@ mod tests {
             .find(|id| Store::is_raw(&catalog, *id).unwrap())
             .unwrap();
         let settings = advanced_explorer_develop::Settings::default();
-        let (reference, _) =
+        let (reference, _, _) =
             crate::develop::library_pixels(&state, id, &settings, &|| false).unwrap();
         let started = std::time::Instant::now();
         assert!(state.library.generate_explicit(&state, id).unwrap());

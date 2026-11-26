@@ -218,6 +218,7 @@ fn start(state: AppState, prefetch: Arc<Prefetch>, ids: Vec<i64>) -> Reply<()> {
                                 };
                                 let _ = crate::rtengine_worker::warm_interactive(
                                     &request.source,
+                                    request.camera_match().and_then(|m| m.gain),
                                     &settings,
                                     &obsolete,
                                 );
@@ -265,8 +266,10 @@ fn prepare(
             .tempdir_in(&state.cache)?;
         let recipe = directory.path().join("recipe.json");
         std::fs::write(&recipe, serde_json::to_vec(settings)?)?;
+        let matched = request.camera_match();
+        let gain = matched.as_ref().and_then(|m| m.gain);
         let frame = if cfg!(test) && std::env::var_os("AE_TEST_EXECUTABLE").is_none() {
-            render_worker(&request.source, directory.path(), settings)?
+            render_worker(&request.source, directory.path(), settings, gain)?
         } else {
             let mut command = std::process::Command::new(media::worker_executable()?);
             command
@@ -276,9 +279,15 @@ fn prepare(
                 .arg(recipe)
                 .env("OMP_NUM_THREADS", "2")
                 .env("OMP_MAX_ACTIVE_LEVELS", "1");
+            if let Some(gain) = gain {
+                command.arg(gain.to_string());
+            }
             media::run_worker(command, None, cancelled)?
         };
         ensure!(!cancelled(), "Prefetch cancelled");
+        if let Some(matched) = matched {
+            matched.remember(&request.db, request.id, &request.source, frame.base.camera_saturation);
+        }
         Ok((directory, frame))
     })?;
     Ok(Entry {
@@ -293,9 +302,10 @@ pub(super) fn render_worker(
     source: &Path,
     directory: &Path,
     settings: &Settings,
+    gain: Option<f32>,
 ) -> Result<DevelopedPreview> {
     settings.validate()?;
-    let base = engine::prepare(source, 1600)?;
+    let base = engine::prepare_with_camera_saturation(source, 1600, gain)?;
     let rendered = engine::render(&base, settings, &|| false)?;
     engine::write_base(&directory.join("base.tif"), &base)?;
     let output = directory.join("preview.png");

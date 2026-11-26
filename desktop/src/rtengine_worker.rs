@@ -22,6 +22,8 @@ use pipe::WorkerInput;
 
 #[derive(Serialize, Deserialize)]
 struct Request {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    camera_saturation: Option<f32>,
     #[serde(default)]
     prepare: bool,
     source: PathBuf,
@@ -32,6 +34,8 @@ struct Request {
 }
 #[derive(Serialize, Deserialize)]
 struct Header {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    camera_saturation: Option<f32>,
     #[serde(default)]
     source_size: [u32; 2],
     #[serde(default)]
@@ -42,7 +46,7 @@ struct Header {
 }
 enum Response {
     Prepared(Box<WorkingImage>),
-    Rendered(RenderedImage, [u32; 2]),
+    Rendered(RenderedImage, [u32; 2], Option<f32>),
 }
 type Frame = Result<Response>;
 struct Worker {
@@ -90,6 +94,7 @@ fn read_frame(reader: &mut impl BufRead) -> Frame {
     Ok(Response::Rendered(
         RenderedImage { image, info },
         header.source_size,
+        header.camera_saturation,
     ))
 }
 fn read_base(reader: &mut impl Read, info: BaseInfo, bytes: usize) -> Result<WorkingImage> {
@@ -278,6 +283,7 @@ pub fn render(
     settings.validate()?;
     match request(
         &mut Request {
+            camera_saturation: working.info.camera_saturation,
             prepare: false,
             source,
             bound,
@@ -288,7 +294,7 @@ pub fn render(
         Some(working),
         cancelled,
     )? {
-        Response::Rendered(frame, _) => Ok(frame),
+        Response::Rendered(frame, _, _) => Ok(frame),
         Response::Prepared(_) => anyhow::bail!("Unexpected prepared frame"),
     }
 }
@@ -296,14 +302,16 @@ pub fn render(
 pub fn prepare(
     source: &Path,
     bound: u32,
+    camera_saturation: Option<f32>,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<WorkingImage> {
     if cfg!(test) && std::env::var_os("AE_TEST_EXECUTABLE").is_none() {
-        return engine::prepare(source, bound);
+        return engine::prepare_with_camera_saturation(source, bound, camera_saturation);
     }
     let source = source.canonicalize()?;
     match request(
         &mut Request {
+            camera_saturation,
             prepare: true,
             source: source.clone(),
             bound,
@@ -321,7 +329,7 @@ pub fn prepare(
             );
             Ok(*base)
         }
-        Response::Rendered(_, _) => anyhow::bail!("Unexpected rendered frame"),
+        Response::Rendered(_, _, _) => anyhow::bail!("Unexpected rendered frame"),
     }
 }
 
@@ -370,6 +378,7 @@ fn exchange(
 // Warm only the selected RAW. Never queue speculative work behind an active slider request.
 pub(super) fn warm_interactive(
     source: &Path,
+    camera_saturation: Option<f32>,
     settings: &Settings,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<()> {
@@ -386,6 +395,7 @@ pub(super) fn warm_interactive(
         return Ok(());
     }
     let mut warmup = Request {
+        camera_saturation,
         prepare: false,
         source,
         bound: 384,
@@ -414,7 +424,7 @@ pub fn library(
     source: &Path,
     settings: &Settings,
     cancelled: &(dyn Fn() -> bool + Sync),
-) -> Option<Result<(image::RgbImage, crate::Preview)>> {
+) -> Option<Result<(image::RgbImage, crate::Preview, Option<f32>)>> {
     if !IMPORT_THREAD.get() {
         return None;
     }
@@ -426,6 +436,7 @@ pub fn library(
         }
         let reply = slot.as_mut().unwrap().request(
             &mut Request {
+                camera_saturation: None,
                 source: source.to_owned(),
                 bound: 1600,
                 settings: settings.clone(),
@@ -436,8 +447,8 @@ pub fn library(
             None,
             cancelled,
         );
-        let (frame, size) = match reply {
-            Ok(Response::Rendered(frame, size)) => (frame, size),
+        let (frame, size, gain) = match reply {
+            Ok(Response::Rendered(frame, size, gain)) => (frame, size, gain),
             other => {
                 *slot = None;
                 return Err(other
@@ -459,6 +470,7 @@ pub fn library(
         Ok((
             image::DynamicImage::ImageRgba8(frame.image).into_rgb8(),
             preview,
+            gain,
         ))
     }))
 }
@@ -521,7 +533,9 @@ pub fn run(import: bool) -> Result<()> {
                 let _prepare = engine::timing::start("prepare");
                 let base = match transferred {
                     Some(base) => base,
-                    None => engine::prepare(&request.source, request.bound)?,
+                    None => engine::prepare_with_camera_saturation(
+                        &request.source, request.bound, request.camera_saturation,
+                    )?,
                 };
                 resident = Some((key, engine::PreviewRenderer::new(base)));
             }
@@ -551,6 +565,7 @@ pub fn run(import: bool) -> Result<()> {
                     &mut output,
                     &Header {
                         source_size: [0, 0],
+                        camera_saturation: None,
                         base: Some(base.info.clone()),
                         info: None,
                         error: None,
@@ -567,6 +582,7 @@ pub fn run(import: bool) -> Result<()> {
             }
             Ok(Some(frame)) => (
                 Header {
+                    camera_saturation: resident.as_ref().unwrap().1.working().info.camera_saturation,
                     source_size: {
                         let base = &resident.as_ref().unwrap().1.working().info;
                         [base.source_width, base.source_height]
@@ -581,6 +597,7 @@ pub fn run(import: bool) -> Result<()> {
             Err(error) => (
                 Header {
                     source_size: [0, 0],
+                    camera_saturation: None,
                     base: None,
                     bytes: 0,
                     info: None,
@@ -611,7 +628,7 @@ mod tests {
         })
         .save(&source)
         .unwrap();
-        let base = prepare(&source, 384, &|| false).unwrap();
+        let base = prepare(&source, 384, None, &|| false).unwrap();
         assert_eq!(base.pixels, engine::prepare(&source, 384).unwrap().pixels);
         let settings = Settings {
             exposure: 0.5,
@@ -683,7 +700,7 @@ mod tests {
         let source = PathBuf::from(std::env::var_os("AE_PREVIEW_PHOTO").unwrap());
         begin_batch();
         let pixels = || library(&source, &Settings::default(), &|| false).unwrap();
-        let (expected, _) = pixels().unwrap();
+        let (expected, _, _) = pixels().unwrap();
         IMPORT.with_borrow_mut(|slot| {
             let child = &mut slot.as_mut().unwrap().child;
             child.kill().unwrap();
@@ -692,8 +709,10 @@ mod tests {
         assert!(pixels().is_err());
         let next = PathBuf::from(std::env::var_os("AE_SECOND_PREVIEW_PHOTO").unwrap());
         assert!(std::fs::read(&next).unwrap() != std::fs::read(&source).unwrap(), "Expected two distinct RAWs");
-        let (recovered, _) = library(&next, &Settings::default(), &|| false).unwrap().unwrap();
-        let fresh = engine::render(&engine::prepare(&next, 1600).unwrap(), &Settings::default(), &|| false).unwrap();
+        let (recovered, _, gain) = library(&next, &Settings::default(), &|| false).unwrap().unwrap();
+        let base = engine::prepare(&next, 1600).unwrap();
+        assert_eq!(gain, base.info.camera_saturation);
+        let fresh = engine::render(&base, &Settings::default(), &|| false).unwrap();
         assert_eq!(recovered, image::DynamicImage::ImageRgba8(fresh.image).into_rgb8());
         assert_eq!(pixels().unwrap().0, expected);
         assert!(
@@ -723,6 +742,7 @@ mod tests {
         };
         let mut bytes = serde_json::to_vec(&Header {
             source_size: [1, 1],
+            camera_saturation: None,
             base: None,
             info: Some(info),
             error: None,
@@ -730,7 +750,7 @@ mod tests {
         })
         .unwrap();
         bytes.extend_from_slice(b"\n12345678");
-        let Response::Rendered(frame, _) = read_frame(&mut std::io::Cursor::new(bytes)).unwrap()
+        let Response::Rendered(frame, _, _) = read_frame(&mut std::io::Cursor::new(bytes)).unwrap()
         else {
             panic!("Expected rendered frame");
         };

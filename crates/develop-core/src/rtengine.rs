@@ -18,11 +18,11 @@ static INITIALIZED: OnceLock<Result<(), String>> = OnceLock::new();
 
 struct CameraSaturation {
     key: (PathBuf, u64, std::time::SystemTime),
-    gain: f32,
+    gain: Option<f32>,
 }
 static CAMERA_SATURATION: Mutex<Option<CameraSaturation>> = Mutex::new(None);
 
-fn camera_saturation(source: &Path) -> Result<f32> {
+fn camera_saturation(source: &Path) -> Result<Option<f32>> {
     let metadata = std::fs::metadata(source)?;
     ensure!(metadata.len() <= 1024 * 1024 * 1024, "Photo exceeds 1 GiB");
     let key = (source.to_path_buf(), metadata.len(), metadata.modified()?);
@@ -39,11 +39,11 @@ fn camera_saturation(source: &Path) -> Result<f32> {
             native(source, None, 384, &Adjustments::default())
                 .ok()
                 .filter(|reference| reference.camera_matched)
-                .map_or(1., |reference| {
+                .map(|reference| {
                     crate::camera_saturation::estimate(&reference.pixels, &camera.to_rgb8())
                 })
         }
-        Err(_) => 1.,
+        Err(_) => None,
     };
     *cache = Some(CameraSaturation { key, gain });
     Ok(gain)
@@ -119,13 +119,13 @@ fn native(
     Ok(rendered)
 }
 
-pub fn prepare_raw(source: &Path, bound: u32) -> Result<WorkingImage> {
-    prepare_raw_adjusted(source, bound, &Adjustments::default()).map(|(working, _)| working)
+pub fn prepare_raw(source: &Path, bound: u32, gain: Option<f32>) -> Result<WorkingImage> {
+    prepare_raw_adjusted(source, bound, &Adjustments::default(), gain).map(|(working, _)| working)
 }
 
 pub fn prepare_export(source: &Path, settings: &Settings) -> Result<WorkingImage> {
     let (mut working, camera_matched) =
-        prepare_raw_adjusted(source, 0, &adjustments(settings, true, 1.))?;
+        prepare_raw_adjusted(source, 0, &adjustments(settings, true, 1.), None)?;
     // An export never reuses native stages; release them before Rust's full-size filters.
     *SESSION
         .lock()
@@ -145,9 +145,13 @@ fn prepare_raw_adjusted(
     source: &Path,
     bound: u32,
     adjustments: &Adjustments,
+    gain: Option<f32>,
 ) -> Result<(WorkingImage, bool)> {
     let source = source.canonicalize()?;
-    let camera_saturation = camera_saturation(&source)?;
+    let camera_saturation = match gain.filter(|v| (0.75..=1.8).contains(v)) {
+        Some(gain) => Some(gain),
+        None => camera_saturation(&source)?,
+    };
     let rendered = native(&source, None, bound, adjustments)?;
     let mut pixels = rendered.pixels;
     if bound > 0 {
@@ -180,7 +184,7 @@ fn prepare_raw_adjusted(
         WorkingImage {
             info: BaseInfo {
                 auto_ca_supported: Some(rendered.auto_ca_supported),
-                camera_saturation: Some(camera_saturation),
+                camera_saturation,
                 native_source: Some(source),
                 raw: Some(raw),
                 raster_wb_temperature: None,

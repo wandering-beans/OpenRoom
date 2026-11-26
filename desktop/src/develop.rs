@@ -214,6 +214,8 @@ pub struct DevelopedPreview {
 
 #[derive(Clone)]
 struct Request {
+    db: PathBuf,
+    id: i64,
     source: PathBuf,
     source_key: PathBuf,
     base: PathBuf,
@@ -235,7 +237,7 @@ fn request(
         "Invalid preview size"
     );
     // The shared key revalidates the source and includes modification time, size and file identity.
-    let original = prepare_render(db, cache.clone(), renderer, id, 4096)?;
+    let original = prepare_render(db.clone(), cache.clone(), renderer, id, 4096)?;
     // v6 also preserves extended ICC colors and scene-linear floating-point rasters.
     let base = original
         .image
@@ -252,6 +254,8 @@ fn request(
     let image = cache.join(format!("develop-{:x}.png", hash.finish()));
     let metadata = image.with_extension("json");
     Ok(Request {
+        db,
+        id,
         source: original.source,
         source_key: original.image,
         base_info: base.with_extension("json"),
@@ -259,6 +263,14 @@ fn request(
         image,
         metadata,
     })
+}
+impl Request {
+    fn camera_match(&self) -> Option<crate::library_previews::CameraMatch> {
+        if !advanced_explorer_media::is_raw(&self.source) {
+            return None;
+        }
+        crate::library_previews::CameraMatch::lookup(&self.db, self.id, &self.source)
+    }
 }
 fn cached(request: &Request) -> Option<DevelopedPreview> {
     if !request.image.is_file() {
@@ -401,7 +413,13 @@ fn load_base_into(
     }
     #[cfg(desktop_rtengine)]
     if engine::is_native_raw(&request.source) {
-        let image = crate::rtengine_worker::prepare(&request.source, bound, cancelled)?;
+        let matched = request.camera_match();
+        let image = crate::rtengine_worker::prepare(
+            &request.source, bound, matched.as_ref().and_then(|m| m.gain), cancelled,
+        )?;
+        if let Some(matched) = matched {
+            matched.remember(&request.db, request.id, &request.source, image.info.camera_saturation);
+        }
         return remember_base(image, request, bound, resident, retain, cancelled);
     }
     let temp = output.with_extension(format!("{}.tmp", nonce()?));
@@ -623,7 +641,7 @@ pub fn library_pixels(
     id: i64,
     settings: &Settings,
     cancelled: &(dyn Fn() -> bool + Sync),
-) -> Result<(image::RgbImage, Preview)> {
+) -> Result<(image::RgbImage, Preview, Option<f32>)> {
     let request = request(
         state.db.clone(),
         state.cache.clone(),
@@ -670,6 +688,7 @@ pub fn library_pixels(
             render_width: info.width as usize,
             render_height: info.height as usize,
         },
+        result.camera_saturation,
     ))
 }
 #[tauri::command]
@@ -742,6 +761,8 @@ pub fn agent_preview(
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 struct AgentPreview {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    camera_saturation: Option<f32>,
     #[serde(flatten)]
     info: RenderInfo,
     source_width: u32,
@@ -775,6 +796,7 @@ fn agent_preview_with_source(
         let rendered = engine::render(&base, &settings, cancelled)?;
         write_worker_pixels(output, rendered.image, library)?;
         Ok(AgentPreview {
+            camera_saturation: base.info.camera_saturation,
             info: rendered.info,
             source_width: base.info.source_width,
             source_height: base.info.source_height,
@@ -830,12 +852,13 @@ pub fn run_worker() -> bool {
         pool.install(|| -> Result<()> {
             match flag {
                 "--develop-prefetch" => {
-                    ensure!(args.len() == 4, "Invalid prefetch arguments");
+                    ensure!((4..=5).contains(&args.len()), "Invalid prefetch arguments");
                     let settings: Settings = serde_json::from_slice(&std::fs::read(&args[3])?)?;
                     let preview = prefetch::render_worker(
                         Path::new(&args[1]),
                         Path::new(&args[2]),
                         &settings,
+                        args.get(4).and_then(|arg| arg.to_str()?.parse().ok()),
                     )?;
                     println!("{}", serde_json::to_string(&preview)?);
                 }
@@ -873,6 +896,7 @@ pub fn run_worker() -> bool {
                     println!(
                         "{}",
                         serde_json::to_string(&AgentPreview {
+                            camera_saturation: base.info.camera_saturation,
                             info: rendered.info,
                             source_width: base.info.source_width,
                             source_height: base.info.source_height
@@ -1125,7 +1149,10 @@ mod tests {
             .items[0]
             .id;
         let settings = Settings::default();
-        let (library, _) = library_pixels(&state, id, &settings, &|| false).unwrap();
+        let (library, _, gain) = library_pixels(&state, id, &settings, &|| false).unwrap();
+        state.library.generate_explicit(&state, id).unwrap();
+        let matched = crate::library_previews::CameraMatch::lookup(&state.db, id, &source).unwrap();
+        assert_eq!(matched.gain, gain);
         let editor = tauri::async_runtime::block_on(preview_inner(
             &state,
             &DevelopState::new().unwrap(),
