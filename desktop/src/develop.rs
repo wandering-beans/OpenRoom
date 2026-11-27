@@ -443,6 +443,29 @@ fn load_base_into(
     }
     remember_base(result?, request, bound, resident, retain, cancelled)
 }
+#[cfg(desktop_rtengine)]
+fn uses_raw_worker(source: &Path) -> bool {
+    engine::is_native_raw(source)
+        && (!cfg!(test) || std::env::var_os("AE_TEST_EXECUTABLE").is_some())
+}
+
+#[cfg(desktop_rtengine)]
+fn raw_frame(
+    request: &Request,
+    settings: &Settings,
+    bound: u32,
+    cancelled: &(dyn Fn() -> bool + Sync),
+) -> Result<(engine::RenderedImage, BaseInfo)> {
+    let matched = request.camera_match();
+    let (frame, base) = crate::rtengine_worker::raw_preview(
+        &request.source, bound, matched.as_ref().and_then(|m| m.gain), settings, cancelled,
+    )?;
+    if let Some(matched) = matched {
+        matched.remember(&request.db, request.id, &request.source, base.camera_saturation);
+    }
+    Ok((frame, base))
+}
+
 fn ready_frame(
     request: &Request,
     settings: &Settings,
@@ -450,23 +473,12 @@ fn ready_frame(
     resident: &Mutex<Option<Resident>>,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<Option<(engine::RenderedImage, BaseInfo)>> {
-    // The RAW drag worker already owns its linear pixels, even on the first input.
     #[cfg(desktop_rtengine)]
-    if bound == 384
-        && engine::is_native_raw(&request.source)
-        && (!cfg!(test) || std::env::var_os("AE_TEST_EXECUTABLE").is_some())
-    {
-        let matched = request.camera_match();
-        let (frame, base) = crate::rtengine_worker::interactive(
-            &request.source,
-            matched.as_ref().and_then(|m| m.gain),
-            settings,
-            cancelled,
-        )?;
-        if let Some(matched) = matched {
-            matched.remember(&request.db, request.id, &request.source, base.camera_saturation);
+    if uses_raw_worker(&request.source) {
+        if bound == 1600 && !crate::rtengine_worker::display_loaded(&request.source) {
+            return Ok(None);
         }
-        return Ok(Some((frame, base)));
+        return raw_frame(request, settings, bound, cancelled).map(Some);
     }
     let Some(base) = cached_base(request, bound, resident, true, cancelled)? else {
         return Ok(None);
@@ -529,7 +541,8 @@ async fn preview_inner(
             let request = request.clone();
             let display = entry.clone();
             if let Ok(frame) = work(move || display.preview()).await {
-                if let Ok(owner) = develop.prefetch.base_job.clone().try_lock_owned() {
+                if entry.has_editable_tiff()
+                    && let Ok(owner) = develop.prefetch.base_job.clone().try_lock_owned() {
                     tauri::async_runtime::spawn_blocking(move || {
                         let _owner = owner;
                         let cancelled = || generation.load(Ordering::SeqCst) != version;
@@ -610,13 +623,22 @@ async fn preview_inner(
                     .prefix("develop-render-")
                     .tempdir_in(&copied.cache)?;
                 let staged_base = job.path().join("base.tif");
-                let base =
-                    load_base_into(&request, &staged_base, bound, &resident, true, &cancelled)?;
-                let rendered = render_frame(&base, &settings, bound, &cancelled)?;
+                let from_base = || -> Result<_> {
+                    let base = load_base_into(&request, &staged_base, bound, &resident, true, &cancelled)?;
+                    Ok((render_frame(&base, &settings, bound, &cancelled)?, base.info.clone()))
+                };
+                // Keep the neutral RAW pixels inside the worker that applies the edits.
+                #[cfg(desktop_rtengine)]
+                let (rendered, mut info) = if bound == 1600 && uses_raw_worker(&request.source) {
+                    raw_frame(&request, &settings, bound, &cancelled)?
+                } else {
+                    from_base()?
+                };
+                #[cfg(not(desktop_rtengine))]
+                let (rendered, mut info) = from_base()?;
                 let png = job.path().join("preview.png");
                 ensure!(!cancelled(), "現像対象が変更されました。");
                 advanced_explorer_media::write_preview(&png, &rendered.image)?;
-                let mut info = base.info.clone();
                 engine::refresh_raw_profile(&mut info);
                 let frame = DevelopedPreview {
                     path: request.image.to_string_lossy().into_owned(),

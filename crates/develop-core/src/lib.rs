@@ -149,6 +149,9 @@ pub fn is_native_raw(source: &Path) -> bool {
     rtengine::is_raw(source)
 }
 
+#[cfg(all(desktop_rtengine, feature = "rtengine"))]
+pub use rtengine::render_raw_display;
+
 /// Decode only once per source/preview size. RAW always uses sensor data.
 pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
     prepare_with_camera_saturation(source, bound, None)

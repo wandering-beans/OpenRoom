@@ -51,6 +51,7 @@ struct Worker {
     output: mpsc::Receiver<Frame>,
     reader: Option<std::thread::JoinHandle<()>>,
     loaded: Option<(PathBuf, u32, u64, std::time::SystemTime)>,
+    source_id: Option<String>,
 }
 static INTERACTIVE: Mutex<Option<Worker>> = Mutex::new(None);
 static FULL: Mutex<Option<Worker>> = Mutex::new(None);
@@ -169,6 +170,7 @@ impl Worker {
             output,
             reader: Some(reader),
             loaded: None,
+            source_id: None,
         })
     }
     fn request(
@@ -356,13 +358,26 @@ fn exchange(
     working: Option<&WorkingImage>,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Frame {
+    let source_id = crate::library_previews::file_id(&request.source);
+    // A same-path replacement can preserve size and mtime in the native session's key.
+    if let Some(current) = worker
+        && current.loaded.as_ref().is_some_and(|(p, _, _, _)| p == &request.source)
+        && current.source_id != source_id
+    {
+        *worker = None;
+    }
     if worker.is_none() {
         *worker = Some(Worker::start(false)?);
     }
-    let frame = worker
-        .as_mut()
-        .unwrap()
-        .request(request, working, cancelled);
+    let current = worker.as_mut().unwrap();
+    current.source_id = source_id;
+    let frame = current.request(request, working, cancelled).and_then(|frame| {
+        ensure!(
+            current.source_id == crate::library_previews::file_id(&request.source),
+            "生成中に原本が変更されました。"
+        );
+        Ok(frame)
+    });
     if frame.is_err() {
         *worker = None;
     }
@@ -385,39 +400,53 @@ pub(super) fn warm_interactive(
     let source = source.canonicalize()?;
     let metadata = std::fs::metadata(&source)?;
     let key = (source.clone(), 384, metadata.len(), metadata.modified()?);
-    if worker.as_ref().and_then(|worker| worker.loaded.as_ref()) == Some(&key) {
+    if worker.as_ref().is_some_and(|worker|
+        worker.loaded.as_ref() == Some(&key)
+            && worker.source_id == crate::library_previews::file_id(&source)
+    ) {
         return Ok(());
     }
-    let mut warmup = interactive_request(source, camera_saturation, settings);
+    let mut warmup = raw_request(source, 384, camera_saturation, settings);
     exchange(&mut worker, &mut warmup, None, cancelled)?;
     Ok(())
 }
 
-fn interactive_request(source: PathBuf, camera_saturation: Option<f32>, settings: &Settings) -> Request {
+fn raw_request(source: PathBuf, bound: u32, camera_saturation: Option<f32>, settings: &Settings) -> Request {
     Request {
         camera_saturation,
         prepare: false,
         source,
-        bound: 384,
+        bound,
         settings: settings.clone(),
         base: None,
         bytes: 0,
     }
 }
 
-pub(super) fn interactive(
+// Cold display requests publish a disk cache entry. Later adjustments can return inline.
+pub(super) fn display_loaded(source: &Path) -> bool {
+    let Ok(source) = source.canonicalize() else { return false };
+    let Ok(metadata) = source.metadata() else { return false };
+    let Ok(modified) = metadata.modified() else { return false };
+    FULL.try_lock().ok().is_some_and(|slot| {
+        slot.as_ref().and_then(|w| w.loaded.as_ref()) == Some(&(source, 1600, metadata.len(), modified))
+    })
+}
+
+pub(super) fn raw_preview(
     source: &Path,
+    bound: u32,
     camera_saturation: Option<f32>,
     settings: &Settings,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<(RenderedImage, BaseInfo)> {
-    let mut input = interactive_request(source.canonicalize()?, camera_saturation, settings);
+    let mut input = raw_request(source.canonicalize()?, bound, camera_saturation, settings);
     match request(&mut input, None, cancelled)? {
         Response::Rendered(frame, base) => {
             ensure!(base.native_source.as_ref() == Some(&input.source), "Unexpected RAW source");
             Ok((frame, *base))
         }
-        Response::Prepared(_) => anyhow::bail!("Expected interactive RAW frame"),
+        Response::Prepared(_) => anyhow::bail!("Expected rendered RAW frame"),
     }
 }
 

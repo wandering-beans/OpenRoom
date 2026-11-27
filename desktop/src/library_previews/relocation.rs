@@ -6,7 +6,7 @@ use std::{fs::File, io::Read, path::Path};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) struct Binding {
-    file_id: String,
+    pub(super) file_id: String,
     // Include the photo ID so importing a replacement at the old path owns separate files.
     pub(super) storage_stamp: String,
     pub(super) thumbnail_crc: u32,
@@ -35,7 +35,7 @@ fn fingerprint(id: String, info: &std::fs::Metadata) -> Option<String> {
 }
 
 #[cfg(windows)]
-fn file_id(path: &Path) -> Option<String> {
+pub(crate) fn file_id(path: &Path) -> Option<String> {
     use std::os::windows::io::AsRawHandle;
     use windows::Win32::{
         Foundation::HANDLE,
@@ -64,7 +64,7 @@ fn file_id(path: &Path) -> Option<String> {
 }
 
 #[cfg(unix)]
-fn file_id(path: &Path) -> Option<String> {
+pub(crate) fn file_id(path: &Path) -> Option<String> {
     use std::os::unix::fs::MetadataExt;
     let info = std::fs::metadata(path).ok()?;
     if info.ino() == 0 {

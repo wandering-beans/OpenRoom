@@ -328,6 +328,8 @@ fn prepare_render(
     )
         .hash(&mut hash);
     renderer.cache_key().hash(&mut hash);
+    #[cfg(windows)]
+    library_previews::file_id(&path).hash(&mut hash);
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;

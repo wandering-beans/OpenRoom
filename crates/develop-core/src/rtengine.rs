@@ -123,6 +123,24 @@ pub fn prepare_raw(source: &Path, bound: u32, gain: Option<f32>) -> Result<Worki
     prepare_raw_adjusted(source, bound, &Adjustments::default(), gain).map(|(working, _)| working)
 }
 
+/// Render directly from the neutral native stage when only downstream controls have changed.
+pub fn render_raw_display(
+    source: &Path,
+    settings: &Settings,
+    gain: Option<f32>,
+) -> Result<(crate::RenderedImage, BaseInfo)> {
+    settings.validate()?;
+    let (mut base, matched) = prepare_raw_adjusted(source, 1600, &Adjustments::default(), gain)?;
+    let info = base.info.clone();
+    let frame = if adjustments(settings, true, 1.) == Adjustments::default() {
+        finish_raw_stage(&mut base, matched);
+        crate::render(&base, &remaining(settings, true), &|| false)?
+    } else {
+        crate::render(&base, settings, &|| false)?
+    };
+    Ok((frame, info))
+}
+
 pub fn prepare_export(source: &Path, settings: &Settings) -> Result<WorkingImage> {
     let (mut working, camera_matched) =
         prepare_raw_adjusted(source, 0, &adjustments(settings, true, 1.), None)?;
@@ -130,6 +148,11 @@ pub fn prepare_export(source: &Path, settings: &Settings) -> Result<WorkingImage
     *SESSION
         .lock()
         .map_err(|_| anyhow::anyhow!("rtengine session failed"))? = None;
+    finish_raw_stage(&mut working, camera_matched);
+    Ok(working)
+}
+
+fn finish_raw_stage(working: &mut WorkingImage, camera_matched: bool) {
     working.info.native_source = None;
     working.info.raw = None;
     working.info.source_kind = if camera_matched {
@@ -138,7 +161,6 @@ pub fn prepare_export(source: &Path, settings: &Settings) -> Result<WorkingImage
         "rtengine-raw-linear"
     }
     .into();
-    Ok(working)
 }
 
 fn prepare_raw_adjusted(

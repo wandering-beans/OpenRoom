@@ -18,6 +18,7 @@ mod relocation;
 #[path = "library_previews/relocation_tests.rs"]
 mod relocation_tests;
 use relocation::Binding;
+pub(crate) use relocation::file_id;
 
 const VERSION: &str = "library-avif-srgb-v1";
 const IMAGE_LIMIT: u64 = 7_500_000_000;
@@ -50,6 +51,9 @@ pub struct Progress {
 struct Images {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     camera_saturation: Option<f32>,
+    // Legacy preview files keep their original storage stamp. Bind only the new RAW measurement.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    camera_saturation_source: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     binding: Option<Binding>,
     version: String,
@@ -74,28 +78,33 @@ struct Images {
 pub(super) struct CameraMatch {
     pub(super) gain: Option<f32>,
     record: advanced_explorer::previews::PreviewRecord,
-    binding: Binding,
+    source_id: String,
 }
 
 impl CameraMatch {
     pub(super) fn lookup(db: &Path, id: i64, source: &Path) -> Option<Self> {
         let record = Catalog::open(db).ok()?.library_preview(id).ok()??;
         let images: Images = serde_json::from_str(record.data.as_deref()?).ok()?;
-        let binding = images.binding?;
         if !images.raw_developed || images.camera_fallback || images.version != VERSION
             || images.render_version != format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION)
-            || !binding.matches(source) {
+        {
             return None;
         }
-        let gain = images.camera_saturation.filter(|v| (0.75..=1.8).contains(v));
-        Some(Self { gain, record, binding })
+        let source_id = relocation::file_id(source)?;
+        let verified = match images.binding {
+            Some(binding) if binding.file_id != source_id => return None,
+            Some(_) => true,
+            None => images.camera_saturation_source.as_ref() == Some(&source_id),
+        };
+        let gain = images.camera_saturation.filter(|v| verified && (0.75..=1.8).contains(v));
+        Some(Self { gain, record, source_id })
     }
 
     pub(super) fn remember(self, db: &Path, id: i64, source: &Path, computed: Option<f32>) {
         if self.gain.is_some() { return; }
         if let Some(gain) = computed.filter(|v| (0.75..=1.8).contains(v))
-            && self.binding.matches(source) && let Ok(catalog) = Catalog::open(db) {
-            let _ = catalog.cache_camera_saturation(id, &self.record, gain);
+            && relocation::file_id(source).as_ref() == Some(&self.source_id) && let Ok(catalog) = Catalog::open(db) {
+            let _ = catalog.cache_camera_saturation(id, &self.record, gain, &self.source_id);
         }
     }
 }
@@ -1087,6 +1096,7 @@ impl Store {
                 self.ready.notify_waiters();
             }
             let mut images = Images {
+                camera_saturation_source: None,
                 camera_saturation,
                 binding: binding.clone(),
                 version: VERSION.into(),
@@ -1573,6 +1583,22 @@ mod tests {
         legacy.remember(&state.db, id, &source, Some(1.25));
         stale.remember(&state.db, id, &source, Some(0.75));
         assert_eq!(lookup().unwrap().gain, Some(1.25));
+        let mut old = metadata.clone();
+        old.as_object_mut().unwrap().remove("binding");
+        old["camera_saturation"] = 1.8.into();
+        store(&old);
+        let unchecked = lookup().unwrap();
+        assert_eq!(unchecked.gain, None);
+        unchecked.remember(&state.db, id, &source, Some(1.35));
+        assert_eq!(lookup().unwrap().gain, Some(1.35));
+        let saved: serde_json::Value = serde_json::from_str(&catalog.library_preview(id).unwrap().unwrap().data.unwrap()).unwrap();
+        assert!(saved.get("binding").is_none());
+        let original = std::fs::read(&source).unwrap();
+        std::fs::write(&source, b"another RAW").unwrap();
+        assert_eq!(lookup().unwrap().gain, None);
+        std::fs::write(&source, original).unwrap();
+        // Use the current file identity for the remaining bound-record cases.
+        metadata["binding"] = serde_json::to_value(Binding::new(&source, id, &record.stamp)).unwrap();
         metadata["camera_saturation"] = 8.into();
         store(&metadata);
         assert_eq!(lookup().unwrap().gain, None);

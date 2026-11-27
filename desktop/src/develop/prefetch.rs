@@ -110,6 +110,10 @@ impl Prefetch {
 }
 
 impl Entry {
+    pub(super) fn has_editable_tiff(&self) -> bool {
+        self.frame.base.source_kind != "raw-rtengine-linear"
+    }
+
     pub(super) fn load_base(
         &self,
         request: &Request,
@@ -310,12 +314,22 @@ pub(super) fn render_worker(
     gain: Option<f32>,
 ) -> Result<DevelopedPreview> {
     settings.validate()?;
-    let base = engine::prepare_with_camera_saturation(source, 1600, gain)?;
-    let rendered = engine::render(&base, settings, &|| false)?;
-    engine::write_base(&directory.join("base.tif"), &base)?;
+    let with_tiff = || -> Result<_> {
+        let base = engine::prepare_with_camera_saturation(source, 1600, gain)?;
+        let rendered = engine::render(&base, settings, &|| false)?;
+        engine::write_base(&directory.join("base.tif"), &base)?;
+        Ok((rendered, base.info))
+    };
+    #[cfg(desktop_rtengine)]
+    let (rendered, mut info) = if engine::is_native_raw(source) {
+        engine::render_raw_display(source, settings, gain)?
+    } else {
+        with_tiff()?
+    };
+    #[cfg(not(desktop_rtengine))]
+    let (rendered, mut info) = with_tiff()?;
     let output = directory.join("preview.png");
     advanced_explorer_media::write_preview(&output, &rendered.image)?;
-    let mut info = base.info;
     engine::refresh_raw_profile(&mut info);
     Ok(DevelopedPreview {
         path: output.to_string_lossy().into_owned(),
@@ -394,6 +408,8 @@ mod tests {
         assert!(cancelled_at.elapsed() < Duration::from_secs(5));
         develop.prefetch.replace(vec![id]).unwrap();
         let entry = prepare(&state, &request, &settings, &|| false).unwrap();
+        #[cfg(desktop_rtengine)]
+        assert!(!entry.directory.path().join("base.tif").exists());
         develop
             .prefetch
             .publish(id, &develop.prefetch.flight(id, &request), entry);
@@ -558,6 +574,14 @@ mod tests {
             .unwrap();
         assert!(develop.prefetch.get(id, &make_request(&settings)).is_none());
         std::fs::write(&request.source, original).unwrap();
+        // Editors can atomically replace a file while preserving its name, size and timestamp.
+        let before = make_request(&settings);
+        let replacement = request.source.with_extension("replacement");
+        std::fs::copy(&request.source, &replacement).unwrap();
+        let time = std::fs::metadata(&request.source).unwrap().modified().unwrap();
+        std::fs::File::options().write(true).open(&replacement).unwrap().set_modified(time).unwrap();
+        std::fs::rename(&replacement, &request.source).unwrap();
+        assert_ne!(before.image, make_request(&settings).image);
         assert_eq!(
             Catalog::open(&state.db)
                 .unwrap()
