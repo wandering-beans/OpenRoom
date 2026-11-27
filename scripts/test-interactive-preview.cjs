@@ -1,9 +1,18 @@
 const assert = require('node:assert/strict');
 
 module.exports = async function testInteractivePreview(page) {
+  await page.evaluate(() => {
+    window.photoMetadataGate = new Promise(resolve => { window.releasePhotoMetadata = resolve; });
+  });
+  await page.click('#toggle-inspector');
+  await page.waitForFunction(() => calls.some(c => c.command === 'photo_metadata' && c.args.id === 1));
   await page.click('#module-develop');
   await page.waitForFunction(() => document.getElementById('full-image').src.includes('develop-1-0-1600'));
   await page.waitForFunction(() => calls.some(c => c.command === 'develop_preview' && c.args.bound === 384));
+  const metadataReads = () => page.evaluate(() => calls.filter(c => c.command === 'photo_metadata' && c.args.id === 1).length);
+  assert.equal(await metadataReads(), 1, 'Develop joins the pending library metadata read');
+  await page.evaluate(() => window.releasePhotoMetadata());
+  await page.waitForFunction(() => document.querySelector('#develop-photo-info').textContent.includes('ISO 400'));
   await page.waitForTimeout(100);
   assert.ok((await page.locator('#full-image').getAttribute('src')).includes('develop-1-0-1600'),
     'warming the drag worker must not replace the displayed high-quality preview');
@@ -64,5 +73,20 @@ module.exports = async function testInteractivePreview(page) {
   await page.waitForTimeout(100);
   assert.equal(await page.locator('#full-image').getAttribute('src'), libraryImage);
   assert.equal(await page.locator('#error').isVisible(), false);
+  await page.click('#toggle-inspector');
+  await page.waitForFunction(() => document.querySelector('#photo-details').textContent.includes('Camera 1'));
+  assert.equal(await metadataReads(), 1, 'editing a photo preserves its original EXIF');
+  // While reads are blocked, select B, C, then B again. Native code cancels the first B.
+  await page.evaluate(() => {
+    window.photoMetadataGate = new Promise(resolve => { window.releasePhotoMetadata = resolve; });
+  });
+  const start = await page.evaluate(() => calls.length);
+  for (const [id, button] of [[2,'film-next'], [3,'film-next'], [2,'film-previous']]) {
+    await page.click('#' + button);
+    await page.waitForFunction(id => calls.filter(c => c.command === 'photo_metadata').at(-1).args.id === id, id);
+  }
+  await page.evaluate(() => window.releasePhotoMetadata());
+  await page.waitForFunction(() => document.querySelector('#photo-details').textContent.includes('Camera 2'));
+  assert.deepEqual(await page.evaluate(start => calls.slice(start).filter(c => c.command === 'photo_metadata').map(c => c.args.id), start), [2,3,2]);
   console.log('Interactive preview: lightweight drag, final quality, stable zoom, and superseded render checks passed.');
 };

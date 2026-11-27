@@ -7,7 +7,7 @@ import type { Detail, Photo, Root, Folder, Cursor, Preview, PhotoMetadata, ViewM
 interface Anchor extends Focus { clientX: number; clientY: number }
 interface ThumbnailJob { item: Photo; key: string; token: number; alive(): boolean; complete(result: Preview): void; failed(error: unknown): void; repair: boolean }
 import { element as $ } from './dom';
-import { t, language, metadataValue, errorText } from './i18n';
+import { t, language, errorText } from './i18n';
 import { createLibraryFilters } from "./library-filters";
 import { createDevelop } from "./develop";
 import { createPhotoExport } from "./components/PhotoExport";
@@ -47,7 +47,8 @@ let epoch = 0, selectionEpoch = 0, viewEpoch = 0, qualityEpoch = 0;
 let metadataDirty = false, metadataReady = false, saving = false;
 let appliedFilters: ReturnType<typeof filterState> | null = null, searchTimer: ReturnType<typeof setTimeout> | undefined, drawFrame = 0;
 const thumbnailRequests = new Map<string, Promise<Preview>>(), readyThumbnails = new Map<string, Preview>();
-const largePreviews = new Map<string, Preview>(), photoMetadata = new Map<string, PhotoMetadata>();
+const largePreviews = new Map<string, Preview>(), photoMetadata = new Map<string, Promise<PhotoMetadata>>();
+let pendingPhotoKey: string | null = null;
 const gridTiles = new Map<number, HTMLButtonElement>(), filmTiles = new Map<number, HTMLButtonElement>();
 const thumbnailJobs: ThumbnailJob[] = [];
 let thumbnailWorkers = 0;
@@ -58,7 +59,8 @@ let avifSupport: Promise<boolean>;
 const importBusy = () => scanning || preparingPreviews;
 let scanCancelled = false;
 const developVersions = new Map<number, number>();
-const itemKey = (item: Photo) => `${item.id}:${item.root_id}:${item.path}:${item.modified}:${item.size}:${developVersions.get(item.id) || 0}`;
+const sourceKey = (item: Photo) => `${item.id}:${item.root_id}:${item.path}:${item.modified}:${item.size}`;
+const itemKey = (item: Photo) => `${sourceKey(item)}:${developVersions.get(item.id) || 0}`;
 const bytes = (size: number) => size >= 1048576 ? `${(size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(size / 1024))} KB`;
 
 const workspaceWarning = bindWarningBanner($('error'));
@@ -70,7 +72,8 @@ async function setPhotoAttributes(attributes: Partial<Pick<Photo, 'rating' | 'fl
   try {
     const ids=review.active ? [item.id] : selectedPhotos.size?[...selectedPhotos]:[item.id];
     await invoke('set_photo_attributes',{ids,rating:null,flag:null,label:null,...attributes});
-    for (const photo of items) if(ids.includes(photo.id)) Object.assign(photo,attributes);
+    const changed = new Set(ids);
+    for (const photo of items) if (changed.has(photo.id)) Object.assign(photo, attributes);
     draw(); updateRatingStars(); updatePhotoAttributes(); syncReview();
     const filters = query();
     if ((attributes.flag != null && filters.flags.length)
@@ -529,11 +532,25 @@ async function refresh(keepId: number | null = null, throwErrors = false) {
   if (token !== epoch) return;
   if (retainedSelection.length) {
     const scope = query();
-    const ids = retainedSelection.filter(id => !scope.ids.length || scope.ids.includes(id));
+    const scopeIds = new Set(scope.ids);
+    const ids = retainedSelection.filter(id => !scopeIds.size || scopeIds.has(id));
+    const wanted = new Set(ids);
     const count = ids.length ? await invoke('count', { query: { ...scope, ids } }) : 0;
-    while (token === epoch && hasMore && items.filter(item => ids.includes(item.id)).length < count) await more(token, throwErrors);
+    let pageItems = items, checked = 0;
+    const found = new Set<number>();
+    while (token === epoch) {
+      if (pageItems !== items) { // A stale cursor replaced the previously loaded pages.
+        pageItems = items; checked = 0; found.clear();
+      }
+      for (; checked < items.length; checked++) {
+        const id = items[checked].id;
+        if (wanted.has(id)) found.add(id);
+      }
+      if (!hasMore || found.size >= count) break;
+      await more(token, throwErrors);
+    }
     if (token !== epoch) return;
-    for (const item of items) if (ids.includes(item.id)) selectedPhotos.add(item.id);
+    for (const id of found) selectedPhotos.add(id);
   }
   if (items.length) {
     const kept = items.findIndex(item => item.id === keepId);
@@ -905,13 +922,24 @@ function setProperties(target: HTMLElement, fields: PhotoMetadata) {
   if (!view) { view = createView(target); detailViews.set(target, view); }
   view.render(<Properties fields={fields} />);
 }
-async function photoJob(item: Photo) {
-  const key = itemKey(item);
-  if (photoMetadata.has(key)) return photoMetadata.get(key)!;
-  const token = epoch;
-  const fields = await invoke('photo_metadata', { id: item.id });
-  if (token === epoch) remember(photoMetadata, key, fields, 100);
-  return fields;
+function photoJob(item: Photo) {
+  const key = sourceKey(item);
+  const cached = photoMetadata.get(key);
+  if (cached) return cached;
+  // A new native metadata request cancels its unfinished predecessor.
+  if (pendingPhotoKey !== null) photoMetadata.delete(pendingPhotoKey);
+  const request = invoke('photo_metadata', { id: item.id });
+  pendingPhotoKey = key;
+  remember(photoMetadata, key, request, 100);
+  request.then(() => {
+    if (photoMetadata.get(key) === request) pendingPhotoKey = null;
+  }, () => {
+    if (photoMetadata.get(key) === request) {
+      photoMetadata.delete(key);
+      pendingPhotoKey = null;
+    }
+  });
+  return request;
 }
 function updateDevelopPrefetch() {
   const offsets = develop.active ? [0, 1, -1, 2, -2, 3, -3] : [0, 1, -1];
@@ -965,7 +993,7 @@ function updateSelection() {
     setFormDisabled(false);
     updateRatingStars();
   }).catch(error => { if (token === selectionEpoch) showError(error); });
-  thumbnail(item).then(preview => {
+  if (!develop.active) thumbnail(item).then(preview => {
     if (token !== selectionEpoch || develop.active) return;
     const image = $('navigator-image');
     image.onload = () => { if (token === selectionEpoch) image.hidden = false; };
@@ -1091,8 +1119,8 @@ async function displayPhoto() {
   image.alt = item.name;
   $('view-message').textContent = t("プレビューを読み込み中…");
   $('view-message').hidden = Boolean(warm);
-  thumbnail(item).then(preview => {
-    if (token === viewEpoch && !currentPreview && !warm) setPreviewImage(preview, itemKey(item));
+  if (!warm) thumbnail(item).then(preview => {
+    if (token === viewEpoch && !currentPreview) setPreviewImage(preview, itemKey(item));
   }).catch(() => {});
   try {
     await invoke('cancel_preview');
@@ -1580,7 +1608,8 @@ async function refreshMcpPhotos(ids: number[]) {
   libraryImageKey = null; thumbnailRequests.clear(); readyThumbnails.clear(); largePreviews.clear(); photoMetadata.clear();
   await loadFolders();
   await refresh(keepId, true);
-  for (const id of selectedIds) if (items.some(item => item.id === id)) selectedPhotos.add(id);
+  const loaded = new Set(items.map(item => item.id));
+  for (const id of selectedIds) if (loaded.has(id)) selectedPhotos.add(id);
   $('selection-count').textContent = t("/ {0}枚選択 /", selectedPhotos.size);
   syncReview(); draw();
   await developSelectionTask;

@@ -1,4 +1,4 @@
-import type { Photo, Root, Folder, Query, Page, Cursor, Detail, Preview, PhotoMetadata, Settings, SettingsPatch, Recipe, DevelopedPreview, HistoryRow, ScanProgress, PreviewProgress, IndexProgress, Facet, WorkflowRequest, WorkflowResult, SavedRecipe, McpRequest, McpResult } from './models';
+import type { Root, Folder, Query, Page, Cursor, Detail, Preview, PhotoMetadata, Settings, SettingsPatch, Recipe, DevelopedPreview, HistoryRow, ScanProgress, PreviewProgress, IndexProgress, Facet, WorkflowRequest, WorkflowResult, SavedRecipe, McpRequest, McpResult } from './models';
 export type Language = 'ja' | 'en';
 export interface TrashPlan { ids: number[]; generation: number }
 export interface AvailableUpdate { version: string; notes: string }

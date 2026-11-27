@@ -337,6 +337,7 @@ async function run() {
             }
             if (command === 'photo_metadata') {
               const version = ++photoVersion;
+              if (window.photoMetadataGate) await window.photoMetadataGate;
               await new Promise(resolve => setTimeout(resolve, window.slow ? 150 : args.id === 1 ? 90 : 10));
               if (version !== photoVersion) throw Error('Obsolete metadata');
               return { 'カメラ': `Camera ${args.id}`, 'ISO': '400', '絞り': 'f/2.8', ...(args.id === 1 ? {'焦点距離':'24 mm', 'シャッター速度':'1/250 秒'} : {}) };
