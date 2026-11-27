@@ -574,6 +574,7 @@ async fn preview_inner(
         let request = request.clone();
         let generation = generation.clone();
         let settings = settings.clone();
+        let library = state.library.clone();
         let frame = work(move || {
             pool.install(|| {
                 let cancelled = || generation.load(Ordering::SeqCst) != version;
@@ -584,6 +585,11 @@ async fn preview_inner(
                 advanced_explorer_media::encode_preview(&mut png, &rendered.image)?;
                 ensure!(!cancelled(), "現像対象が変更されました。");
                 engine::refresh_raw_profile(&mut info);
+                if bound == 1600 {
+                    *library.last_develop.lock().unwrap() = Some(DisplayHandoff {
+                        id, key: request.image, image: rendered.image, base: info.clone(),
+                    });
+                }
                 Ok(Some(DevelopedPreview {
                     path: String::new(),
                     inline_image: Some(format!(
@@ -692,6 +698,37 @@ pub async fn develop_preview(
 ) -> Reply<DevelopedPreview> {
     preview_inner(&state, &develop, id, settings, bound).await
 }
+// One finished full-display frame can pass to the library without a PNG round-trip.
+pub(super) struct DisplayHandoff {
+    id: i64,
+    key: PathBuf,
+    image: image::RgbaImage,
+    base: BaseInfo,
+}
+
+fn library_image(rgb: image::RgbImage, base: &BaseInfo) -> (image::RgbImage, Preview, Option<f32>) {
+    let preview = Preview {
+        path: String::new(), width: base.source_width as usize, height: base.source_height as usize,
+        render_width: rgb.width() as usize, render_height: rgb.height() as usize,
+    };
+    (rgb, preview, base.camera_saturation)
+}
+
+// Only lossless Develop output for this exact source, recipe and render version qualifies.
+fn cached_library_pixels(request: &Request) -> Option<(image::RgbImage, Preview, Option<f32>)> {
+    let hit = cached(request)?;
+    // Volumes without stable file IDs cannot prove this disposable frame belongs to the original.
+    crate::library_previews::file_id(&request.source)?;
+    let png = image::codecs::png::PngDecoder::new(std::io::BufReader::new(
+        std::fs::File::open(&request.image).ok()?,
+    )).ok()?;
+    use image::ImageDecoder;
+    let (w, h) = png.dimensions();
+    if w.max(h) > 1600 || (w, h) != (hit.info.width, hit.info.height) { return None; }
+    let rgb = image::DynamicImage::from_decoder(png).ok()?.into_rgb8();
+    Some(library_image(rgb, &hit.base))
+}
+
 pub fn library_pixels(
     state: &AppState,
     id: i64,
@@ -706,8 +743,24 @@ pub fn library_pixels(
         settings,
         1600,
     )?;
+    ensure!(!cancelled(), "Library preview cancelled");
+    let handoff = {
+        let mut last = state.library.last_develop.lock().unwrap();
+        if last.as_ref().is_some_and(|frame| frame.id == id && frame.key == request.image) {
+            last.take()
+        } else { None }
+    };
+    if let Some(frame) = handoff && crate::library_previews::file_id(&request.source).is_some() {
+        let rgb = image::DynamicImage::ImageRgba8(frame.image).into_rgb8();
+        return Ok(library_image(rgb, &frame.base));
+    }
+    if let Some(result) = cached_library_pixels(&request) {
+        ensure!(!cancelled(), "Library preview cancelled");
+        return Ok(result);
+    }
+    let gain = request.camera_match().and_then(|matched| matched.gain);
     #[cfg(desktop_rtengine)]
-    if let Some(result) = crate::rtengine_worker::library(&request.source, settings, cancelled) {
+    if let Some(result) = crate::rtengine_worker::library(&request.source, settings, gain, cancelled) {
         return result;
     }
     let temporary = tempfile::tempdir_in(&state.cache)?;
@@ -718,7 +771,7 @@ pub fn library_pixels(
     // A cancellable short-lived worker cannot evict or block the editor's resident RAW session.
     let worker = engine::timing::start("worker-round-trip");
     let result =
-        agent_preview_with_source(&request.source, &output, &recipe, 1600, !png_handoff, cancelled)?;
+        agent_preview_with_source(&request.source, &output, &recipe, 1600, !png_handoff, gain, cancelled)?;
     drop(worker);
     let _read = engine::timing::start("pixel-read");
     let info = result.info;
@@ -794,7 +847,7 @@ pub async fn export_develop(
             "既存ファイルは上書きしません。別の名前を指定してください。"
         );
         crate::batch_export::export_to(
-            &source,
+            (&db, id), &source,
             &settings,
             &format,
             &options,
@@ -813,7 +866,7 @@ pub fn agent_preview(
     bound: u32,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<RenderInfo> {
-    Ok(agent_preview_with_source(source, output, recipe, bound, false, cancelled)?.info)
+    Ok(agent_preview_with_source(source, output, recipe, bound, false, None, cancelled)?.info)
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 struct AgentPreview {
@@ -830,6 +883,7 @@ fn agent_preview_with_source(
     recipe: &Path,
     bound: u32,
     library: bool,
+    gain: Option<f32>,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<AgentPreview> {
     ensure!(!cancelled(), "Preview cancelled");
@@ -845,19 +899,37 @@ fn agent_preview_with_source(
             .arg(output)
             .arg(recipe)
             .arg(bound.to_string());
+        if let Some(gain) = gain { command.arg(gain.to_string()); }
         media::run_worker(command, Some(output), cancelled)
     } else {
         let settings: Settings = serde_json::from_slice(&std::fs::read(recipe)?)?;
-        let base = engine::prepare(source, bound)?;
-        let rendered = engine::render(&base, &settings, cancelled)?;
+        let (rendered, base) = render_source_preview(source, bound, &settings, gain, cancelled)?;
         write_worker_pixels(output, rendered.image, library)?;
         Ok(AgentPreview {
-            camera_saturation: base.info.camera_saturation,
+            camera_saturation: base.camera_saturation,
             info: rendered.info,
-            source_width: base.info.source_width,
-            source_height: base.info.source_height,
+            source_width: base.source_width,
+            source_height: base.source_height,
         })
     }
+}
+
+fn render_source_preview(
+    source: &Path, bound: u32, settings: &Settings, gain: Option<f32>,
+    cancelled: &(dyn Fn() -> bool + Sync),
+) -> Result<(engine::RenderedImage, BaseInfo)> {
+    #[cfg(desktop_rtengine)]
+    if bound == 1600 && engine::is_native_raw(source) {
+        ensure!(!cancelled(), "Preview cancelled");
+        let result = engine::render_raw_display(source, settings, gain)?;
+        ensure!(!cancelled(), "Preview cancelled");
+        return Ok(result);
+    }
+    let prepare = engine::timing::start("prepare");
+    let base = engine::prepare_with_camera_saturation(source, bound, gain)?;
+    drop(prepare);
+    let _render = engine::timing::start("develop");
+    Ok((engine::render(&base, settings, cancelled)?, base.info))
 }
 
 fn write_worker_pixels(path: &Path, image: image::RgbaImage, library: bool) -> Result<()> {
@@ -933,16 +1005,12 @@ pub fn run_worker() -> bool {
                     println!("{}", serde_json::to_string(&base.info)?);
                 }
                 "--develop-agent-preview" | "--develop-library-preview" => {
-                    ensure!(args.len() == 5, "Invalid preview arguments");
+                    ensure!((5..=6).contains(&args.len()), "Invalid preview arguments");
                     let bound: u32 = args[4].to_str().unwrap_or("").parse()?;
                     ensure!([384, 1600].contains(&bound), "Invalid preview size");
                     let settings: Settings = serde_json::from_slice(&std::fs::read(&args[3])?)?;
-                    let prepare = engine::timing::start("prepare");
-                    let base = engine::prepare(Path::new(&args[1]), bound)?;
-                    drop(prepare);
-                    let render = engine::timing::start("develop");
-                    let rendered = engine::render(&base, &settings, &|| false)?;
-                    drop(render);
+                    let gain = args.get(5).map(|arg| arg.to_str().unwrap_or("").parse()).transpose()?;
+                    let (rendered, base) = render_source_preview(Path::new(&args[1]), bound, &settings, gain, &|| false)?;
                     let _handoff = engine::timing::start("pixel-write");
                     write_worker_pixels(
                         Path::new(&args[2]),
@@ -952,15 +1020,15 @@ pub fn run_worker() -> bool {
                     println!(
                         "{}",
                         serde_json::to_string(&AgentPreview {
-                            camera_saturation: base.info.camera_saturation,
+                            camera_saturation: base.camera_saturation,
                             info: rendered.info,
-                            source_width: base.info.source_width,
-                            source_height: base.info.source_height
+                            source_width: base.source_width,
+                            source_height: base.source_height
                         })?
                     );
                 }
                 _ => {
-                    ensure!((5..=6).contains(&args.len()), "Invalid export arguments");
+                    ensure!((5..=7).contains(&args.len()), "Invalid export arguments");
                     let settings: Settings = serde_json::from_slice(&std::fs::read(&args[3])?)?;
                     settings.validate()?;
                     let options = args
@@ -968,12 +1036,14 @@ pub fn run_worker() -> bool {
                         .map(|value| serde_json::from_str(value.to_str().unwrap_or("")))
                         .transpose()?
                         .unwrap_or_default();
-                    engine::export_source_with_options(
+                    let gain = args.get(6).map(|arg| arg.to_str().unwrap_or("").parse()).transpose()?;
+                    engine::export_source_with_calibration(
                         Path::new(&args[1]),
                         &settings,
                         Path::new(&args[2]),
                         args[4].to_str().unwrap_or(""),
                         &options,
+                        gain,
                     )?;
                     println!("{{\"ok\":true}}");
                 }
@@ -1179,6 +1249,33 @@ mod tests {
     }
 
     #[test]
+    fn library_reuses_only_complete_develop_pixels_for_the_current_recipe() {
+        let (_dir, state, id) = fixture();
+        let settings = Settings { exposure: 0.5, ..Default::default() };
+        let key = |recipe: &Settings| request(state.db.clone(), state.cache.clone(), state.renderer.clone(), id, recipe, 1600).unwrap();
+        let original = key(&settings);
+        let frame = tauri::async_runtime::block_on(preview_inner(&state, &DevelopState::new().unwrap(), id, settings.clone(), 1600)).unwrap();
+        let bytes = preview_bytes(&frame);
+        let expected = image::load_from_memory(&bytes).unwrap().into_rgb8();
+        assert!(frame.inline_image.is_some());
+        assert!(state.library.last_develop.lock().unwrap().is_some());
+        assert_eq!(library_pixels(&state, id, &settings, &|| false).unwrap().0, expected);
+        assert!(state.library.last_develop.lock().unwrap().is_none());
+        // The renderer can deliver the foreground frame inline; exercise its on-disk form.
+        std::fs::write(&original.image, &bytes).unwrap();
+        std::fs::write(&original.metadata, serde_json::to_vec(&frame).unwrap()).unwrap();
+        assert_eq!(cached_library_pixels(&original).unwrap().0, expected);
+        assert_eq!(library_pixels(&state, id, &settings, &|| false).unwrap().0, expected);
+        assert!(cached_library_pixels(&key(&Settings::default())).is_none());
+        let mut damaged = bytes;
+        let data = damaged.windows(4).position(|kind| kind == b"IDAT").unwrap() + 4;
+        damaged[data] ^= 0xff;
+        std::fs::write(&original.image, damaged).unwrap();
+        assert!(cached_library_pixels(&original).is_none());
+        assert_eq!(library_pixels(&state, id, &settings, &|| false).unwrap().0, expected);
+    }
+
+    #[test]
     #[ignore = "requires AE_PREVIEW_PHOTO and packaged AE_TEST_EXECUTABLE"]
     fn raw_library_pixels_match_editor() {
         let (_directory, state, _) = fixture();
@@ -1243,6 +1340,22 @@ mod tests {
             assert_eq!(frame.info.histogram, expected.info.histogram);
         }
         assert_eq!(catalog.develop_recipe(id).unwrap(), (None, 0));
+        if gain.is_some() {
+            let dest = state.db.with_extension("export.png");
+            let started = AtomicBool::new(false);
+            let changed = || {
+                if started.swap(true, Ordering::SeqCst) {
+                    std::fs::rename(&source, source.with_extension("offline")).unwrap();
+                }
+                false
+            };
+            let error = crate::batch_export::export_to(
+                (&state.db, id), &source, &Settings::default(), "png",
+                &engine::ExportOptions { long_edge: 100, ..Default::default() }, &dest, &changed,
+            ).unwrap_err();
+            assert!(error.to_string().contains("原本が変更"));
+            assert!(!dest.exists());
+        }
     }
 
     #[test]

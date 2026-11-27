@@ -535,7 +535,7 @@ impl Operations {
                         let stem = source.file_stem().unwrap_or_default().to_string_lossy();
                         let destination = input.destination.join(format!("{stem}-{photo_id}-edited.{extension}"));
                         let result = crate::batch_export::export_to(
-                            &source, &settings, &input.format, &input.options, &destination, &cancelled,
+                            (&operations.state.db, photo_id), &source, &settings, &input.format, &input.options, &destination, &cancelled,
                         );
                         match result {
                             Ok(()) => files.push(destination),

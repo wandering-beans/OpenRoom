@@ -349,11 +349,12 @@ fn request(
             Err(error) => anyhow::bail!("rtengine worker lock failed: {error}"),
         }
     };
-    exchange(&mut worker, request, working, cancelled)
+    exchange(&mut worker, false, request, working, cancelled)
 }
 
 fn exchange(
     worker: &mut Option<Worker>,
+    import: bool,
     request: &mut Request,
     working: Option<&WorkingImage>,
     cancelled: &(dyn Fn() -> bool + Sync),
@@ -367,7 +368,7 @@ fn exchange(
         *worker = None;
     }
     if worker.is_none() {
-        *worker = Some(Worker::start(false)?);
+        *worker = Some(Worker::start(import)?);
     }
     let current = worker.as_mut().unwrap();
     current.source_id = source_id;
@@ -407,7 +408,7 @@ pub(super) fn warm_interactive(
         return Ok(());
     }
     let mut warmup = raw_request(source, 384, camera_saturation, settings);
-    exchange(&mut worker, &mut warmup, None, cancelled)?;
+    exchange(&mut worker, false, &mut warmup, None, cancelled)?;
     Ok(())
 }
 
@@ -466,6 +467,7 @@ pub fn begin_batch() {
 pub fn library(
     source: &Path,
     settings: &Settings,
+    gain: Option<f32>,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Option<Result<(image::RgbImage, crate::Preview, Option<f32>)>> {
     if !IMPORT_THREAD.get() {
@@ -474,12 +476,9 @@ pub fn library(
     Some(IMPORT.with_borrow_mut(|slot| {
         let _worker = engine::timing::start("import-pipe-round-trip");
         ensure!(!cancelled(), "Library preview cancelled");
-        if slot.is_none() {
-            *slot = Some(Worker::start(true)?);
-        }
-        let reply = slot.as_mut().unwrap().request(
+        let reply = exchange(slot, true,
             &mut Request {
-                camera_saturation: None,
+                camera_saturation: gain,
                 source: source.to_owned(),
                 bound: 1600,
                 settings: settings.clone(),
@@ -532,6 +531,7 @@ pub fn run(import: bool) -> Result<()> {
     let mut input = BufReader::new(std::io::stdin().lock());
     let mut output = std::io::BufWriter::new(std::io::stdout().lock());
     let mut resident = None;
+    let mut last_source = None;
     loop {
         let mut line = String::new();
         if (&mut input)
@@ -557,11 +557,20 @@ pub fn run(import: bool) -> Result<()> {
             ensure!(request.bytes == 0, "Unexpected resident input bytes");
             None
         };
-        let result = pool.install(|| -> Result<Option<RenderedImage>> {
+        let result = pool.install(|| -> Result<Option<(RenderedImage, BaseInfo)>> {
             ensure!(
                 request.bound == 0 || request.bound <= 4096,
                 "Invalid resident preview bound"
             );
+            if last_source.as_ref() != Some(&request.source) {
+                // Raster inputs and pre-calibrated RAWs can leave different native caches active.
+                resident = None;
+                engine::release_raw_source()?;
+                last_source = Some(request.source.clone());
+            }
+            if import && !request.prepare && transferred.is_none() && request.bound == 1600 && engine::is_native_raw(&request.source) {
+                return engine::render_raw_display(&request.source, &request.settings, request.camera_saturation).map(Some);
+            }
             let metadata = std::fs::metadata(&request.source)?;
             let key = (
                 request.source.clone(),
@@ -586,20 +595,13 @@ pub fn run(import: bool) -> Result<()> {
                 return Ok(None);
             }
             let _render = engine::timing::start("develop");
-            if import {
-                return engine::render(
-                    resident.as_ref().unwrap().1.working(),
-                    &request.settings,
-                    &|| false,
-                )
-                .map(Some);
-            }
-            resident
-                .as_mut()
-                .unwrap()
-                .1
-                .render(&request.settings, &|| false)
-                .map(Some)
+            let renderer = &mut resident.as_mut().unwrap().1;
+            let frame = if import {
+                engine::render(renderer.working(), &request.settings, &|| false)?
+            } else {
+                renderer.render(&request.settings, &|| false)?
+            };
+            Ok(Some((frame, renderer.working().info.clone())))
         });
         let (header, bytes) = match result {
             Ok(None) => {
@@ -621,9 +623,9 @@ pub fn run(import: bool) -> Result<()> {
                 output.flush()?;
                 continue;
             }
-            Ok(Some(frame)) => (
+            Ok(Some((frame, base))) => (
                 Header {
-                    base: Some(resident.as_ref().unwrap().1.working().info.clone()),
+                    base: Some(base),
                     bytes: frame.image.as_raw().len(),
                     info: Some(frame.info),
                     error: None,
@@ -733,7 +735,7 @@ mod tests {
     fn import_worker_recovers_and_matches_a_fresh_decoder() {
         let source = PathBuf::from(std::env::var_os("AE_PREVIEW_PHOTO").unwrap());
         begin_batch();
-        let pixels = || library(&source, &Settings::default(), &|| false).unwrap();
+        let pixels = || library(&source, &Settings::default(), None, &|| false).unwrap();
         let (expected, _, _) = pixels().unwrap();
         IMPORT.with_borrow_mut(|slot| {
             let child = &mut slot.as_mut().unwrap().child;
@@ -743,14 +745,34 @@ mod tests {
         assert!(pixels().is_err());
         let next = PathBuf::from(std::env::var_os("AE_SECOND_PREVIEW_PHOTO").unwrap());
         assert!(std::fs::read(&next).unwrap() != std::fs::read(&source).unwrap(), "Expected two distinct RAWs");
-        let (recovered, _, gain) = library(&next, &Settings::default(), &|| false).unwrap().unwrap();
+        let (recovered, _, gain) = library(&next, &Settings::default(), None, &|| false).unwrap().unwrap();
         let base = engine::prepare(&next, 1600).unwrap();
         assert_eq!(gain, base.info.camera_saturation);
         let fresh = engine::render(&base, &Settings::default(), &|| false).unwrap();
         assert_eq!(recovered, image::DynamicImage::ImageRgba8(fresh.image).into_rgb8());
         assert_eq!(pixels().unwrap().0, expected);
+        // A RAW between two reads of the same raster must release the previous raster's pixels.
+        let fixture = tempfile::tempdir().unwrap();
+        let raster = fixture.path().join("test.png");
+        let replacement = fixture.path().join("replacement.png");
+        for (path, color) in [(&raster, [240, 10, 10]), (&replacement, [10, 10, 240])] {
+            image::RgbImage::from_pixel(32, 32, image::Rgb(color)).save(path).unwrap();
+        }
+        let length = raster.metadata().unwrap().len().max(replacement.metadata().unwrap().len());
+        for path in [&raster, &replacement] {
+            std::fs::File::options().write(true).open(path).unwrap().set_len(length).unwrap();
+        }
+        let modified = raster.metadata().unwrap().modified().unwrap();
+        let raster_pixels = || library(&raster, &Settings::default(), None, &|| false).unwrap().unwrap().0;
+        let red = raster_pixels();
+        pixels().unwrap();
+        std::fs::File::options().write(true).open(&replacement).unwrap().set_modified(modified).unwrap();
+        std::fs::rename(replacement, &raster).unwrap();
+        let blue = raster_pixels();
+        assert_ne!(red, blue);
+        assert!(blue.get_pixel(0, 0)[2] > blue.get_pixel(0, 0)[0]);
         assert!(
-            library(&source, &Settings::default(), &|| true)
+            library(&source, &Settings::default(), None, &|| true)
                 .unwrap()
                 .is_err()
         );

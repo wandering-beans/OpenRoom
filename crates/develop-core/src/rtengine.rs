@@ -49,6 +49,13 @@ fn camera_saturation(source: &Path) -> Result<Option<f32>> {
     Ok(gain)
 }
 
+/// A resident worker is moving to another photo. No native input from the old path is reusable.
+pub fn release_raw_source() -> Result<()> {
+    *CAMERA_SATURATION.lock().map_err(|_| anyhow::anyhow!("Camera color cache failed"))? = None;
+    *SESSION.lock().map_err(|_| anyhow::anyhow!("rtengine session failed"))? = None;
+    Ok(())
+}
+
 pub use advanced_explorer_media::is_raw;
 
 fn native(
@@ -134,16 +141,16 @@ pub fn render_raw_display(
     let info = base.info.clone();
     let frame = if adjustments(settings, true, 1.) == Adjustments::default() {
         finish_raw_stage(&mut base, matched);
-        crate::render(&base, &remaining(settings, true), &|| false)?
+        crate::render_working(std::borrow::Cow::Owned(base), &remaining(settings, true), &|| false)?
     } else {
-        crate::render(&base, settings, &|| false)?
+        crate::render_working(std::borrow::Cow::Owned(base), settings, &|| false)?
     };
     Ok((frame, info))
 }
 
-pub fn prepare_export(source: &Path, settings: &Settings) -> Result<WorkingImage> {
+pub fn prepare_export(source: &Path, settings: &Settings, gain: Option<f32>) -> Result<WorkingImage> {
     let (mut working, camera_matched) =
-        prepare_raw_adjusted(source, 0, &adjustments(settings, true, 1.), None)?;
+        prepare_raw_adjusted(source, 0, &adjustments(settings, true, 1.), gain)?;
     // An export never reuses native stages; release them before Rust's full-size filters.
     *SESSION
         .lock()

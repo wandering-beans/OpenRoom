@@ -150,7 +150,7 @@ pub fn is_native_raw(source: &Path) -> bool {
 }
 
 #[cfg(all(desktop_rtengine, feature = "rtengine"))]
-pub use rtengine::render_raw_display;
+pub use rtengine::{release_raw_source, render_raw_display};
 
 /// Decode only once per source/preview size. RAW always uses sensor data.
 pub fn prepare(source: &Path, bound: u32) -> Result<WorkingImage> {
@@ -799,8 +799,14 @@ pub fn render(
     settings: &Settings,
     cancelled: &(dyn Fn() -> bool + Sync),
 ) -> Result<RenderedImage> {
+    render_working(Cow::Borrowed(working), settings, cancelled)
+}
+
+fn render_working(
+    working: Cow<'_, WorkingImage>, settings: &Settings, cancelled: &(dyn Fn() -> bool + Sync),
+) -> Result<RenderedImage> {
     let start = Instant::now();
-    let processed = process(true, Cow::Borrowed(working), settings, cancelled)?;
+    let processed = process(true, working, settings, cancelled)?;
     let image = preview_pixels(&processed);
     let histogram = histogram(&image);
     let info = RenderInfo {
@@ -911,12 +917,23 @@ pub fn export_source_with_options(
     format: &str,
     options: &ExportOptions,
 ) -> Result<()> {
+    export_source_with_calibration(source, settings, destination, format, options, None)
+}
+
+pub fn export_source_with_calibration(
+    source: &Path,
+    settings: &Settings,
+    destination: &Path,
+    format: &str,
+    options: &ExportOptions,
+    _camera_saturation: Option<f32>,
+) -> Result<()> {
     settings.validate()?;
     options.validate()?;
     ensure!(!destination.exists(), "Destination already exists");
     #[cfg(all(desktop_rtengine, feature = "rtengine"))]
     if rtengine::is_raw(source) {
-        let working = rtengine::prepare_export(source, settings)?;
+        let working = rtengine::prepare_export(source, settings, _camera_saturation)?;
         return export_working(
             Cow::Owned(working),
             &rtengine::remaining(settings, true),

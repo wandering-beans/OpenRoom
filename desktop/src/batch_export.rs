@@ -136,6 +136,7 @@ pub fn publish(temporary: &Path, destination: &Path) -> Result<()> {
 }
 /// Render into the destination directory and publish without replacing existing files.
 pub fn export_to(
+    catalog_photo: (&Path, i64),
     source: &Path,
     settings: &Settings,
     format: &str,
@@ -160,6 +161,10 @@ pub fn export_to(
     let output = temporary.path().join("image");
     let recipe = temporary.path().join("recipe.json");
     std::fs::write(&recipe, serde_json::to_vec(settings)?)?;
+    let calibration = advanced_explorer_media::is_raw(source).then(|| {
+        crate::library_previews::CameraMatch::lookup(catalog_photo.0, catalog_photo.1, source)
+    }).flatten().filter(|matched| matched.gain.is_some());
+    let gain = calibration.as_ref().and_then(|matched| matched.gain);
     #[cfg(not(test))]
     {
         let mut command = std::process::Command::new(std::env::current_exe()?);
@@ -170,15 +175,17 @@ pub fn export_to(
             .arg(&recipe)
             .arg(format)
             .arg(serde_json::to_string(options)?);
+        if let Some(gain) = gain { command.arg(gain.to_string()); }
         let _: serde_json::Value = crate::media::run_worker(command, Some(&output), cancelled)?;
     }
     #[cfg(test)]
     {
-        advanced_explorer_develop::export_source_with_options(
-            source, settings, &output, format, options,
+        advanced_explorer_develop::export_source_with_calibration(
+            source, settings, &output, format, options, gain,
         )?;
     }
     ensure!(!cancelled(), "書き出しを中止しました");
+    ensure!(calibration.is_none_or(|matched| matched.matches(source)), "書き出し中に原本が変更されました。");
     publish(&output, destination)
 }
 
@@ -226,7 +233,7 @@ pub async fn export_develop_batch(
             folder.is_absolute() && folder.is_dir(),
             "書き出し先のフォルダを選択してください"
         );
-        let catalog = Catalog::open(db)?;
+        let catalog = Catalog::open(&db)?;
         // Freeze settings before starting; subsequent editing cannot change this export job.
         let jobs = ids
             .into_iter()
@@ -252,7 +259,7 @@ pub async fn export_develop_batch(
                 let (id, source, settings) = job?;
                 let stem = output_stem(&naming, &source, id, index + 1)?;
                 let destination = available_destination(&folder, &stem, extension);
-                export_to(&source, &settings, &format, &options, &destination, &|| {
+                export_to((&db, id), &source, &settings, &format, &options, &destination, &|| {
                     cancel.load(Ordering::SeqCst)
                 })
                 .map_err(|error| anyhow::anyhow!("{}: {error:#}", source.display()))

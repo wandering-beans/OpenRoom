@@ -100,10 +100,14 @@ impl CameraMatch {
         Some(Self { gain, record, source_id })
     }
 
+    pub(super) fn matches(&self, source: &Path) -> bool {
+        relocation::file_id(source).as_ref() == Some(&self.source_id)
+    }
+
     pub(super) fn remember(self, db: &Path, id: i64, source: &Path, computed: Option<f32>) {
         if self.gain.is_some() { return; }
         if let Some(gain) = computed.filter(|v| (0.75..=1.8).contains(v))
-            && relocation::file_id(source).as_ref() == Some(&self.source_id) && let Ok(catalog) = Catalog::open(db) {
+            && self.matches(source) && let Ok(catalog) = Catalog::open(db) {
             let _ = catalog.cache_camera_saturation(id, &self.record, gain, &self.source_id);
         }
     }
@@ -163,6 +167,7 @@ pub struct Store {
     workspace: std::sync::RwLock<()>,
     shared_outputs: Mutex<()>,
     early: Mutex<HashMap<i64, (String, serde_json::Value)>>,
+    pub(super) last_develop: Mutex<Option<crate::develop::DisplayHandoff>>,
     avif: AtomicBool,
     encoder_available: bool,
     protected: Mutex<Option<PathBuf>>,
@@ -362,6 +367,7 @@ impl Store {
             workspace: Default::default(),
             shared_outputs: Default::default(),
             early: Default::default(),
+            last_develop: Default::default(),
             updates: Default::default(),
             avif: AtomicBool::new(encoder_available),
             encoder_available,
@@ -763,6 +769,7 @@ impl Store {
             Self::remove(usage, &path)?;
         }
         self.early.lock().unwrap().clear();
+        self.last_develop.lock().unwrap().take();
         *self.protected.lock().unwrap() = None;
         Ok(())
     }
@@ -898,13 +905,11 @@ impl Store {
         if outdated && catalog.source_path(id).is_err() {
             return Ok(false);
         }
-        if !outdated
-            && self.lookup_stored(catalog, id, 1600)?.is_some()
-            && self.lookup_stored(catalog, id, 384)?.is_some()
-        {
+        let large = self.lookup_stored(catalog, id, 1600)?;
+        if !outdated && large.is_some() && self.lookup_stored(catalog, id, 384)?.is_some() {
             return Ok(false);
         }
-        if self.lookup_stored(catalog, id, 1600)?.is_none() {
+        if large.is_none() {
             catalog.refresh_preview_source(id)?;
         }
         let wait = advanced_explorer_develop::timing::start("queue");
@@ -921,17 +926,10 @@ impl Store {
         // Recheck after another import, repair, or edit-save job released the writer.
         outdated = self.outdated_development(catalog, id)?
             || old.as_ref().is_some_and(|record| record.stamp != stamp);
-        if !outdated
-            && self.lookup_stored(catalog, id, 1600)?.is_some()
-            && self.lookup_stored(catalog, id, 384)?.is_some()
-        {
+        let stored = if outdated { None } else { self.lookup_stored(catalog, id, 1600)? };
+        if stored.is_some() && self.lookup_stored(catalog, id, 384)?.is_some() {
             return Ok(false);
         }
-        let stored = if outdated {
-            None
-        } else {
-            self.lookup_stored(catalog, id, 1600)?
-        };
         let raw = Self::is_raw(catalog, id)?;
         let previous = old
             .as_ref()
@@ -1096,7 +1094,7 @@ impl Store {
                 self.ready.notify_waiters();
             }
             let mut images = Images {
-                camera_saturation_source: None,
+                camera_saturation_source: stored.as_ref().and_then(|_| previous.as_ref()?.camera_saturation_source.clone()),
                 camera_saturation,
                 binding: binding.clone(),
                 version: VERSION.into(),
