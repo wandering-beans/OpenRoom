@@ -28,10 +28,17 @@ pub const RENDER_VERSION: &str = "develop-rtengine-5.13-19241791-v12";
 #[cfg(not(all(desktop_rtengine, feature = "rtengine")))]
 pub const RENDER_VERSION: &str = "develop-v9";
 
+#[cfg(all(desktop_rtengine, feature = "rtengine"))]
+pub const RAW_RENDER_VERSION: &str = concat!("develop-rtengine-5.13-19241791-v13-", env!("OPENROOM_LENS_DB_VERSION"));
+#[cfg(not(all(desktop_rtengine, feature = "rtengine")))]
+pub const RAW_RENDER_VERSION: &str = RENDER_VERSION;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BaseInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub auto_ca_supported: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub lens_profiles: Vec<(String, u32)>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub camera_saturation: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -230,6 +237,7 @@ pub fn prepare_with_camera_saturation(
     let mut image = WorkingImage {
         pixels,
         info: BaseInfo {
+            lens_profiles: Vec::new(),
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: if cfg!(all(
@@ -1166,6 +1174,7 @@ mod regressions {
                 Rgba([x as f32 / 40., y as f32 / 30., 0.3, (x % 4) as f32 / 3.])
             }),
             info: BaseInfo {
+                lens_profiles: Vec::new(),
                 auto_ca_supported: None,
                 camera_saturation: None,
                 native_source: None,

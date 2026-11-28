@@ -12,6 +12,7 @@ fn fixture() -> WorkingImage {
     WorkingImage {
         pixels,
         info: BaseInfo {
+            lens_profiles: Vec::new(),
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: None,
@@ -60,16 +61,20 @@ fn compact_catalog_recipes_restore_exact_settings_and_pixels() {
 #[test]
 fn lens_recipes_keep_legacy_defaults_and_validate_ranges() {
     let legacy: Settings = serde_json::from_str(r#"{"version":1,"exposure":1}"#).unwrap();
+    assert!(legacy.lens_profile && legacy.lens_model.is_none());
+    assert_eq!(legacy.exposure, 1.);
     assert!(!legacy.ca_auto && !legacy.defringe);
     assert_eq!((legacy.ca_red, legacy.ca_blue), (0., 0.));
     let edited: Settings = serde_json::from_value(serde_json::json!({
-        "ca_auto":true,"ca_red":-40,"ca_blue":60,"defringe":true,"defringe_radius":3.2,"defringe_threshold":20
+        "lens_profile":false,"lens_model":"Test 24mm","ca_auto":true,"ca_red":-40,"ca_blue":60,"defringe":true,"defringe_radius":3.2,"defringe_threshold":20
     })).unwrap();
     assert_eq!(
         serde_json::from_str::<Settings>(&edited.catalog_recipe().unwrap()).unwrap(),
         edited
     );
     for patch in [
+        serde_json::json!({"lens_model":"x".repeat(256)}),
+        serde_json::json!({"lens_model":"abc\0xyz"}),
         serde_json::json!({"ca_red":101}),
         serde_json::json!({"ca_blue":-101}),
         serde_json::json!({"defringe_radius":0}),

@@ -19,6 +19,7 @@ if [[ ! -f "$deps/lib/pkgconfig/exiv2.pc" ]]; then
 fi
 export PKG_CONFIG_PATH="$deps/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export LD_LIBRARY_PATH="$deps/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+python3 scripts/check-lensfun-release.py
 python3 scripts/build-rtengine.py
 export LD_LIBRARY_PATH="$PWD/.tools/rtengine/build-linux${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 notices=.tools/linux-notices

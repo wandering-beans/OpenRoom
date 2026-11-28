@@ -109,6 +109,9 @@ export function Workspace() {
           <details id="color-grading-panel" className="panel"><summary>カラーグレーディング</summary><div id="develop-grading"></div></details>
           <details className="panel"><summary>ディテール</summary><div id="develop-detail" className="develop-group"></div><p className="panel-note">通常のエッジ・ノイズ補正。AIノイズ除去は後続実装です。</p></details>
           <details id="lens-correction-panel" className="panel"><summary>レンズ補正</summary>
+            <label className="develop-check"><input id="develop-lens-profile" type="checkbox" />レンズプロファイル補正</label>
+            <select id="develop-lens-model" aria-label="撮影レンズ" hidden></select>
+            <p id="develop-lens-status" className="panel-note"></p>
             <label className="develop-check"><input id="develop-ca-auto" type="checkbox" />色収差を自動補正</label>
             <p id="develop-ca-status" className="panel-note"></p>
             <div id="develop-lens" className="develop-group"></div>

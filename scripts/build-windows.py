@@ -14,6 +14,7 @@ def main():
     if os.name != 'nt':
         raise SystemExit('Build this installer on Windows with scripts/windows-dev.ps1 loaded.')
     root = Path(__file__).resolve().parents[1]
+    subprocess.run([sys.executable, str(root / "scripts/check-lensfun-release.py")], check=True)
     result = subprocess.check_output([sys.executable, str(root / 'scripts/build-rtengine.py')], cwd=root)
     native = json.loads(result)
     target = root / '.tools/windows-bundle'
@@ -28,7 +29,7 @@ def main():
         shutil.copytree(root / 'licenses', notices / 'third-party')
         for name in ['LICENSE', 'COPYRIGHT.md', 'THIRD_PARTY.md', 'DISCLAIMER.md', 'TERMS.md']:
             shutil.copy2(root / name, notices / name)
-        for name in ['source.json', 'float-preview.patch', 'metadata-time.patch', 'COPYING.GPL-3.0']:
+        for name in ['source.json', 'float-preview.patch', 'metadata-time.patch', 'lens-candidates.patch', 'COPYING.GPL-3.0']:
             shutil.copy2(root / 'native/rtengine' / name, notices / name)
         prefix = Path(os.environ['OPENROOM_MSYS2_PREFIX'])
         shutil.copytree(prefix / 'share/licenses', notices / 'msys2')

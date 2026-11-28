@@ -34,6 +34,8 @@ pub struct Adjustments {
     pub ca_blue: f32,
     pub defringe_radius: f32,
     pub defringe_threshold: f32,
+    pub lens_profile: u32,
+    pub lens_model: [u8; 256],
 }
 impl Default for Adjustments {
     fn default() -> Self {
@@ -56,6 +58,8 @@ impl Default for Adjustments {
             ca_blue: 0.,
             defringe_radius: 2.,
             defringe_threshold: 13.,
+            lens_profile: 0,
+            lens_model: [0; 256],
         }
     }
 }
@@ -93,6 +97,7 @@ unsafe extern "C" {
     fn openroom_rt_camera(session: *mut c_void) -> *const c_char;
     fn openroom_rt_camera_matched(session: *mut c_void) -> i32;
     fn openroom_rt_auto_ca_supported(session: *mut c_void) -> i32;
+    fn openroom_rt_lens_candidate(session: *mut c_void, index: usize, flags: *mut u32) -> *const c_char;
     fn openroom_rt_error() -> *const c_char;
     fn openroom_rt_raster_temperature(source: *const c_char) -> f64;
 }
@@ -178,6 +183,7 @@ pub struct Rendered {
     pub camera: String,
     pub camera_matched: bool,
     pub auto_ca_supported: bool,
+    pub lens_profiles: Vec<(String, u32)>,
 }
 impl Session {
     pub fn open(source: &Path, pixels: Option<&Rgba32FImage>, bound: u32) -> Result<Self> {
@@ -255,7 +261,8 @@ impl Session {
                 && (-100. ..=100.).contains(&adjustments.ca_red)
                 && (-100. ..=100.).contains(&adjustments.ca_blue)
                 && (0.5..=5.).contains(&adjustments.defringe_radius)
-                && (0. ..=100.).contains(&adjustments.defringe_threshold),
+                && (0. ..=100.).contains(&adjustments.defringe_threshold)
+                && adjustments.lens_profile <= 1 && adjustments.lens_model.contains(&0),
             "Invalid native lens corrections"
         );
         // Frame data remain bridge-owned until the next render or session destruction.
@@ -288,7 +295,15 @@ impl Session {
         let camera = unsafe { CStr::from_ptr(openroom_rt_camera(self.handle.as_ptr())) }
             .to_string_lossy()
             .into_owned();
+        let mut lens_profiles = Vec::new();
+        loop {
+            let mut flags = 0;
+            let name = unsafe { openroom_rt_lens_candidate(self.handle.as_ptr(), lens_profiles.len(), &mut flags) };
+            if name.is_null() { break; }
+            lens_profiles.push((unsafe { CStr::from_ptr(name) }.to_string_lossy().into_owned(), flags));
+        }
         Ok(Rendered {
+            lens_profiles,
             auto_ca_supported: unsafe { openroom_rt_auto_ca_supported(self.handle.as_ptr()) } != 0,
             pixels,
             source_width: frame.source_width,
@@ -458,6 +473,26 @@ mod tests {
                 "stale detail cache: {settings:?}"
             );
         }
+    }
+
+    #[test]
+    #[ignore = "requires AE_RAW_PHOTO with a matching Lensfun profile"]
+    fn lens_profile_switch_is_reversible() {
+        let source = std::path::PathBuf::from(std::env::var_os("AE_RAW_PHOTO").unwrap());
+        let mut session = Session::open(&source, None, 1600).unwrap();
+        let original = session.render(&Adjustments::default()).unwrap();
+        assert_eq!(original.lens_profiles.len(), 1);
+        let automatic = Adjustments { lens_profile: 1, ..Default::default() };
+        let corrected = session.render(&automatic).unwrap().pixels;
+        assert!(original.pixels != corrected);
+        assert!(session.render(&automatic).unwrap().pixels == corrected);
+        let mut manual = automatic;
+        let model = original.lens_profiles[0].0.as_bytes();
+        manual.lens_model[..model.len()].copy_from_slice(model);
+        assert!(session.render(&manual).unwrap().pixels == corrected);
+        manual.lens_model[0] = b'?';
+        assert!(session.render(&manual).unwrap().pixels == original.pixels);
+        assert!(session.render(&Adjustments::default()).unwrap().pixels == original.pixels);
     }
 
     #[test]

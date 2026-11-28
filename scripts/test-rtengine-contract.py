@@ -17,7 +17,7 @@ class Adjustments(c.Structure):
         'sharpen', 'sharpen_radius', 'sharpen_detail', 'sharpen_masking',
         'noise_luma', 'noise_color', 'scale')] + [
         ('ca_auto', c.c_uint32), ('defringe', c.c_uint32)] + [
-        (name, c.c_float) for name in ('ca_red', 'ca_blue', 'defringe_radius', 'defringe_threshold')]
+        (name, c.c_float) for name in ('ca_red', 'ca_blue', 'defringe_radius', 'defringe_threshold')] + [('lens_profile', c.c_uint32), ('lens_model', c.c_char * 256)]
 
 
 class Frame(c.Structure):

@@ -8,6 +8,8 @@ struct OpenRoomAdjustments {
     float noise_luma, noise_color, scale;
     uint32_t ca_auto, defringe;
     float ca_red, ca_blue, defringe_radius, defringe_threshold;
+    uint32_t lens_profile;
+    char lens_model[256];
 };
 struct OpenRoomFrame {
     uint32_t width, height, source_width, source_height;
@@ -26,6 +28,7 @@ OPENROOM_RT_API int openroom_rt_render(void* session, const OpenRoomAdjustments*
 OPENROOM_RT_API int openroom_rt_copy(void* session, float* pixels, size_t count);
 OPENROOM_RT_API void openroom_rt_close(void* session);
 OPENROOM_RT_API const char* openroom_rt_camera(void* session);
+OPENROOM_RT_API const char* openroom_rt_lens_candidate(void* session, size_t index, unsigned* flags);
 OPENROOM_RT_API int openroom_rt_camera_matched(void* session);
 OPENROOM_RT_API int openroom_rt_auto_ca_supported(void* session);
 OPENROOM_RT_API const char* openroom_rt_error();

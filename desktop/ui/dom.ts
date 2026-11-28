@@ -1,5 +1,7 @@
 // Required controls fail at startup instead of failing later in an unrelated event handler.
 interface Controls {
+  'develop-lens-profile': HTMLInputElement;
+  'develop-lens-model': HTMLSelectElement;
   'develop-ca-auto': HTMLInputElement;
   'develop-defringe': HTMLInputElement;
   'add': HTMLButtonElement;

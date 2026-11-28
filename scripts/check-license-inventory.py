@@ -55,6 +55,9 @@ def main():
             libraries[library['name']] = library['uuid']
 
     if len(sys.argv) > 1:
+        from lensfun_data import profiles as lens_database
+        profiles['data_files'].extend({'file': 'lensfun/' + name, 'sha256': hashlib.sha256(data).hexdigest()}
+                                      for name, data in lens_database().items())
         check_engine_data(Path(sys.argv[1]) / 'Contents/Resources/rtengine', profiles)
         frameworks = Path(sys.argv[1]) / 'Contents/Frameworks'
         actual = {path.name: path for path in frameworks.glob('*.dylib')}

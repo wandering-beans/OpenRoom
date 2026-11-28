@@ -23,6 +23,7 @@ const groups: CopyGroup[] = [
     { label: '輝度ノイズ低減', fields: ['noise_luma'] }, { label: 'カラーノイズ低減', fields: ['noise_color'] },
   ] },
   { label: 'レンズ補正', checked: true, options: [
+    { label: 'レンズプロファイル補正', fields: ['lens_profile', 'lens_model'] },
     { label: '色収差補正', fields: ['ca_auto', 'ca_red', 'ca_blue'] },
     { label: 'フリンジ除去', fields: ['defringe', 'defringe_radius', 'defringe_threshold'] },
     { label: '手動の歪曲補正', fields: ['distortion'] },

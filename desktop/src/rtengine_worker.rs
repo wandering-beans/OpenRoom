@@ -701,6 +701,7 @@ mod tests {
     #[test]
     fn prepared_reader_validates_samples_dimensions_and_complete_payload() {
         let info = BaseInfo {
+            lens_profiles: Vec::new(),
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: Some(PathBuf::from("photo.raf")),

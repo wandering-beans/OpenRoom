@@ -50,6 +50,14 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+## Lens correction profiles
+
+OpenRoom bundles the Lensfun project's calibration XML on Windows, macOS and Linux.
+The [database attribution and license](licenses/native/lensfun-database/NOTICE.txt)
+apply to the profiles. The reviewed snapshot is pinned in `native/rtengine/lensfun/`.
+Before tagging a release, run `python scripts/check-lensfun-release.py`.
+If the upstream data have changed, run it with `--update`, test the profiles and commit the new pin.
+
 ## macOS rtengine integration
 
 RawTherapee 5.13, commit `1924179107995b01b73cdc7f4fe91e44fc8227a7`:

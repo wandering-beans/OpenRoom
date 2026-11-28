@@ -1,0 +1,4 @@
+Lensfun lens database, by the Lensfun project and its contributors.
+Source: https://lensfun.github.io/db/version_1.tar.bz2
+Unmodified calibration XML. License: Creative Commons Attribution-ShareAlike 3.0 Unported.
+https://creativecommons.org/licenses/by-sa/3.0/

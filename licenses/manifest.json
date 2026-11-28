@@ -6576,6 +6576,8 @@
   ],
   "unresolved": [],
   "supporting_notices": [
+    "native/lensfun-database/NOTICE.txt",
+    "native/lensfun-database/COPYING",
     "native/Homebrew-core/LICENSE.txt"
   ],
   "supporting_notice_sources": {

@@ -15,6 +15,7 @@ fn main() {
         "cargo:rerun-if-changed={}",
         root.join("scripts/build-rtengine.py").display()
     );
+    println!("cargo:rerun-if-changed={}", root.join("scripts/lensfun_data.py").display());
     for name in ["OPENROOM_PYTHON", "OPENROOM_MSYS2_PREFIX"] {
         println!("cargo:rerun-if-env-changed={name}");
     }

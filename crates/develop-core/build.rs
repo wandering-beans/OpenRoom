@@ -1,4 +1,7 @@
 fn main() {
+    println!("cargo:rerun-if-changed=../../native/rtengine/lensfun/sha256.txt");
+    let digest = include_str!("../../native/rtengine/lensfun/sha256.txt").trim();
+    println!("cargo:rustc-env=OPENROOM_LENS_DB_VERSION={}", &digest[..12]);
     println!("cargo:rustc-check-cfg=cfg(desktop_rtengine)");
     if matches!(std::env::var("CARGO_CFG_TARGET_OS").as_deref(), Ok("windows" | "macos" | "linux")) {
         println!("cargo:rustc-cfg=desktop_rtengine");

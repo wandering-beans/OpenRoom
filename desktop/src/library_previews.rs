@@ -86,7 +86,7 @@ impl CameraMatch {
         let record = Catalog::open(db).ok()?.library_preview(id).ok()??;
         let images: Images = serde_json::from_str(record.data.as_deref()?).ok()?;
         if !images.raw_developed || images.camera_fallback || images.version != VERSION
-            || images.render_version != format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION)
+            || images.render_version != format!("{}-raw-library-v1", advanced_explorer_develop::RAW_RENDER_VERSION)
         {
             return None;
         }
@@ -493,7 +493,7 @@ impl Store {
             }
         }
         // Keep old RAW previews usable offline, but update their tone before online display.
-        let raw_version = format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION);
+        let raw_version = format!("{}-raw-library-v1", advanced_explorer_develop::RAW_RENDER_VERSION);
         if (images.render_version != raw_version
             || (!images.raw_developed && !images.camera_fallback))
             && Self::is_raw(catalog, id)?
@@ -942,7 +942,7 @@ impl Store {
             serde_json::from_str::<Images>(old.as_ref().unwrap().data.as_ref().unwrap())?
                 .render_version
         } else if raw {
-            format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION)
+            format!("{}-raw-library-v1", advanced_explorer_develop::RAW_RENDER_VERSION)
         } else {
             advanced_explorer_develop::RENDER_VERSION.into()
         };
@@ -1242,7 +1242,7 @@ impl Store {
             return Ok(false);
         }
         let expected = if raw {
-            format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION)
+            format!("{}-raw-library-v1", advanced_explorer_develop::RAW_RENDER_VERSION)
         } else {
             advanced_explorer_develop::RENDER_VERSION.into()
         };
@@ -1277,7 +1277,7 @@ pub fn prepare_pending(
     let catalog = Catalog::open(&state.db)?;
     let render_version = advanced_explorer_develop::RENDER_VERSION;
     let ids = catalog.pending_library_preview_items(
-        None, VERSION, render_version, &format!("{render_version}-raw-library-v1"),
+        None, VERSION, render_version, &format!("{}-raw-library-v1", advanced_explorer_develop::RAW_RENDER_VERSION),
     )?;
     prepare_batch(state, None, false, Some(ids), progress)
 }
@@ -1568,7 +1568,7 @@ mod tests {
         let display = |revision| state.library.lookup_recipe(&catalog, id, 1600, Some(revision)).unwrap();
         assert!(display(0).is_some());
         assert!(display(1).is_none());
-        metadata["render_version"] = format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION).into();
+        metadata["render_version"] = format!("{}-raw-library-v1", advanced_explorer_develop::RAW_RENDER_VERSION).into();
         metadata["raw_developed"] = true.into();
         let store = |value: &serde_json::Value| {
             assert!(catalog.save_library_preview(id, &record.stamp, Some(&value.to_string()), None).unwrap());
@@ -1604,7 +1604,7 @@ mod tests {
         store(&metadata);
         assert!(lookup().is_none());
         std::fs::write(&source, b"replacement").unwrap();
-        metadata["render_version"] = format!("{}-raw-library-v1", advanced_explorer_develop::RENDER_VERSION).into();
+        metadata["render_version"] = format!("{}-raw-library-v1", advanced_explorer_develop::RAW_RENDER_VERSION).into();
         store(&metadata);
         assert!(lookup().is_none());
         assert!(display(0).is_none());

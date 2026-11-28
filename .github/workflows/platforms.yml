@@ -73,6 +73,10 @@ jobs:
           OPENROOM_UPDATE_PACKAGE: ${{ runner.temp }}/signed-mac-update
         run: cargo test --manifest-path desktop/Cargo.toml --locked packaged_release_verifies_and_installs_with_the_production_public_key -- --ignored
       - run: python scripts/fetch-media-fixtures.py "${{ runner.temp }}/raw-assets"
+      - name: Verify Lensfun correction on a real RAW
+        env:
+          AE_RAW_PHOTO: ${{ runner.temp }}/raw-assets/Fujifilm - X-T2 - 14bit 14bit compressed (3_2).RAF
+        run: cargo test --locked --manifest-path crates/rtengine/Cargo.toml lens_profile_switch_is_reversible -- --ignored
       - run: cargo test --manifest-path crates/media-core/Cargo.toml --locked -- --include-ignored
         env:
           AE_RAW_ASSETS: ${{ runner.temp }}/raw-assets
@@ -137,6 +141,10 @@ jobs:
       - run: cargo test --manifest-path crates/develop-core/Cargo.toml --locked
       - run: cargo test --manifest-path crates/develop-core/Cargo.toml --locked --no-default-features
       - run: python scripts/fetch-media-fixtures.py "${{ runner.temp }}/raw-assets"
+      - name: Verify Lensfun correction on a real RAW
+        env:
+          AE_RAW_PHOTO: ${{ runner.temp }}/raw-assets/Fujifilm - X-T2 - 14bit 14bit compressed (3_2).RAF
+        run: cargo test --locked --manifest-path crates/rtengine/Cargo.toml lens_profile_switch_is_reversible -- --ignored
       - run: cargo test --manifest-path crates/media-core/Cargo.toml --locked -- --include-ignored
         env:
           AE_RAW_ASSETS: ${{ runner.temp }}/raw-assets

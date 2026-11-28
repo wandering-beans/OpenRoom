@@ -1,0 +1,101 @@
+diff --git a/rtengine/rtlensfun.cc b/rtengine/rtlensfun.cc
+index f0f7945..6f92fed 100644
+--- a/rtengine/rtlensfun.cc
++++ b/rtengine/rtlensfun.cc
+@@ -618,6 +618,52 @@ LFCamera LFDatabase::findCamera(const Glib::ustring &make, const Glib::ustring &
+ }
+ 
+ 
++// Tries to find the lens by name, possibly splitting the maker and
++// model from the lens name.
++static const lfLens **find_lens_from_name(const lfDatabase *database, const lfCamera *cam, const Glib::ustring &lens_name) {
++    auto found = database->FindLenses(cam, nullptr, lens_name.c_str());
++    for (size_t pos = 0; !found && pos < lens_name.size(); ) {
++        // try to split the maker from the model of the lens -- we have to
++        // guess a bit here, since there are makers with a multi-word name
++        // (e.g. "Leica Camera AG")
++        if (lens_name.find("f/", pos) == 0) {
++            break; // no need to search further
++        }
++        Glib::ustring make, model;
++        auto i = lens_name.find(' ', pos);
++        if (i != Glib::ustring::npos) {
++            make = lens_name.substr(0, i);
++            model = lens_name.substr(i+1);
++            found = database->FindLenses(cam, make.c_str(), model.c_str());
++            pos = i+1;
++        } else {
++            break;
++        }
++    }
++    return found;
++}
++
++std::vector<LFLens> LFDatabase::profileCandidates(const LFCamera &camera, const Glib::ustring &name) const
++{
++    std::vector<LFLens> result;
++    if (!data_ || !camera || (name.empty() && !camera.isFixedLens())) {
++        return result;
++    }
++    MyMutex::MyLock lock(lfDBMutex);
++    auto found = find_lens_from_name(data_, camera.data_, trimDashWhitespace(name.raw()));
++    if (!found && camera.isFixedLens()) {
++        found = data_->FindLenses(camera.data_, nullptr, "");
++    }
++    if (found) {
++        for (auto row = found; *row; ++row) {
++            result.emplace_back();
++            result.back().data_ = *row;
++        }
++        lf_free(found);
++    }
++    return result;
++}
++
+ LFLens LFDatabase::findLens(const LFCamera &camera, const Glib::ustring &name, bool autoMatch) const
+ {
+     LFLens ret;
+@@ -639,31 +685,6 @@ LFLens LFDatabase::findLens(const LFCamera &camera, const Glib::ustring &name, b
+             }
+         }
+ 
+-        // Tries to find the lens by name, possibly splitting the maker and
+-        // model from the lens name.
+-        const auto find_lens_from_name = [](const lfDatabase *database, const lfCamera *cam, const Glib::ustring &lens_name) {
+-            auto found = database->FindLenses(cam, nullptr, lens_name.c_str());
+-            for (size_t pos = 0; !found && pos < lens_name.size(); ) {
+-                // try to split the maker from the model of the lens -- we have to
+-                // guess a bit here, since there are makers with a multi-word name
+-                // (e.g. "Leica Camera AG")
+-                if (lens_name.find("f/", pos) == 0) {
+-                    break; // no need to search further
+-                }
+-                Glib::ustring make, model;
+-                auto i = lens_name.find(' ', pos);
+-                if (i != Glib::ustring::npos) {
+-                    make = lens_name.substr(0, i);
+-                    model = lens_name.substr(i+1);
+-                    found = database->FindLenses(cam, make.c_str(), model.c_str());
+-                    pos = i+1;
+-                } else {
+-                    break;
+-                }
+-            }
+-            return found;
+-        };
+-
+         // Find the lens, starting with the mount, then trying without the mount
+         // if no match is found. The latter is necessary for certain adapted
+         // lenses.
+diff --git a/rtengine/rtlensfun.h b/rtengine/rtlensfun.h
+index 78c9c9f..c7a6c08 100644
+--- a/rtengine/rtlensfun.h
++++ b/rtengine/rtlensfun.h
+@@ -124,6 +124,7 @@ public:
+ 
+     std::vector<LFCamera> getCameras() const;
+     std::vector<LFLens> getLenses() const;
++    std::vector<LFLens> profileCandidates(const LFCamera &camera, const Glib::ustring &name) const;
+     LFCamera findCamera(const Glib::ustring &make, const Glib::ustring &model, bool autoMatch) const;
+     LFLens findLens(const LFCamera &camera, const Glib::ustring &name, bool autoMatch) const;
+ 

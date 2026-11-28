@@ -82,6 +82,7 @@ fn native_raw_initial_tone_is_shared_by_preview_and_export_only_once() {
     let mut base = engine::WorkingImage {
         pixels: Rgba32FImage::from_pixel(40, 30, Rgba([0.18, 0.18, 0.18, 0.5])),
         info: engine::BaseInfo {
+            lens_profiles: Vec::new(),
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: None,
@@ -125,6 +126,7 @@ fn camera_saturation_is_shared_by_cached_preview_and_export_without_changing_ras
             })
         }),
         info: engine::BaseInfo {
+            lens_profiles: Vec::new(),
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: None,
@@ -213,6 +215,7 @@ fn raw_profile_keeps_distinct_highlights_available_for_recovery() {
     let base = engine::WorkingImage {
         pixels: pixels.clone(),
         info: engine::BaseInfo {
+            lens_profiles: Vec::new(),
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: None,
@@ -286,6 +289,7 @@ fn damaged_float_cache_is_rejected_instead_of_rendering_invalid_samples() {
         let base = engine::WorkingImage {
             pixels: Rgba32FImage::from_pixel(1, 1, Rgba([value, 0.5, 0.5, 1.])),
             info: engine::BaseInfo {
+                lens_profiles: Vec::new(),
                 auto_ca_supported: None,
                 camera_saturation: None,
                 native_source: None,
@@ -309,6 +313,7 @@ fn editing_an_unrelated_hue_does_not_clip_highlights_before_vignetting() {
     let base = engine::WorkingImage {
         pixels: Rgba32FImage::from_pixel(3, 3, Rgba([0.1, 0.1, 4., 1.])),
         info: engine::BaseInfo {
+            lens_profiles: Vec::new(),
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: None,
@@ -339,6 +344,7 @@ fn hue_edits_keep_highlight_brightness_and_leave_neutral_highlights_unchanged() 
     let mut base = engine::WorkingImage {
         pixels: Rgba32FImage::from_pixel(3, 3, Rgba([4., 0.1, 0.1, 1.])),
         info: engine::BaseInfo {
+            lens_profiles: Vec::new(),
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: None,
@@ -376,6 +382,7 @@ fn midtone_curves_do_not_discard_highlight_headroom_before_vignetting() {
     let base = engine::WorkingImage {
         pixels: Rgba32FImage::from_pixel(3, 3, Rgba([4., 4., 4., 1.])),
         info: engine::BaseInfo {
+            lens_profiles: Vec::new(),
             auto_ca_supported: None,
             camera_saturation: None,
             native_source: None,

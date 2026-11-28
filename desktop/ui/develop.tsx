@@ -70,7 +70,13 @@ export function createDevelop({
   const controls: SliderHandle[] = [];
   const historyView = createView($('develop-history-list'));
   let rawInfo: RawInfo | null = null, rasterTemperature: number | null = null, whiteBalanceReady = false;
+  let lensProfiles: [string, number][] = [];
   let autoCaSupported = false;
+  function setLensProfiles(profiles: [string, number][]) {
+    if (equal(profiles, lensProfiles)) return;
+    lensProfiles = profiles;
+    $('develop-lens-model').replaceChildren(new Option(t('自動'), ''), ...profiles.map(([name]) => new Option(name, name)));
+  }
   const tools = createDevelopTools({ invoke, error, edit, refresh:schedule, save, status, saved, selectedIds,
     selectionChanged() { finishGesture(); sync(); },
     get:()=>({settings,defaults}),
@@ -189,9 +195,25 @@ export function createDevelop({
     // MCP completion and native close guards must observe the committed controls.
     flushSync(() => { for (const control of controls) control.sync(); });
     $('develop-mono').checked = settings.monochrome;
+    const profile = settings.lens_model ? lensProfiles.find(([name]) => name === settings!.lens_model)
+      : lensProfiles.length === 1 ? lensProfiles[0] : undefined;
+    const selector = $('develop-lens-model');
+    selector.hidden = lensProfiles.length < 2 && !(settings.lens_model && !profile && lensProfiles.length);
+    selector.disabled = !settings.lens_profile;
+    selector.value = settings.lens_model ?? '';
+    $('develop-lens-profile').checked = settings.lens_profile;
+    $('develop-lens-profile').disabled = !lensProfiles.length;
+    const flags = profile?.[1] ?? 0;
+    const effects = [flags & 1 && t('歪曲'), flags & 2 && t('倍率色収差'), t(flags & 4 ? '周辺光量' : '周辺光量のデータなし')].filter(Boolean);
+    $('develop-lens-status').textContent = !whiteBalanceReady ? t('写真の対応状況を確認中…')
+      : !lensProfiles.length ? t('対応するレンズプロファイルがありません')
+      : !settings.lens_profile ? t('プロファイル補正はオフです')
+      : profile ? [profile[0], ...effects].join(' · ') : t('撮影に使用したレンズを選んでください');
     $('develop-ca-auto').checked = settings.ca_auto;
-    $('develop-ca-auto').disabled = !autoCaSupported;
-    $('develop-ca-status').textContent = !whiteBalanceReady ? t('写真の対応状況を確認中…') : autoCaSupported
+    const profileCorrectsCa = settings.lens_profile && Boolean(flags & 2);
+    $('develop-ca-auto').disabled = !autoCaSupported || profileCorrectsCa;
+    $('develop-ca-status').textContent = !whiteBalanceReady ? t('写真の対応状況を確認中…')
+      : profileCorrectsCa ? t('倍率色収差はレンズプロファイルで補正します。') : autoCaSupported
       ? t('自動補正後に、赤・青の色ずれを微調整できます。')
       : t('この写真は赤・青の手動補正を使用してください。自動補正はBayer RAWに対応しています。');
     $('develop-defringe').checked = settings.defringe;
@@ -329,6 +351,7 @@ export function createDevelop({
   }
   function histogram(result: DevelopedPreview) {
     rawInfo = result.base.raw ?? null;
+    setLensProfiles(result.base.lens_profiles ?? []);
     autoCaSupported = result.base.auto_ca_supported === true;
     rasterTemperature = result.base.raster_wb_temperature ?? null;
     whiteBalanceReady = true;
@@ -397,6 +420,7 @@ export function createDevelop({
     invoke('cancel_develop_preview').catch(error);
     tools.select(next?.id, settings); compare(null);
     rawInfo = null;
+    setLensProfiles([]);
     autoCaSupported = false;
     rasterTemperature = null;
     whiteBalanceReady = false;
@@ -575,6 +599,8 @@ export function createDevelop({
   $('develop-copy').onclick = () => { if (item) void copySettings(item.id); };
   $('develop-paste').onclick = () => { if (item) void pasteSettings(item.id); };
   $('develop-before').onclick = () => { if (!settings) return; before = !before; buttons(); schedule(); };
+  $('develop-lens-profile').onchange = () => edit(s => { s.lens_profile = $('develop-lens-profile').checked; }, t('レンズプロファイル補正'));
+  $('develop-lens-model').onchange = () => edit(s => { s.lens_model = $('develop-lens-model').value || null; }, t('レンズプロファイル補正'));
   $('develop-ca-auto').onchange = () => { if (autoCaSupported) edit(s => { s.ca_auto = $('develop-ca-auto').checked; }, t('色収差補正')); };
   $('develop-defringe').onchange = () => edit(s => { s.defringe = $('develop-defringe').checked; }, t('フリンジ除去'));
   $('develop-mono').onchange = event => edit(value => { value.monochrome = (event.target as HTMLInputElement).checked; });

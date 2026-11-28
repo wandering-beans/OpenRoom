@@ -99,7 +99,7 @@ def build_engine(root, bridge, pin, cache, source, build):
     actual = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
     if actual != pin["commit"]:
         raise RuntimeError("rtengine source does not match native/rtengine/source.json")
-    patches = [bridge / "float-preview.patch", bridge / "metadata-time.patch"]
+    patches = [bridge / "float-preview.patch", bridge / "metadata-time.patch", bridge / "lens-candidates.patch"]
     for patch in patches:
         applied = subprocess.run(["git", "-C", str(source), "apply", "--reverse", "--check", str(patch)], capture_output=True)
         if applied.returncode:
@@ -157,6 +157,17 @@ def build_engine(root, bridge, pin, cache, source, build):
     shutil.copy2(source / "rtengine/camconst.json", data)
     for name in ["iccprofiles", "dcpprofiles"]:
         shutil.copytree(source / "rtdata" / name, data / name, dirs_exist_ok=True)
+    from lensfun_data import profiles
+    lens_dir = data / "lensfun"
+    lens_dir.mkdir(exist_ok=True)
+    files = profiles()
+    for name, contents in files.items():
+        target = lens_dir / name
+        if not target.is_file() or target.read_bytes() != contents:
+            target.write_bytes(contents)
+    for old in lens_dir.glob("*.xml"):
+        if old.name not in files:
+            old.unlink()
     dependencies = dll_dependencies(library, prefix) if os.name == "nt" else []
     for dependency in dependencies:
         shutil.copy2(dependency, library.parent / dependency.name)

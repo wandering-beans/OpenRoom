@@ -39,6 +39,7 @@ fn main() -> anyhow::Result<()> {
                     ])
                 }),
                 info: BaseInfo {
+                    lens_profiles: Vec::new(),
                     auto_ca_supported: None,
                     camera_saturation: None,
                     native_source: None,

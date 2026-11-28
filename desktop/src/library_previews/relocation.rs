@@ -105,7 +105,7 @@ impl Store {
         let render = advanced_explorer_develop::RENDER_VERSION;
         let raw = advanced_explorer_media::is_raw(path);
         if raw {
-            if images.render_version != format!("{render}-raw-library-v1")
+            if images.render_version != format!("{}-raw-library-v1", advanced_explorer_develop::RAW_RENDER_VERSION)
                 || !(images.raw_developed || images.camera_fallback)
             {
                 return None;

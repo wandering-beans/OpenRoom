@@ -67,7 +67,7 @@ async function run() {
         texture: 0, clarity: 0, dehaze: 0, vibrance: 0, saturation: 0, monochrome: false,
         point_curves:[[],[],[],[]], curves: Array.from({length:4}, () => [0,.25,.5,.75,1]), mixer: Array.from({length:8}, () => [0,0,0]),
         grading: Array.from({length:4}, () => [0,0,0]), grading_balance:0, grading_blending:50,
-        sharpen:0, sharpen_radius:1, sharpen_detail:25, sharpen_masking:0, noise_luma:0, noise_color:0, ca_auto:false, ca_red:0, ca_blue:0, defringe:false, defringe_radius:2, defringe_threshold:13,
+        sharpen:0, sharpen_radius:1, sharpen_detail:25, sharpen_masking:0, noise_luma:0, noise_color:0, lens_profile:true, lens_model:null, ca_auto:false, ca_red:0, ca_blue:0, defringe:false, defringe_radius:2, defringe_threshold:13,
         crop:[0,0,1,1],quarter_turns:0,flip_h:false,flip_v:false,angle:0,perspective_h:0,perspective_v:0,scale:100,distortion:0,
         vignette:0,vignette_midpoint:50,vignette_feather:50,grain:0,grain_size:25,grain_roughness:50,
       };
@@ -398,7 +398,7 @@ async function run() {
               const inline_image = [384, 1600].includes(args.bound) ? window.__TAURI__.core.convertFileSrc(path) : undefined;
               if (held) window.originalLoadFinished = true;
               window.completedDevelopPreviews.push({id:args.id, bound:args.bound});
-              return { path: inline_image ? '' : path, inline_image, info: {...previewSize(1,args.bound === 384 ? 384 : 720),elapsed_ms:25,histogram:window.histogramFixture ?? Array.from({length:3},()=>Array(256).fill(100))}, base:{auto_ca_supported:window.autoCaFixture === true,source_width:4000,source_height:6000,raster_wb_temperature:window.rasterTemperatureFixture ?? null,color_note:window.rawFixture ? 'Canon EOS 350D / Adobe Standard' : 'テスト用の線形sRGB',raw:window.rawFixture ? {as_shot:[4668.35,22.3]} : null} };
+              return { path: inline_image ? '' : path, inline_image, info: {...previewSize(1,args.bound === 384 ? 384 : 720),elapsed_ms:25,histogram:window.histogramFixture ?? Array.from({length:3},()=>Array(256).fill(100))}, base:{lens_profiles:window.lensFixture ?? [],auto_ca_supported:window.autoCaFixture === true,source_width:4000,source_height:6000,raster_wb_temperature:window.rasterTemperatureFixture ?? null,color_note:window.rawFixture ? 'Canon EOS 350D / Adobe Standard' : 'テスト用の線形sRGB',raw:window.rawFixture ? {as_shot:[4668.35,22.3]} : null} };
             }
             if (command === 'export_develop') return '/exports/edited.jpg';
             if (command === 'invalidate_library_preview') { jpegPreviews.add(args.id); return; }

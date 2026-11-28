@@ -48,6 +48,8 @@ pub struct Settings {
     pub sharpen_masking: f32,
     pub noise_luma: f32,
     pub noise_color: f32,
+    pub lens_profile: bool,
+    pub lens_model: Option<String>,
     pub ca_auto: bool,
     pub ca_red: f32,
     pub ca_blue: f32,
@@ -111,6 +113,8 @@ impl Default for Settings {
             sharpen_masking: 0.,
             noise_luma: 0.,
             noise_color: 0.,
+            lens_profile: true,
+            lens_model: None,
             ca_auto: false,
             ca_red: 0.,
             ca_blue: 0.,
@@ -149,6 +153,9 @@ impl Settings {
     }
 
     pub fn validate(&self) -> Result<()> {
+        if let Some(model) = &self.lens_model {
+            ensure!(!model.is_empty() && model.len() < 256 && !model.contains('\0'), "Invalid lens profile name");
+        }
         ensure!(self.version == 1, "Unsupported development recipe version");
         let range =
             |value: f32, min: f32, max: f32| value.is_finite() && (min..=max).contains(&value);

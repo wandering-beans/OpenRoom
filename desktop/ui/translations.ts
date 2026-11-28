@@ -1,5 +1,14 @@
 // UI text only. User filenames, tags, notes, and custom names are never translated.
 export const english = {
+  "レンズプロファイル補正": "Lens profile corrections",
+  "撮影レンズ": "Capture lens",
+  "歪曲": "Distortion",
+  "倍率色収差はレンズプロファイルで補正します。": "The lens profile corrects lateral chromatic aberration.",
+  "倍率色収差": "Lateral chromatic aberration",
+  "周辺光量のデータなし": "No vignetting data",
+  "対応するレンズプロファイルがありません": "No matching lens profile",
+  "プロファイル補正はオフです": "Profile corrections are off",
+  "撮影に使用したレンズを選んでください": "Select the lens used for this photo",
   "白": "White",
   "グレー": "Gray",
   "黒": "Black",

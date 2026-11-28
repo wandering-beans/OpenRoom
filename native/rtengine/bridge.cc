@@ -5,6 +5,7 @@
 #include <cmath>
 #include <condition_variable>
 #include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -21,6 +22,7 @@
 #include "rtengine/curves.h"
 #include "rtengine/color.h"
 #include "rtengine/dcp.h"
+#include "rtengine/rtlensfun.h"
 #include "rtengine/stdimagesource.h"
 #include "rtgui/options.h"
 #ifdef _OPENMP
@@ -90,7 +92,32 @@ public:
     int detail_threads = 4;
     ColorTemp camera_wb;
     std::string camera;
+    struct Profile { std::string name; unsigned flags; };
+    std::vector<Profile> lens_profiles;
+    LensProfParams profile_params;
     ProcParams previous;
+
+    void find_profiles() {
+        const auto* meta = initial->getMetaData();
+        if (!raw || meta->getFocalLen() <= 0) return;
+        const auto* db = LFDatabase::getInstance();
+        const auto body = db->findCamera(meta->getMake(), meta->getModel(), true);
+        if (!body) return;
+        profile_params.lcMode = LensProfParams::LcMode::LENSFUNMANUAL;
+        profile_params.lfCameraMake = body.getMake();
+        profile_params.lfCameraModel = body.getModel();
+        for (const auto& candidate : db->profileCandidates(body, meta->getLens())) {
+            const std::string name = candidate.getLens().raw();
+            if (name.size() >= sizeof(OpenRoomAdjustments::lens_model) || std::any_of(
+                lens_profiles.begin(), lens_profiles.end(), [&](const Profile &p) { return p.name == name; })) continue;
+            profile_params.lfLens = name;
+            auto modifier = db->findModifier(profile_params, meta, source_width, source_height, previous.coarse, -1);
+            if (!modifier) continue;
+            const unsigned flags = (modifier->hasDistortionCorrection() ? 1u : 0u) |
+                (modifier->hasCACorrection() ? 2u : 0u) | (modifier->hasVignettingCorrection() ? 4u : 0u);
+            if (flags) lens_profiles.push_back({name, flags});
+        }
+    }
 
     Session(const char* path, const float* rgba, uint32_t width, uint32_t height, uint32_t bound, InitialImage* shared = nullptr) : raw(!rgba) {
         App::get().mut_options().prevdemo = bound == 384 ? PD_Fast : PD_Sidecar;
@@ -112,6 +139,7 @@ public:
         detail_threads = !bound || bound >= uint32_t(std::max(source_width, source_height)) ? 8 : 4;
         camera_wb = initial->getImageSource()->getWB();
         camera = initial->getMetaData()->getCamera();
+        find_profiles();
         processor = static_cast<ImProcCoordinator*>(StagedImageProcessor::create(initial));
         // create() transfers the initial reference; its destructor releases it.
         processor->openroomLinearOnly = true;
@@ -142,7 +170,21 @@ public:
         omp_set_num_threads(std::min(detail_threads, omp_get_num_procs()));
 #endif
         ProcParams params;
-        params.raw.ca_autocorrect = auto_ca_supported && a.ca_auto;
+        unsigned lens_flags = 0;
+        if (a.lens_profile) {
+            for (const auto& profile : lens_profiles) {
+                if (a.lens_model[0] ? profile.name == a.lens_model : lens_profiles.size() == 1) {
+                    params.lensProf = profile_params;
+                    params.lensProf.lfLens = profile.name;
+                    lens_flags = profile.flags;
+                    params.lensProf.useDist = lens_flags & 1;
+                    params.lensProf.useCA = lens_flags & 2;
+                    params.lensProf.useVign = lens_flags & 4;
+                    break;
+                }
+            }
+        }
+        params.raw.ca_autocorrect = auto_ca_supported && a.ca_auto && !(lens_flags & 2);
         params.raw.ca_avoidcolourshift = true;
         params.icm.workingProfile = "sRGB";
         params.icm.outputProfile = "No ICM: sRGB output";
@@ -207,7 +249,7 @@ public:
             }
             ProcParams* updated = processor->beginUpdateParams();
             *updated = params;
-            processor->endUpdateParams(ProcEvent(first ? EvPhotoLoaded : params.raw != previous.raw ? EvPreProcessAutoCA : params.wb != previous.wb ? EvWBTemp : EvExpComp));
+            processor->endUpdateParams(ProcEvent(first ? EvPhotoLoaded : (params.raw != previous.raw || params.lensProf != previous.lensProf) ? EvPreProcessAutoCA : params.wb != previous.wb ? EvWBTemp : EvExpComp));
             std::unique_lock<std::mutex> lock(mutex);
             if (!ready.wait_for(lock, std::chrono::seconds(90), [this] { return completed; })) throw std::runtime_error("rtengine preview timed out");
             if (!error.empty()) throw std::runtime_error(error);
@@ -221,12 +263,14 @@ public:
         const float detail_scale = raw ? float(std::max(linear->getWidth(), linear->getHeight())) / std::max(source_width, source_height) : a.scale;
         const std::array<float, 12> key{{a.sharpen, a.sharpen_radius, a.sharpen_detail, a.sharpen_masking, a.noise_luma, a.noise_color, detail_scale,
             a.ca_red, a.ca_blue, float(a.defringe), a.defringe_radius, a.defringe_threshold}};
-        const bool needs_detail = a.sharpen > 0 || a.noise_luma > 0 || a.noise_color > 0 || a.ca_red != 0 || a.ca_blue != 0 || a.defringe;
+        const bool lens_geometry = lens_flags & 3;
+        const bool needs_detail = lens_geometry || a.sharpen > 0 || a.noise_luma > 0 || a.noise_color > 0 || a.ca_red != 0 || a.ca_blue != 0 || a.defringe;
         if (needs_detail && (!detailed || key != detail_key)) {
             detailed.reset();
             output = nullptr;
             std::unique_ptr<Imagefloat> result(new Imagefloat(linear->getWidth(), linear->getHeight()));
             ProcParams detail_params;
+            detail_params.lensProf = params.lensProf;
             detail_params.icm.workingProfile = "sRGB";
             detail_params.cacorrection.red = a.ca_red * 0.00005;
             detail_params.cacorrection.blue = a.ca_blue * 0.00005;
@@ -253,11 +297,11 @@ public:
             if (!needs_denoise || noise_key != denoise_key) denoised.reset();
             if (denoised) denoised->copyData(result.get());
             else {
-                if (a.ca_red != 0 || a.ca_blue != 0) {
+                if (lens_geometry || a.ca_red != 0 || a.ca_blue != 0) {
                     // Relative channel scaling works for Bayer, X-Trans and raster images alike.
                     functions.transform(const_cast<Imagefloat*>(linear), result.get(), 0, 0, 0, 0,
                         linear->getWidth(), linear->getHeight(), linear->getWidth(), linear->getHeight(),
-                        initial->getMetaData(), 0, true);
+                        initial->getMetaData(), initial->getImageSource()->getRotateDegree(), true);
                 } else linear->copyData(result.get());
                 if (a.defringe) {
                     LabImage lab(result->getWidth(), result->getHeight());
@@ -356,6 +400,7 @@ extern "C" int openroom_rt_init(const char* data, const char* cache) {
         options.rtSettings.verbose = false;
         options.rtSettings.enableLibRaw = true;
         options.rtSettings.iccDirectory = "";
+        options.rtSettings.lensfunDbDirectory = "lensfun";
         options.rtSettings.metadata_xmp_sync = Settings::MetadataXmpSync::NONE;
         rtengine::init(&options.rtSettings, data, cache, false);
         return 0;
@@ -379,7 +424,7 @@ extern "C" void* openroom_rt_reopen(void* session, uint32_t bound) {
 extern "C" int openroom_rt_render(void* session, const OpenRoomAdjustments* adjustments, OpenRoomFrame* frame) {
     try {
         Diagnostics diagnostics;
-        if (!session || !adjustments || !frame) throw std::runtime_error("Invalid rtengine request");
+        if (!session || !adjustments || !frame || !std::memchr(adjustments->lens_model, 0, sizeof adjustments->lens_model)) throw std::runtime_error("Invalid rtengine request");
         static_cast<Session*>(session)->render(*adjustments, *frame);
         return 0;
     } catch (const std::exception& e) { last_error = e.what(); return -1; }
@@ -393,6 +438,13 @@ extern "C" int openroom_rt_copy(void* session, float* pixels, size_t count) {
 }
 extern "C" void openroom_rt_close(void* session) { delete static_cast<Session*>(session); }
 extern "C" const char* openroom_rt_camera(void* session) { return static_cast<Session*>(session)->camera.c_str(); }
+extern "C" const char* openroom_rt_lens_candidate(void* session, size_t index, unsigned* flags) {
+    if (!session || !flags) return nullptr;
+    const auto& profiles = static_cast<Session*>(session)->lens_profiles;
+    if (index >= profiles.size()) return nullptr;
+    *flags = profiles[index].flags;
+    return profiles[index].name.c_str();
+}
 extern "C" int openroom_rt_camera_matched(void* session) { return bool(static_cast<Session*>(session)->camera_curve); }
 extern "C" int openroom_rt_auto_ca_supported(void* session) { return static_cast<Session*>(session)->auto_ca_supported; }
 extern "C" const char* openroom_rt_error() { return last_error.c_str(); }

@@ -130,21 +130,17 @@ pub fn prepare_raw(source: &Path, bound: u32, gain: Option<f32>) -> Result<Worki
     prepare_raw_adjusted(source, bound, &Adjustments::default(), gain).map(|(working, _)| working)
 }
 
-/// Render directly from the neutral native stage when only downstream controls have changed.
+/// Apply native adjustments once before the downstream display controls.
 pub fn render_raw_display(
     source: &Path,
     settings: &Settings,
     gain: Option<f32>,
 ) -> Result<(crate::RenderedImage, BaseInfo)> {
     settings.validate()?;
-    let (mut base, matched) = prepare_raw_adjusted(source, 1600, &Adjustments::default(), gain)?;
+    let (mut base, matched) = prepare_raw_adjusted(source, 1600, &adjustments(settings, true, 1.), gain)?;
     let info = base.info.clone();
-    let frame = if adjustments(settings, true, 1.) == Adjustments::default() {
-        finish_raw_stage(&mut base, matched);
-        crate::render_working(std::borrow::Cow::Owned(base), &remaining(settings, true), &|| false)?
-    } else {
-        crate::render_working(std::borrow::Cow::Owned(base), settings, &|| false)?
-    };
+    finish_raw_stage(&mut base, matched);
+    let frame = crate::render_working(std::borrow::Cow::Owned(base), &remaining(settings, true), &|| false)?;
     Ok((frame, info))
 }
 
@@ -212,6 +208,7 @@ fn prepare_raw_adjusted(
     Ok((
         WorkingImage {
             info: BaseInfo {
+                lens_profiles: rendered.lens_profiles,
                 auto_ca_supported: Some(rendered.auto_ca_supported),
                 camera_saturation,
                 native_source: Some(source),
@@ -299,7 +296,13 @@ pub(crate) fn preview_adjustments(working: &WorkingImage, settings: &Settings) -
 }
 
 fn adjustments(settings: &Settings, is_raw: bool, scale: f32) -> Adjustments {
+    let mut lens_model = [0; 256];
+    if let Some(name) = settings.lens_model.as_ref().filter(|s| s.len() < lens_model.len()) {
+        lens_model[..name.len()].copy_from_slice(name.as_bytes());
+    }
     Adjustments {
+        lens_profile: u32::from(is_raw && settings.lens_profile),
+        lens_model,
         // Raster tone/WB stays with Rust's calibrated display and linear input paths.
         exposure: if is_raw { settings.exposure } else { 0. },
         temperature: if is_raw { settings.temperature } else { 0. },

@@ -239,13 +239,18 @@ fn request(
     // The shared key revalidates the source and includes modification time, size and file identity.
     let original = prepare_render(db.clone(), cache.clone(), renderer, id, 4096)?;
     // v6 also preserves extended ICC colors and scene-linear floating-point rasters.
+    let version = if advanced_explorer_media::is_raw(&original.source) {
+        engine::RAW_RENDER_VERSION
+    } else {
+        engine::RENDER_VERSION
+    };
     let base = original
         .image
-        .with_extension(format!("{}-{bound}.tif", engine::RENDER_VERSION));
+        .with_extension(format!("{version}-{bound}.tif"));
     let mut hash = std::collections::hash_map::DefaultHasher::new();
     // Render changes must invalidate thumbnails and previews, while retaining decoded bases.
     (
-        engine::RENDER_VERSION,
+        version,
         &base,
         bound,
         serde_json::to_string(settings)?,
